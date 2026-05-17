@@ -1,0 +1,28 @@
+# Web framework
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.9.2
+pydantic-settings==2.6.1
+
+# Vietnam stock data
+vnstock==3.2.0
+requests==2.32.3
+httpx==0.27.2
+
+# Data processing
+pandas==2.2.3
+numpy==1.26.4
+
+# AI
+anthropic==0.39.0
+
+# Cache & DB
+redis==5.2.0
+sqlalchemy==2.0.36
+asyncpg==0.30.0
+
+# Utilities
+python-dotenv==1.0.1
+loguru==0.7.2
+apscheduler==3.10.4
+python-multipart==0.0.17
