@@ -149,3 +149,54 @@ def compute_all(df: pd.DataFrame) -> pd.DataFrame:
     df["vol_ratio"] = df["volume"] / df["vol_ma20"]
     df["vpa"] = vpa_signal(df)
     return df
+
+
+# ============================================================
+# Screener helpers
+# ============================================================
+
+def is_above_ma(df: pd.DataFrame, ma_period: int = 20) -> bool:
+    if len(df) < ma_period:
+        return False
+    last_close = df["close"].iloc[-1]
+    last_ma = sma(df["close"], ma_period).iloc[-1]
+    return bool(last_close > last_ma) if pd.notna(last_ma) else False
+
+
+def is_breaking_ma(df: pd.DataFrame, ma_period: int = 20) -> bool:
+    if len(df) < ma_period + 1:
+        return False
+    ma_series = sma(df["close"], ma_period)
+    prev_below = df["close"].iloc[-2] <= ma_series.iloc[-2]
+    now_above = df["close"].iloc[-1] > ma_series.iloc[-1]
+    return bool(prev_below and now_above)
+
+
+def is_squeeze(df: pd.DataFrame, period: int = 20) -> bool:
+    if len(df) < 126:
+        return False
+    bb = bollinger_bands(df["close"], period)
+    cur = bb["bb_width"].iloc[-1]
+    avg = bb["bb_width"].iloc[-126:-21].mean()
+    if pd.isna(cur) or pd.isna(avg) or avg == 0:
+        return False
+    return bool(cur < 0.5 * avg)
+
+
+def is_vpa_setup(df: pd.DataFrame) -> bool:
+    if len(df) < 5:
+        return False
+    recent = vpa_signal(df).iloc[-5:]
+    return bool(("SOS" in recent.values) or ("Spring" in recent.values))
+
+
+def is_strong_trend(df: pd.DataFrame) -> bool:
+    if len(df) < 30:
+        return False
+    a = adx(df)
+    last_adx = a["adx"].iloc[-1]
+    last_plus = a["plus_di"].iloc[-1]
+    last_minus = a["minus_di"].iloc[-1]
+    if pd.isna(last_adx):
+        return False
+    return bool(last_adx > 25 and last_plus > last_minus)

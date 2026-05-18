@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPASTOCK — Bộ lọc CP</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#131722; --bg2:#1e222d; --bg3:#2a2e39; --bg4:#363a45;
+  --border:#363a45; --border-hi:#4f5664;
+  --text:#d1d4dc; --text2:#787b86; --text3:#5d606b;
+  --blue:#2962ff; --blue-hi:#3d7dff; --blue-bg:#0a1d3d;
+  --green:#26a69a; --green-hi:#2dd4bf; --green-bg:#0a2e2a;
+  --red:#ef5350; --red-hi:#ff6b68; --red-bg:#3d0a0a;
+  --orange:#ff9800; --yellow:#ffd54f; --purple:#ab47bc;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;letter-spacing:-0.005em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+/* TOP BAR */
+.topbar{height:48px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:24px;position:sticky;top:0;z-index:10}
+.logo{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--blue);display:flex;align-items:center;gap:8px}
+.logo-mark{width:22px;height:22px;background:var(--blue);border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700}
+.nav{display:flex;gap:2px}
+.nav a{padding:6px 12px;font-size:12px;color:var(--text2);text-decoration:none;border-radius:4px;transition:all .15s;font-weight:500}
+.nav a:hover{color:var(--text);background:var(--bg3)}
+.nav a.active{color:#fff;background:var(--blue)}
+.user{width:32px;height:32px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;font-family:var(--mono);margin-left:auto}
+
+/* CONTAINER */
+.container{max-width:1400px;margin:0 auto;padding:24px}
+
+.page-title{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.page-title h1{font-size:22px;font-weight:700;letter-spacing:-0.02em}
+.page-title .subtitle{color:var(--text2);font-size:12px;font-family:var(--mono)}
+
+/* PRESET BUTTONS */
+.preset-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.section-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--mono);font-weight:600;margin-bottom:10px}
+.preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.preset-btn{padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;text-align:left;transition:all .15s;display:flex;flex-direction:column;gap:3px}
+.preset-btn:hover{background:var(--bg4);border-color:var(--border-hi)}
+.preset-btn.active{background:var(--blue-bg);border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}
+.preset-btn .pname{font-size:13px;font-weight:600;color:var(--text)}
+.preset-btn.active .pname{color:var(--blue-hi)}
+.preset-btn .pdesc{font-size:10.5px;color:var(--text3);font-family:var(--mono);line-height:1.3}
+
+/* OPTIONS BAR */
+.options-bar{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px}
+.options-bar label{font-size:11px;color:var(--text2);font-family:var(--mono);font-weight:600}
+.options-bar select{background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-family:var(--mono);font-size:12px;outline:none}
+.options-bar select:focus{border-color:var(--blue)}
+.btn-scan{background:var(--blue);color:#fff;padding:8px 16px;border-radius:5px;font-weight:600;font-size:12px;font-family:var(--mono);transition:background .15s;letter-spacing:0.02em}
+.btn-scan:hover{background:var(--blue-hi)}
+.btn-refresh{background:var(--bg3);color:var(--text2);padding:8px 12px;border-radius:5px;font-size:12px;font-family:var(--mono);border:1px solid var(--border)}
+.btn-refresh:hover{background:var(--bg4);color:var(--text)}
+
+/* META INFO */
+.meta-info{display:flex;align-items:center;gap:16px;margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text3)}
+.meta-info .badge{padding:3px 8px;border-radius:10px;font-weight:600;font-size:10px}
+.meta-info .badge.cache{background:var(--green-bg);color:var(--green-hi);border:1px solid var(--green)}
+.meta-info .badge.fresh{background:var(--blue-bg);color:var(--blue-hi);border:1px solid var(--blue)}
+
+/* RESULTS TABLE */
+.results-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.results-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.results-header .count{font-size:13px;color:var(--text);font-weight:600}
+.results-header .count strong{color:var(--blue-hi);font-family:var(--mono);font-size:16px}
+
+table{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono)}
+thead{background:var(--bg3);position:sticky;top:48px;z-index:5}
+th{padding:10px 12px;text-align:right;font-weight:600;color:var(--text2);text-transform:uppercase;font-size:10px;letter-spacing:0.06em;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;transition:color .1s}
+th:hover{color:var(--text)}
+th.left{text-align:left}
+th.sort-asc::after{content:' ↑';color:var(--blue-hi)}
+th.sort-desc::after{content:' ↓';color:var(--blue-hi)}
+td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--border)}
+td.left{text-align:left}
+tr{transition:background .1s}
+tbody tr:hover{background:var(--bg3);cursor:pointer}
+.sym{font-weight:700;color:var(--text);font-size:13px}
+.up{color:var(--green-hi);font-weight:600}
+.down{color:var(--red-hi);font-weight:600}
+.neutral{color:var(--text2)}
+.vpa-cell{padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;display:inline-block}
+.vpa-sos,.vpa-spring{background:var(--green-bg);color:var(--green-hi)}
+.vpa-sow,.vpa-upthrust{background:var(--red-bg);color:var(--red-hi)}
+.vpa-nosupply{background:var(--blue-bg);color:var(--blue-hi)}
+.vpa-nodemand{background:#3d2e0a;color:var(--yellow)}
+.vpa-normal{color:var(--text3)}
+
+/* LOADING */
+.loading{padding:60px 20px;text-align:center;color:var(--text2)}
+.loading .spinner{display:inline-block;width:32px;height:32px;border:3px solid var(--bg4);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading .msg{font-family:var(--mono);font-size:13px;color:var(--blue-hi)}
+.loading .sub{font-size:11px;color:var(--text3);margin-top:6px}
+
+.empty{padding:60px 20px;text-align:center;color:var(--text3);font-size:13px}
+.error{padding:40px 20px;text-align:center;color:var(--red-hi);font-family:var(--mono);font-size:12px;background:var(--red-bg);border-radius:6px;margin:16px}
+
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-hi)}
+
+@media (max-width: 800px){
+  .container{padding:14px}
+  .preset-grid{grid-template-columns:1fr}
+  .meta-info{display:none}
+  th,td{padding:8px 6px;font-size:11px}
+  th:nth-child(n+5),td:nth-child(n+5){display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="logo-mark">V</span>VPASTOCK</div>
+  <nav class="nav">
+    <a href="stock-detail-live.html">Chi tiết CP</a>
+    <a href="#" class="active">Bộ lọc</a>
+    <a href="#">Watchlist</a>
+  </nav>
+  <div class="user">H</div>
+</div>
+
+<div class="container">
+
+  <div class="page-title">
+    <h1>Bộ lọc cổ phiếu</h1>
+    <span class="subtitle">Scan toàn HOSE • 117 mã thanh khoản cao</span>
+  </div>
+
+  <!-- PRESET BUTTONS -->
+  <div class="preset-section">
+    <div class="section-label">Preset</div>
+    <div class="preset-grid" id="presetGrid">
+      <!-- JS render -->
+    </div>
+  </div>
+
+  <!-- OPTIONS BAR -->
+  <div class="options-bar">
+    <label>Sàn:</label>
+    <select id="exchangeSelect">
+      <option value="HOSE">HOSE</option>
+      <option value="HNX">HNX</option>
+      <option value="ALL">ALL</option>
+    </select>
+    <button class="btn-scan" id="btnScan">▶ Quét thị trường</button>
+    <button class="btn-refresh" id="btnRefresh" title="Force refresh - scan lại từ đầu">↻ Refresh</button>
+    <div class="meta-info" id="metaInfo"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section">
+    <div class="results-header">
+      <span class="count" id="countLabel">Chọn 1 preset và quét</span>
+    </div>
+    <div id="resultsBody">
+      <div class="empty">Chọn preset ở trên rồi nhấn "Quét thị trường"</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = window.location.origin.includes('localhost')
+  ? 'http://localhost:8000'
+  : window.location.origin;
+
+let currentPreset = 'above_ma20';
+let currentExchange = 'HOSE';
+let currentData = null;
+let sortColumn = 'vol_ratio';
+let sortDirection = 'desc';
+
+const PRESETS = [];
+
+async function loadPresets() {
+  try {
+    const res = await fetch(`${API}/api/screener/presets`);
+    const data = await res.json();
+    PRESETS.push(...data.presets);
+    renderPresetButtons();
+  } catch (err) {
+    console.error('Loi load presets:', err);
+  }
+}
+
+function renderPresetButtons() {
+  const grid = document.getElementById('presetGrid');
+  grid.innerHTML = PRESETS.map(p => `
+    <button class="preset-btn ${p.key === currentPreset ? 'active' : ''}" data-key="${p.key}">
+      <div class="pname">${p.name}</div>
+      <div class="pdesc">${p.desc}</div>
+    </button>
+  `).join('');
+  grid.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentPreset = btn.dataset.key;
+      renderPresetButtons();
+    });
+  });
+}
+
+async function runScan(forceRefresh = false) {
+  currentExchange = document.getElementById('exchangeSelect').value;
+
+  document.getElementById('resultsBody').innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <div class="msg">Đang quét thị trường...</div>
+      <div class="sub">Lần đầu mất 1-2 phút, các lần sau instant từ cache</div>
+    </div>
+  `;
+  document.getElementById('countLabel').textContent = 'Đang scan...';
+  document.getElementById('metaInfo').innerHTML = '';
+
+  const url = `${API}/api/screener/scan?preset=${currentPreset}&exchange=${currentExchange}${forceRefresh ? '&force_refresh=true' : ''}`;
+
+  try {
+    const t0 = performance.now();
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({detail: 'Unknown'}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const latency = (performance.now() - t0).toFixed(0);
+
+    currentData = data;
+    renderResults(data, latency);
+  } catch (err) {
+    document.getElementById('resultsBody').innerHTML = `
+      <div class="error">⚠ Lỗi: ${err.message}<br>Backend có chạy không? (${API})</div>
+    `;
+    document.getElementById('countLabel').textContent = 'Lỗi';
+  }
+}
+
+function renderResults(data, latency) {
+  // Update count + meta
+  document.getElementById('countLabel').innerHTML = `
+    Tìm thấy <strong>${data.matched}</strong> mã thỏa "${PRESETS.find(p => p.key === data.preset)?.name || data.preset}"
+    <span style="color:var(--text3);font-family:var(--mono);font-size:11px;margin-left:8px">
+      • Scan ${data.scanned}/${data.total_symbols} mã ${data.exchange}
+    </span>
+  `;
+
+  const cacheBadge = data.from_cache
+    ? '<span class="badge cache">📦 Cached</span>'
+    : '<span class="badge fresh">⚡ Fresh</span>';
+
+  document.getElementById('metaInfo').innerHTML = `
+    ${cacheBadge}
+    <span>${Math.round(data.duration_ms / 1000)}s scan</span>
+    <span>${latency}ms response</span>
+  `;
+
+  if (data.matched === 0) {
+    document.getElementById('resultsBody').innerHTML = `
+      <div class="empty">Không có mã nào thỏa điều kiện hiện tại.<br>Thử preset khác.</div>
+    `;
+    return;
+  }
+
+  renderTable(data.stocks);
+}
+
+function renderTable(stocks) {
+  const sorted = sortStocks(stocks, sortColumn, sortDirection);
+
+  const tableHtml = `
+    <div style="max-height:calc(100vh - 380px);overflow-y:auto">
+    <table>
+      <thead>
+        <tr>
+          <th class="left" data-col="symbol">Mã</th>
+          <th data-col="price">Giá</th>
+          <th data-col="change_pct">% CH</th>
+          <th data-col="ma20">MA20</th>
+          <th data-col="ma50">MA50</th>
+          <th data-col="rsi">RSI</th>
+          <th data-col="adx">ADX</th>
+          <th data-col="vol_ratio">Vol/MA20</th>
+          <th class="left" data-col="vpa">VPA</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sorted.map(s => renderRow(s)).join('')}
+      </tbody>
+    </table>
+    </div>
+  `;
+  document.getElementById('resultsBody').innerHTML = tableHtml;
+
+  // Sort handlers
+  document.querySelectorAll('th[data-col]').forEach(th => {
+    const col = th.dataset.col;
+    if (col === sortColumn) th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+    th.addEventListener('click', () => {
+      if (sortColumn === col) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortColumn = col;
+        sortDirection = 'desc';
+      }
+      renderTable(stocks);
+    });
+  });
+
+  // Click row → open detail
+  document.querySelectorAll('tbody tr').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const sym = tr.dataset.sym;
+      window.location.href = `stock-detail-live.html?symbol=${sym}`;
+    });
+  });
+}
+
+function sortStocks(stocks, col, direction) {
+  const mult = direction === 'asc' ? 1 : -1;
+  return [...stocks].sort((a, b) => {
+    const va = a[col];
+    const vb = b[col];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    if (typeof va === 'string') return va.localeCompare(vb) * mult;
+    return (va - vb) * mult;
+  });
+}
+
+function renderRow(s) {
+  const fmt = (v, dec = 2) => v == null ? '—' : v.toFixed(dec);
+  const fmtPct = (v) => {
+    if (v == null) return '—';
+    const cls = v > 0 ? 'up' : v < 0 ? 'down' : 'neutral';
+    return `<span class="${cls}">${v > 0 ? '+' : ''}${v.toFixed(2)}%</span>`;
+  };
+  const fmtMA = (price, ma) => {
+    if (ma == null) return '—';
+    const above = price > ma;
+    return `<span class="${above ? 'up' : 'down'}">${ma.toFixed(2)}</span>`;
+  };
+  const fmtRsi = (v) => {
+    if (v == null) return '—';
+    const cls = v > 70 ? 'down' : v < 30 ? 'up' : 'neutral';
+    return `<span class="${cls}">${v.toFixed(1)}</span>`;
+  };
+  const fmtAdx = (v) => {
+    if (v == null) return '—';
+    const cls = v > 25 ? 'up' : 'neutral';
+    return `<span class="${cls}">${v.toFixed(1)}</span>`;
+  };
+  const fmtVol = (v) => {
+    if (v == null) return '—';
+    const pct = (v - 1) * 100;
+    const cls = pct > 30 ? 'up' : pct < -30 ? 'down' : 'neutral';
+    return `<span class="${cls}">${pct > 0 ? '+' : ''}${pct.toFixed(0)}%</span>`;
+  };
+  const vpaClass = {
+    'SOS': 'vpa-sos', 'Spring': 'vpa-spring',
+    'SOW': 'vpa-sow', 'UpThrust': 'vpa-upthrust',
+    'NoSupply': 'vpa-nosupply', 'NoDemand': 'vpa-nodemand',
+    'Normal': 'vpa-normal',
+  }[s.vpa] || 'vpa-normal';
+
+  return `
+    <tr data-sym="${s.symbol}">
+      <td class="left"><span class="sym">${s.symbol}</span></td>
+      <td>${fmt(s.price)}</td>
+      <td>${fmtPct(s.change_pct)}</td>
+      <td>${fmtMA(s.price, s.ma20)}</td>
+      <td>${fmtMA(s.price, s.ma50)}</td>
+      <td>${fmtRsi(s.rsi)}</td>
+      <td>${fmtAdx(s.adx)}</td>
+      <td>${fmtVol(s.vol_ratio)}</td>
+      <td class="left"><span class="vpa-cell ${vpaClass}">${s.vpa}</span></td>
+    </tr>
+  `;
+}
+
+// Event listeners
+document.getElementById('btnScan').addEventListener('click', () => runScan(false));
+document.getElementById('btnRefresh').addEventListener('click', () => {
+  if (confirm('Force refresh sẽ scan lại từ đầu, mất 1-2 phút. Tiếp tục?')) {
+    runScan(true);
+  }
+});
+
+// Auto load presets
+loadPresets();
+</script>
+</body>
+</html>
