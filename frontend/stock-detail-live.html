@@ -116,6 +116,28 @@ input{font-family:inherit;color:inherit}
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+
+/* === T+2 SETTLEMENT WIDGET === */
+.t2-widget{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-top:6px;font-family:var(--mono)}
+.t2-widget.low{border-left:3px solid var(--green)}
+.t2-widget.medium{border-left:3px solid var(--orange)}
+.t2-widget.high{border-left:3px solid var(--red)}
+.t2-head{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.t2-head .t2-emoji{font-size:14px;line-height:1}
+.t2-head .t2-title{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;flex:1}
+.t2-head .t2-badge{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700}
+.t2-head .t2-badge.low{background:var(--green-bg);color:var(--green-hi)}
+.t2-head .t2-badge.medium{background:#3d2e0a;color:var(--yellow)}
+.t2-head .t2-badge.high{background:var(--red-bg);color:var(--red-hi)}
+.t2-timeline{font-size:11px;color:var(--text);line-height:1.6;margin-bottom:6px}
+.t2-timeline b{color:var(--blue-hi)}
+.t2-countdown{font-size:11px;color:var(--text2);padding-top:6px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.t2-countdown .t2-time{color:var(--blue-hi);font-weight:600}
+.t2-countdown .t2-time.expired{color:var(--green-hi)}
+.t2-link{display:block;margin-top:6px;font-size:10px;color:var(--text3);text-decoration:none;text-align:center;padding:4px;border-radius:3px;transition:all .15s}
+.t2-link:hover{color:var(--blue-hi);background:var(--bg4)}
+.t2-holidays{margin-top:6px;padding:6px 8px;background:var(--red-bg);border-radius:4px;font-size:10px;color:var(--red-hi);line-height:1.5}
+.t2-holidays .t2-h-label{font-weight:600;margin-bottom:2px}
 </style>
 </head>
 <body>
@@ -233,6 +255,22 @@ input{font-family:inherit;color:inherit}
       <p id="trendAnalysis" class="muted">--</p>
       <h4>Cảnh báo</h4>
       <p id="warningAnalysis" class="muted">--</p>
+
+      <h4>Settlement T+2 (nếu MUA hôm nay)</h4>
+      <div class="t2-widget low" id="t2Widget">
+        <div class="t2-head">
+          <span class="t2-emoji" id="t2Emoji">📅</span>
+          <span class="t2-title" id="t2Title">Đang tính T+2...</span>
+          <span class="t2-badge low" id="t2Badge">--</span>
+        </div>
+        <div class="t2-timeline" id="t2Timeline">--</div>
+        <div class="t2-holidays" id="t2Holidays" style="display:none"></div>
+        <div class="t2-countdown">
+          <span>⏱ CP về sau</span>
+          <span class="t2-time" id="t2Countdown">--</span>
+        </div>
+        <a href="t2-calculator.html" class="t2-link" target="_blank">→ Mở Trình tính T+2 đầy đủ</a>
+      </div>
     </div>
   </aside>
 </div>
@@ -502,6 +540,101 @@ document.querySelectorAll('.tabs button').forEach(b => {
   });
 });
 
+// === T+2 SETTLEMENT WIDGET ===
+let t2CountdownInterval = null;
+
+async function loadT2Settlement() {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await fetch(`${API}/api/calendar/buy?buy_date=${today}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+    renderT2Widget(d);
+  } catch (err) {
+    document.getElementById('t2Title').textContent = 'Không tải được T+2';
+    document.getElementById('t2Timeline').textContent = '(' + err.message + ')';
+  }
+}
+
+function renderT2Widget(d) {
+  const widget = document.getElementById('t2Widget');
+  const emoji = document.getElementById('t2Emoji');
+  const title = document.getElementById('t2Title');
+  const badge = document.getElementById('t2Badge');
+  const timeline = document.getElementById('t2Timeline');
+  const holidays = document.getElementById('t2Holidays');
+
+  if (!d.is_trading_day) {
+    widget.className = 't2-widget high';
+    emoji.textContent = '⛔';
+    title.textContent = 'Hôm nay không giao dịch';
+    badge.textContent = 'OFF';
+    badge.className = 't2-badge high';
+    timeline.textContent = d.warning_message;
+    return;
+  }
+
+  // Set warning level
+  const lvl = d.warning_level || 'low';
+  const emojiMap = { low: '🟢', medium: '🟡', high: '🔴' };
+  const titleMap = {
+    low: `Khoá ${d.calendar_days_locked} ngày — Bình thường`,
+    medium: `Khoá ${d.calendar_days_locked} ngày — Cảnh giác`,
+    high: `Khoá ${d.calendar_days_locked} ngày — Rủi ro cao`,
+  };
+  widget.className = 't2-widget ' + lvl;
+  emoji.textContent = emojiMap[lvl];
+  title.textContent = titleMap[lvl];
+  badge.textContent = lvl.toUpperCase();
+  badge.className = 't2-badge ' + lvl;
+
+  // Timeline compact
+  const buyShort = formatShortDate(d.buy_date);
+  const arrivalShort = formatShortDate(d.cp_arrival_date);
+  timeline.innerHTML = `🛒 ${buyShort} (${d.buy_weekday}) → 📦 <b>${arrivalShort} (${d.cp_arrival_weekday})</b> sau 13:00`;
+
+  // Holidays
+  if (d.holidays_in_period && d.holidays_in_period.length > 0) {
+    holidays.style.display = 'block';
+    holidays.innerHTML = `<div class="t2-h-label">⚠ Dính ${d.holidays_in_period.length} ngày lễ:</div>`
+      + d.holidays_in_period.map(h => `• ${formatShortDate(h.date)} - ${h.name}`).join('<br>');
+  } else {
+    holidays.style.display = 'none';
+  }
+
+  // Countdown
+  startT2Countdown(d.sellable_from);
+}
+
+function startT2Countdown(sellableFromIso) {
+  if (t2CountdownInterval) clearInterval(t2CountdownInterval);
+  const target = new Date(sellableFromIso).getTime();
+  const el = document.getElementById('t2Countdown');
+
+  function update() {
+    if (!el) { clearInterval(t2CountdownInterval); return; }
+    const diff = target - Date.now();
+    if (diff <= 0) {
+      el.textContent = '✅ Đã giao dịch được';
+      el.classList.add('expired');
+      clearInterval(t2CountdownInterval);
+      return;
+    }
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff / 3600000) % 24);
+    const mins = Math.floor((diff / 60000) % 60);
+    el.textContent = `${days}d ${String(hours).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m`;
+  }
+  update();
+  t2CountdownInterval = setInterval(update, 60000);
+}
+
+function formatShortDate(iso) {
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+loadT2Settlement();
 loadStock('VIC');
 </script>
 </body>

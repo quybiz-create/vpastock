@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPASTOCK — Tính T+2 Settlement</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#131722; --bg2:#1e222d; --bg3:#2a2e39; --bg4:#363a45;
+  --border:#363a45; --border-hi:#4f5664;
+  --text:#d1d4dc; --text2:#787b86; --text3:#5d606b;
+  --blue:#2962ff; --blue-hi:#3d7dff; --blue-bg:#0a1d3d;
+  --green:#26a69a; --green-hi:#2dd4bf; --green-bg:#0a2e2a;
+  --red:#ef5350; --red-hi:#ff6b68; --red-bg:#3d0a0a;
+  --orange:#ff9800; --orange-bg:#3d2607;
+  --yellow:#ffd54f; --yellow-bg:#3d3007;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;letter-spacing:-0.005em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+/* TOP BAR */
+.topbar{height:48px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:24px;position:sticky;top:0;z-index:10}
+.logo{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--blue);display:flex;align-items:center;gap:8px}
+.logo-mark{width:22px;height:22px;background:var(--blue);border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700}
+.nav{display:flex;gap:2px}
+.nav a{padding:6px 12px;font-size:12px;color:var(--text2);text-decoration:none;border-radius:4px;transition:all .15s;font-weight:500}
+.nav a:hover{color:var(--text);background:var(--bg3)}
+.nav a.active{color:#fff;background:var(--blue)}
+.user{width:32px;height:32px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;font-family:var(--mono);margin-left:auto}
+
+.container{max-width:900px;margin:0 auto;padding:24px}
+
+.page-title{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.page-title h1{font-size:22px;font-weight:700;letter-spacing:-0.02em}
+.page-title .subtitle{color:var(--text2);font-size:12px;font-family:var(--mono)}
+
+.intro{margin:8px 0 20px;color:var(--text2);font-size:13px;line-height:1.6;max-width:680px}
+.intro b{color:var(--text)}
+
+/* DATE PICKER */
+.picker-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:16px}
+.picker-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.picker-row label{font-size:11px;color:var(--text2);font-family:var(--mono);font-weight:600;text-transform:uppercase;letter-spacing:0.06em}
+.picker-row input[type=date]{background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:8px 12px;font-family:var(--mono);font-size:13px;outline:none;color-scheme:dark}
+.picker-row input[type=date]:focus{border-color:var(--blue)}
+.btn-calc{background:var(--blue);color:#fff;padding:8px 18px;border-radius:5px;font-weight:600;font-size:12px;font-family:var(--mono);transition:background .15s;letter-spacing:0.02em}
+.btn-calc:hover{background:var(--blue-hi)}
+.btn-preset{background:var(--bg3);color:var(--text2);padding:6px 12px;border-radius:4px;font-size:11px;font-family:var(--mono);border:1px solid var(--border)}
+.btn-preset:hover{background:var(--bg4);color:var(--text)}
+
+/* RESULT CARD */
+.result-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;display:none}
+.result-card.show{display:block}
+
+.warning-banner{padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.warning-banner.low{background:var(--green-bg);border-left:3px solid var(--green)}
+.warning-banner.medium{background:var(--yellow-bg);border-left:3px solid var(--orange)}
+.warning-banner.high{background:var(--red-bg);border-left:3px solid var(--red)}
+.warning-icon{font-size:24px;line-height:1}
+.warning-text{flex:1}
+.warning-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.warning-msg{font-size:11.5px;color:var(--text2);line-height:1.5}
+
+.timeline{padding:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.tl-step{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;position:relative}
+.tl-step .tl-icon{font-size:20px;line-height:1;margin-bottom:6px}
+.tl-step .tl-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:var(--mono);font-weight:600;margin-bottom:4px}
+.tl-step .tl-date{font-size:14px;font-weight:700;color:var(--text)}
+.tl-step .tl-weekday{font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:2px}
+.tl-step.highlight{background:var(--blue-bg);border-color:var(--blue)}
+.tl-step.highlight .tl-date{color:var(--blue-hi)}
+
+/* COUNTDOWN */
+.countdown{padding:18px;border-top:1px solid var(--border);background:var(--bg3);text-align:center}
+.countdown-label{font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+.countdown-time{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--blue-hi);letter-spacing:-0.01em}
+.countdown-time.expired{color:var(--green-hi)}
+
+/* HOLIDAYS LIST */
+.holidays-section{padding:14px 18px;background:var(--red-bg);border-top:1px solid var(--red)}
+.holidays-section h4{font-size:11px;color:var(--red-hi);text-transform:uppercase;letter-spacing:0.06em;font-family:var(--mono);font-weight:700;margin-bottom:8px}
+.holidays-section ul{list-style:none;padding:0;margin:0}
+.holidays-section li{font-size:12px;color:var(--text);padding:4px 0;font-family:var(--mono);display:flex;justify-content:space-between;border-bottom:1px solid rgba(239,83,80,0.15)}
+.holidays-section li:last-child{border-bottom:0}
+.holidays-section li .h-name{color:var(--text2)}
+
+/* RECOMMENDATION */
+.recommendation{padding:14px 18px;border-top:1px solid var(--border);background:var(--orange-bg)}
+.recommendation .rec-title{font-size:11px;color:var(--orange);text-transform:uppercase;letter-spacing:0.06em;font-family:var(--mono);font-weight:700;margin-bottom:6px}
+.recommendation .rec-text{font-size:12.5px;color:var(--text);line-height:1.6}
+
+/* STATS GRID */
+.stats{padding:14px 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;border-top:1px solid var(--border)}
+.stat{}
+.stat .stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:var(--mono);margin-bottom:3px}
+.stat .stat-value{font-size:18px;font-weight:700;color:var(--text);font-family:var(--mono)}
+.stat .stat-value.muted{color:var(--text2);font-weight:500}
+
+/* SELL SECTION */
+.sell-info{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-top:16px;display:none}
+.sell-info.show{display:block}
+.sell-info h3{font-size:13px;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.sell-info p{font-size:12px;color:var(--text2);line-height:1.5}
+.sell-info b{color:var(--text)}
+
+/* LOADING / ERROR */
+.loading{padding:40px;text-align:center;color:var(--text2)}
+.loading .spinner{display:inline-block;width:24px;height:24px;border:2px solid var(--bg4);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-msg{padding:16px;text-align:center;color:var(--red-hi);font-family:var(--mono);font-size:12px;background:var(--red-bg);border-radius:6px}
+
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-hi)}
+
+@media (max-width:700px){
+  .container{padding:14px}
+  .timeline{grid-template-columns:1fr}
+  .countdown-time{font-size:20px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="logo-mark">V</span>VPASTOCK</div>
+  <nav class="nav">
+    <a href="stock-detail-live.html">Chi tiết CP</a>
+    <a href="screener.html">Bộ lọc</a>
+    <a href="#" class="active">Tính T+2</a>
+  </nav>
+  <div class="user">H</div>
+</div>
+
+<div class="container">
+
+  <div class="page-title">
+    <h1>Tính T+2 Settlement</h1>
+    <span class="subtitle">Quy định VSDC từ 29/08/2022</span>
+  </div>
+  <p class="intro">
+    Tại Việt Nam, khi <b>MUA</b> cổ phiếu hôm nay (T+0), cổ phiếu sẽ về tài khoản
+    <b>trước 13:00 ngày T+2</b> và có thể giao dịch chiều cùng ngày. Nếu T+1, T+2 dính
+    cuối tuần hoặc lễ Tết, thời gian khoá sẽ kéo dài. Tool này giúp bạn tính chính xác
+    ngày CP về và cảnh báo rủi ro trước khi vào lệnh.
+  </p>
+
+  <!-- DATE PICKER -->
+  <div class="picker-section">
+    <div class="picker-row">
+      <label>Ngày MUA:</label>
+      <input type="date" id="buyDate" />
+      <button class="btn-calc" id="btnCalc">▶ Tính T+2</button>
+      <button class="btn-preset" data-preset="today">Hôm nay</button>
+      <button class="btn-preset" data-preset="friday">Thứ 6 này</button>
+      <button class="btn-preset" data-preset="before-holiday">Trước lễ 30/4</button>
+    </div>
+  </div>
+
+  <!-- RESULT (initially hidden) -->
+  <div class="result-card" id="resultCard"></div>
+
+  <!-- SELL INFO -->
+  <div class="sell-info" id="sellInfo"></div>
+
+</div>
+
+<script>
+const API = window.location.origin.includes('localhost')
+  ? 'http://localhost:8000'
+  : window.location.origin;
+
+const buyDateEl = document.getElementById('buyDate');
+const btnCalc = document.getElementById('btnCalc');
+const resultCard = document.getElementById('resultCard');
+const sellInfo = document.getElementById('sellInfo');
+
+// Init: default to today
+const today = new Date();
+buyDateEl.value = today.toISOString().split('T')[0];
+
+// Preset buttons
+document.querySelectorAll('.btn-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const preset = btn.dataset.preset;
+    const d = new Date();
+    if (preset === 'today') {
+      // already today
+    } else if (preset === 'friday') {
+      const day = d.getDay();
+      const daysUntilFri = (5 - day + 7) % 7 || 7;
+      d.setDate(d.getDate() + daysUntilFri);
+    } else if (preset === 'before-holiday') {
+      d.setFullYear(2026, 3, 28); // 28/04/2026
+    }
+    buyDateEl.value = d.toISOString().split('T')[0];
+    calcSettlement();
+  });
+});
+
+btnCalc.addEventListener('click', calcSettlement);
+buyDateEl.addEventListener('change', calcSettlement);
+
+async function calcSettlement() {
+  const buyDate = buyDateEl.value;
+  if (!buyDate) return;
+
+  resultCard.classList.add('show');
+  resultCard.innerHTML = '<div class="loading"><div class="spinner"></div><div>Đang tính...</div></div>';
+  sellInfo.classList.remove('show');
+
+  try {
+    const res = await fetch(`${API}/api/calendar/buy?buy_date=${buyDate}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({detail: `HTTP ${res.status}`}));
+      throw new Error(err.detail || `Lỗi ${res.status}`);
+    }
+    const data = await res.json();
+    renderResult(data);
+
+    // Also fetch sell info if buy is a trading day
+    if (data.is_trading_day) {
+      const resSell = await fetch(`${API}/api/calendar/sell?sell_date=${buyDate}`);
+      if (resSell.ok) {
+        const dataSell = await resSell.json();
+        renderSellInfo(dataSell);
+      }
+    }
+  } catch (err) {
+    resultCard.innerHTML = `<div class="error-msg">⚠ Lỗi: ${err.message}<br>Backend có chạy không? (${API})</div>`;
+  }
+}
+
+function renderResult(d) {
+  // Handle non-trading day
+  if (!d.is_trading_day) {
+    resultCard.innerHTML = `
+      <div class="warning-banner high">
+        <span class="warning-icon">⛔</span>
+        <div class="warning-text">
+          <div class="warning-title">Không phải ngày giao dịch</div>
+          <div class="warning-msg">${d.warning_message}</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // Warning level colors
+  const levelMap = {
+    low:    { cls: 'low',    icon: '🟢', title: 'Bình thường — Khoá 2 ngày giao dịch' },
+    medium: { cls: 'medium', icon: '🟡', title: `Khoá ${d.calendar_days_locked} ngày dương lịch — Cảnh giác` },
+    high:   { cls: 'high',   icon: '🔴', title: `Khoá ${d.calendar_days_locked} ngày — Rủi ro cao` },
+  };
+  const lvl = levelMap[d.warning_level] || levelMap.low;
+
+  // Holidays section
+  let holidaysHtml = '';
+  if (d.holidays_in_period && d.holidays_in_period.length > 0) {
+    holidaysHtml = `
+      <div class="holidays-section">
+        <h4>⚠️ Dính ${d.holidays_in_period.length} ngày lễ</h4>
+        <ul>
+          ${d.holidays_in_period.map(h => `
+            <li><span>${formatDateVN(h.date)}</span><span class="h-name">${h.name}</span></li>
+          `).join('')}
+        </ul>
+      </div>
+    `;
+  }
+
+  // Recommendation
+  let recHtml = '';
+  if (d.warning_level === 'high') {
+    recHtml = `
+      <div class="recommendation">
+        <div class="rec-title">💡 Khuyến nghị</div>
+        <div class="rec-text">
+          Nên <b>đợi sau lễ</b> hãy vào lệnh, hoặc đặt <b>SL rộng hơn bình thường</b> (vd: -8% thay vì -5%)
+          để không bị stop loss trong thời gian CP bị khoá.
+        </div>
+      </div>
+    `;
+  } else if (d.warning_level === 'medium') {
+    recHtml = `
+      <div class="recommendation">
+        <div class="rec-title">💡 Khuyến nghị</div>
+        <div class="rec-text">
+          CP sẽ khoá qua cuối tuần. Cân nhắc đặt <b>SL rộng hơn 1-2%</b> so với bình thường
+          để chịu được biến động cuối tuần.
+        </div>
+      </div>
+    `;
+  }
+
+  resultCard.innerHTML = `
+    <div class="warning-banner ${lvl.cls}">
+      <span class="warning-icon">${lvl.icon}</span>
+      <div class="warning-text">
+        <div class="warning-title">${lvl.title}</div>
+        <div class="warning-msg">${d.warning_message}</div>
+      </div>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-step">
+        <div class="tl-icon">🛒</div>
+        <div class="tl-label">Ngày MUA (T+0)</div>
+        <div class="tl-date">${formatDateShort(d.buy_date)}</div>
+        <div class="tl-weekday">${d.buy_weekday}</div>
+      </div>
+      <div class="tl-step highlight">
+        <div class="tl-icon">📦</div>
+        <div class="tl-label">CP về tài khoản (T+2)</div>
+        <div class="tl-date">${formatDateShort(d.cp_arrival_date)}</div>
+        <div class="tl-weekday">${d.cp_arrival_weekday} • sau 13:00</div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-icon">💰</div>
+        <div class="tl-label">Có thể BÁN</div>
+        <div class="tl-date">${formatDateShort(d.cp_arrival_date)}</div>
+        <div class="tl-weekday">Chiều cùng ngày</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Ngày giao dịch khoá</div>
+        <div class="stat-value">${d.trading_days_locked}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Ngày dương lịch khoá</div>
+        <div class="stat-value">${d.calendar_days_locked}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Cuối tuần trong period</div>
+        <div class="stat-value muted">${d.weekend_in_period ? 'Có' : 'Không'}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Lễ trong period</div>
+        <div class="stat-value muted">${d.holidays_in_period.length}</div>
+      </div>
+    </div>
+
+    ${holidaysHtml}
+    ${recHtml}
+
+    <div class="countdown">
+      <div class="countdown-label">⏱ Thời gian đến khi CP về tài khoản</div>
+      <div class="countdown-time" id="countdownTime">—</div>
+    </div>
+  `;
+
+  startCountdown(d.sellable_from);
+}
+
+function renderSellInfo(d) {
+  if (!d.is_trading_day) return;
+  sellInfo.classList.add('show');
+  sellInfo.innerHTML = `
+    <h3>💵 Nếu BÁN ngày này</h3>
+    <p>
+      Bán <b>${formatDateVN(d.sell_date)}</b> →
+      Tiền về tài khoản <b>${formatDateVN(d.money_arrival_date)}</b> chiều
+      (sau ${d.calendar_days_to_money} ngày dương lịch).
+    </p>
+  `;
+}
+
+let countdownInterval = null;
+function startCountdown(sellableFromIso) {
+  if (countdownInterval) clearInterval(countdownInterval);
+  const target = new Date(sellableFromIso).getTime();
+
+  function update() {
+    const now = Date.now();
+    const diff = target - now;
+    const el = document.getElementById('countdownTime');
+    if (!el) {
+      clearInterval(countdownInterval);
+      return;
+    }
+    if (diff <= 0) {
+      el.textContent = '✅ CP đã có thể giao dịch';
+      el.classList.add('expired');
+      clearInterval(countdownInterval);
+      return;
+    }
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const mins = Math.floor((diff / (1000 * 60)) % 60);
+    const secs = Math.floor((diff / 1000) % 60);
+    el.textContent = `${days}d ${String(hours).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
+  }
+  update();
+  countdownInterval = setInterval(update, 1000);
+}
+
+function formatDateVN(iso) {
+  const d = new Date(iso);
+  const weekdays = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+  return `${weekdays[d.getDay()]} ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+function formatDateShort(iso) {
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+// Auto calc on load
+calcSettlement();
+</script>
+</body>
+</html>

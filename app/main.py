@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from app.config import settings
-from app.api import stock, market, screener
+from app.api import stock, market, screener, calendar
 
 
 @asynccontextmanager
@@ -45,3 +45,4 @@ async def health():
 app.include_router(stock.router, prefix="/api/stock", tags=["stock"])
 app.include_router(market.router, prefix="/api/market", tags=["market"])
 app.include_router(screener.router, prefix="/api/screener", tags=["screener"])
+app.include_router(calendar.router, prefix="/api/calendar", tags=["calendar"])
