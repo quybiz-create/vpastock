@@ -115,6 +115,23 @@ tbody tr:hover{background:var(--bg3);cursor:pointer}
   th,td{padding:8px 6px;font-size:11px}
   th:nth-child(n+5),td:nth-child(n+5){display:none}
 }
+
+/* === T+2 BANNER === */
+.t2-banner{display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:12px;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--green)}
+.t2-banner.medium{border-left-color:var(--orange)}
+.t2-banner.high{border-left-color:var(--red)}
+.t2-banner .t2-b-icon{font-size:20px;line-height:1}
+.t2-banner .t2-b-content{flex:1;line-height:1.55}
+.t2-banner .t2-b-content b{color:var(--blue-hi)}
+.t2-banner .t2-b-content .t2-warn{font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:2px;display:block}
+.t2-banner.medium .t2-warn{color:var(--yellow)}
+.t2-banner.high .t2-warn{color:var(--red-hi)}
+.t2-banner .t2-b-link{font-size:11px;color:var(--text2);text-decoration:none;padding:5px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;font-family:var(--mono);transition:all .15s;white-space:nowrap}
+.t2-banner .t2-b-link:hover{background:var(--bg4);color:var(--blue-hi);border-color:var(--blue)}
+@media (max-width: 800px){
+  .t2-banner{flex-wrap:wrap}
+  .t2-banner .t2-b-link{width:100%;text-align:center}
+}
 </style>
 </head>
 <body>
@@ -134,6 +151,13 @@ tbody tr:hover{background:var(--bg3);cursor:pointer}
   <div class="page-title">
     <h1>Bộ lọc cổ phiếu</h1>
     <span class="subtitle">Scan toàn HOSE • 117 mã thanh khoản cao</span>
+  </div>
+
+  <!-- T+2 SETTLEMENT BANNER -->
+  <div class="t2-banner" id="t2Banner" style="display:none">
+    <span class="t2-b-icon" id="t2BIcon">📅</span>
+    <div class="t2-b-content" id="t2BContent">Đang tính T+2 cho hôm nay...</div>
+    <a href="t2-calculator.html" class="t2-b-link" target="_blank">▶ Tính chi tiết</a>
   </div>
 
   <!-- PRESET BUTTONS -->
@@ -395,8 +419,67 @@ document.getElementById('btnRefresh').addEventListener('click', () => {
   }
 });
 
-// Auto load presets
+// === T+2 SETTLEMENT BANNER ===
+async function loadT2Banner() {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await fetch(`${API}/api/calendar/buy?buy_date=${today}`);
+    if (!res.ok) return;
+    const d = await res.json();
+    renderT2Banner(d);
+  } catch (err) {
+    // Silently ignore - banner is optional
+    console.warn('T+2 banner failed:', err);
+  }
+}
+
+function renderT2Banner(d) {
+  const banner = document.getElementById('t2Banner');
+  const icon = document.getElementById('t2BIcon');
+  const content = document.getElementById('t2BContent');
+
+  if (!d.is_trading_day) {
+    banner.className = 't2-banner high';
+    banner.style.display = 'flex';
+    icon.textContent = '⛔';
+    content.innerHTML = `<b>Hôm nay không giao dịch.</b><span class="t2-warn">${d.warning_message}</span>`;
+    return;
+  }
+
+  const lvl = d.warning_level || 'low';
+  const emojiMap = { low: '🟢', medium: '🟡', high: '🔴' };
+  banner.className = 't2-banner ' + lvl;
+  banner.style.display = 'flex';
+  icon.textContent = emojiMap[lvl];
+
+  const arrivalShort = formatT2Short(d.cp_arrival_date);
+  const buyShort = formatT2Short(d.buy_date);
+
+  let warnText = '';
+  if (lvl === 'high') {
+    const holidayNames = (d.holidays_in_period || []).map(h => h.name).join(', ');
+    warnText = `Khoá ${d.calendar_days_locked} ngày — Rủi ro cao do dính lễ${holidayNames ? ': ' + holidayNames : ''}. Cân nhắc đợi sau lễ hoặc đặt SL rộng (-8%).`;
+  } else if (lvl === 'medium') {
+    warnText = `Khoá ${d.calendar_days_locked} ngày dương lịch do dính cuối tuần. Cân nhắc đặt SL rộng hơn 1-2%.`;
+  } else {
+    warnText = `Khoá 2 ngày giao dịch bình thường.`;
+  }
+
+  content.innerHTML = `
+    <b>Hôm nay (${d.buy_weekday} ${buyShort}):</b>
+    Mua → CP về <b>${d.cp_arrival_weekday} ${arrivalShort}</b> sau 13:00
+    <span class="t2-warn">${warnText}</span>
+  `;
+}
+
+function formatT2Short(iso) {
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+// Auto load presets + T+2 banner
 loadPresets();
+loadT2Banner();
 </script>
 </body>
 </html>
