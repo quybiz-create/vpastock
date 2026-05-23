@@ -892,17 +892,20 @@ async function loadWatchlistFromApi() {
   
   try {
     const tickers = await refreshWatchlistSidebar();
+    // Decide which symbol to load
+    let symToLoad;
     if (urlSym && urlSym.length >= 3) {
-      // URL has symbol - load it directly
-      await loadStock(urlSym);
+      symToLoad = urlSym;
     } else if (tickers.length > 0) {
-      await loadStock(tickers[0]);
+      symToLoad = tickers[0];
+    } else {
+      symToLoad = 'VIC';  // default fallback for new users
     }
+    await loadStock(symToLoad);
   } catch (err) {
     console.warn('Watchlist API:', err);
     const fallback = ['VIC', 'FPT', 'HPG', 'VCB', 'MWG', 'MSN', 'VHM', 'TCB'];
     renderWatchlistSidebar(fallback, fallback[0]);
-    // Even on error, respect URL param
     await loadStock(urlSym && urlSym.length >= 3 ? urlSym : fallback[0]);
   }
 }
