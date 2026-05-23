@@ -221,7 +221,7 @@ input{font-family:inherit;color:inherit}
 <div class="ticker-strip">
   <div class="ticker-item up"><span class="sym">VNI</span><span class="val">đang test...</span></div>
   <div class="ticker-item up"><span class="sym">DATA</span><span class="val">LIVE từ KBS</span></div>
-  <div class="ticker-item up"><span class="sym">BACKEND</span><span class="val">localhost:8000</span></div>
+  <div class="ticker-item up"><span class="sym">BACKEND</span><span class="val" id="backendUrl">--</span></div>
 </div>
 
 <div class="main">
@@ -409,7 +409,15 @@ input{font-family:inherit;color:inherit}
 </div>
 
 <script>
-const API = 'http://localhost:8000';
+const API = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+  ? 'http://localhost:8000'
+  : window.location.origin;
+
+// Update backend URL in ticker
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('backendUrl');
+  if (el) el.textContent = API.replace('http://', '').replace('https://', '');
+});
 const WATCHLIST_NAME = 'Demo';
 let watchlistTickers = [];
 let mainChart = null;
