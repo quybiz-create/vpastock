@@ -1,11 +1,10 @@
-"""FastAPI app chính cho vpastock. Entry: uvicorn app.main:app --reload"""
+"""FastAPI app chinh cho vpastock. Entry: uvicorn app.main:app --reload"""
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
-
 from app.config import settings
-from app.api import stock, market, screener, calendar
+from app.api import stock, market, screener, calendar, risk
 
 
 @asynccontextmanager
@@ -18,14 +17,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="VPASTOCK API",
-    description="API cho vpastock.com - app trading chứng khoán Việt Nam",
+    description="API cho vpastock.com - app trading chung khoan Viet Nam",
     version="1.0.0",
     lifespan=lifespan,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,3 +45,4 @@ app.include_router(stock.router, prefix="/api/stock", tags=["stock"])
 app.include_router(market.router, prefix="/api/market", tags=["market"])
 app.include_router(screener.router, prefix="/api/screener", tags=["screener"])
 app.include_router(calendar.router, prefix="/api/calendar", tags=["calendar"])
+app.include_router(risk.router, prefix="/api/risk", tags=["risk"])

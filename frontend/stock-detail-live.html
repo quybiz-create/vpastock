@@ -138,6 +138,64 @@ input{font-family:inherit;color:inherit}
 .t2-link:hover{color:var(--blue-hi);background:var(--bg4)}
 .t2-holidays{margin-top:6px;padding:6px 8px;background:var(--red-bg);border-radius:4px;font-size:10px;color:var(--red-hi);line-height:1.5}
 .t2-holidays .t2-h-label{font-weight:600;margin-bottom:2px}
+
+/* === TINH LENH TAB === */
+.calc-form{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.calc-row{display:flex;flex-direction:column;gap:3px}
+.calc-row label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;font-family:var(--mono);font-weight:600}
+.calc-row .hint{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.calc-row input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:4px;font-family:var(--mono);font-size:12px;outline:none}
+.calc-row input:focus{border-color:var(--blue)}
+.calc-input-row{display:flex;gap:6px;align-items:center}
+.calc-input-row input{flex:1}
+.btn-suggest{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:7px 8px;border-radius:4px;font-size:10px;font-family:var(--mono);cursor:pointer;white-space:nowrap}
+.btn-suggest:hover{background:var(--bg4);color:var(--blue-hi);border-color:var(--blue)}
+.btn-calc-main{background:var(--blue);color:#fff;padding:9px;border-radius:4px;font-weight:700;font-size:12px;font-family:var(--mono);border:none;cursor:pointer;letter-spacing:0.04em;transition:background .15s;margin-top:4px}
+.btn-calc-main:hover{background:var(--blue-hi)}
+.btn-calc-main:disabled{opacity:0.5;cursor:not-allowed}
+
+/* Result */
+.calc-result{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px;margin-top:10px;display:none;font-family:var(--mono)}
+.calc-result.show{display:block}
+.calc-result.weak{border-left:3px solid var(--red)}
+.calc-result.average{border-left:3px solid var(--orange)}
+.calc-result.good{border-left:3px solid var(--green)}
+.calc-result.excellent{border-left:3px solid var(--green);background:linear-gradient(180deg,var(--bg2),var(--green-bg))}
+
+.calc-score-section{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.calc-score-header{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.calc-score-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-weight:600}
+.calc-score-value{font-size:20px;font-weight:700;color:var(--text)}
+.calc-score-quality{font-size:10px;padding:2px 8px;border-radius:3px;font-weight:700;letter-spacing:0.04em;margin-left:auto}
+.calc-score-quality.weak{background:var(--red-bg);color:var(--red-hi)}
+.calc-score-quality.average{background:#3d2607;color:var(--orange)}
+.calc-score-quality.good{background:var(--green-bg);color:var(--green-hi)}
+.calc-score-quality.excellent{background:var(--green-bg);color:var(--green-hi)}
+.calc-score-bar{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.calc-score-bar-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--orange),var(--green));transition:width .4s}
+.calc-rec{font-size:11px;color:var(--text2);line-height:1.5}
+.calc-rec.weak{color:var(--red-hi)}
+.calc-rec.good,.calc-rec.excellent{color:var(--green-hi)}
+
+.calc-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.calc-stat{}
+.calc-stat-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px}
+.calc-stat-value{font-size:13px;font-weight:700;color:var(--text)}
+.calc-stat-value.muted{color:var(--text2);font-weight:500}
+.calc-stat-value.warn{color:var(--orange)}
+.calc-stat-value.danger{color:var(--red-hi)}
+.calc-stat-value.success{color:var(--green-hi)}
+
+.calc-breakdown{margin-top:8px}
+.calc-breakdown-title{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;font-weight:600}
+.calc-bd-item{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;border-bottom:1px solid var(--border)}
+.calc-bd-item:last-child{border-bottom:0}
+.calc-bd-name{color:var(--text2);text-transform:uppercase;font-size:10px;letter-spacing:0.04em;font-weight:600;min-width:50px}
+.calc-bd-score{color:var(--text);font-weight:600;width:50px;text-align:right;margin-right:8px}
+.calc-bd-note{color:var(--text3);font-size:10px;flex:1;text-align:right}
+
+.calc-error{padding:10px;background:var(--red-bg);color:var(--red-hi);border-radius:4px;font-size:11px;border-left:3px solid var(--red);margin-top:8px;font-family:var(--mono);display:none}
+.calc-error.show{display:block}
 </style>
 </head>
 <body>
@@ -246,6 +304,7 @@ input{font-family:inherit;color:inherit}
       <button class="active" data-tab="vpa">VPA</button>
       <button data-tab="fin">Tài chính</button>
       <button data-tab="info">Info</button>
+      <button data-tab="calc">💰 Tính lệnh</button>
     </div>
 
     <div class="tab-content" id="tabContent">
@@ -270,6 +329,99 @@ input{font-family:inherit;color:inherit}
           <span class="t2-time" id="t2Countdown">--</span>
         </div>
         <a href="t2-calculator.html" class="t2-link" target="_blank">→ Mở Trình tính T+2 đầy đủ</a>
+      </div>
+
+      <!-- TAB TINH LENH (hidden mac dinh, show khi tab calc active) -->
+      <div id="calcSection" style="display:none">
+        <h4 style="margin-top:0">💰 Tính lệnh MUA</h4>
+        <p style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.5">
+          Tính chính xác số CP nên mua, R:R, và đánh giá chất lượng setup.
+        </p>
+
+        <div class="calc-form">
+          <div class="calc-row">
+            <label>NAV của bạn (VND)</label>
+            <input type="number" id="calcNav" value="100000000" step="1000000" />
+            <div class="hint">Tổng vốn hiện có</div>
+          </div>
+
+          <div class="calc-row">
+            <label>Risk per trade (%)</label>
+            <input type="number" id="calcRiskPct" value="2" step="0.1" min="0.1" max="10" />
+            <div class="hint">Khuyến nghị 1-2% (an toàn)</div>
+          </div>
+
+          <div class="calc-row">
+            <label>Entry price (VND/CP)</label>
+            <input type="number" id="calcEntry" value="0" step="100" />
+            <div class="hint">Giá mua dự kiến (auto từ chart)</div>
+          </div>
+
+          <div class="calc-row">
+            <label>Stop loss (VND/CP)</label>
+            <div class="calc-input-row">
+              <input type="number" id="calcSL" value="0" step="100" />
+              <button class="btn-suggest" id="btnSuggestSL">ATR×2</button>
+            </div>
+            <div class="hint">Giá cắt lỗ (ATR×2 tự gợi ý)</div>
+          </div>
+
+          <div class="calc-row">
+            <label>Target price (VND/CP)</label>
+            <input type="number" id="calcTarget" value="0" step="100" />
+            <div class="hint">Giá chốt lời kỳ vọng</div>
+          </div>
+
+          <button class="btn-calc-main" id="btnCalcRun">▶ TÍNH TOÁN</button>
+        </div>
+
+        <div class="calc-error" id="calcError"></div>
+
+        <div class="calc-result" id="calcResult">
+          <div class="calc-score-section">
+            <div class="calc-score-header">
+              <span class="calc-score-label">Setup Quality</span>
+              <span class="calc-score-value" id="calcScoreValue">--/100</span>
+              <span class="calc-score-quality" id="calcScoreQuality">--</span>
+            </div>
+            <div class="calc-score-bar">
+              <div class="calc-score-bar-fill" id="calcScoreBar" style="width:0%"></div>
+            </div>
+            <div class="calc-rec" id="calcRec">--</div>
+          </div>
+
+          <div class="calc-stats">
+            <div class="calc-stat">
+              <div class="calc-stat-label">Số CP nên mua</div>
+              <div class="calc-stat-value success" id="calcShares">--</div>
+            </div>
+            <div class="calc-stat">
+              <div class="calc-stat-label">Vốn sử dụng</div>
+              <div class="calc-stat-value" id="calcCapital">--</div>
+            </div>
+            <div class="calc-stat">
+              <div class="calc-stat-label">% NAV</div>
+              <div class="calc-stat-value muted" id="calcCapitalPct">--</div>
+            </div>
+            <div class="calc-stat">
+              <div class="calc-stat-label">Max loss</div>
+              <div class="calc-stat-value warn" id="calcMaxLoss">--</div>
+            </div>
+            <div class="calc-stat">
+              <div class="calc-stat-label">% NAV mất tối đa</div>
+              <div class="calc-stat-value muted" id="calcMaxLossPct">--</div>
+            </div>
+            <div class="calc-stat">
+              <div class="calc-stat-label">R:R ratio</div>
+              <div class="calc-stat-value" id="calcRR">--</div>
+            </div>
+          </div>
+
+          <div class="calc-breakdown">
+            <div class="calc-breakdown-title">Breakdown Setup Score (5 yếu tố)</div>
+            <div id="calcBreakdown"></div>
+          </div>
+        </div>
       </div>
     </div>
   </aside>
@@ -318,10 +470,18 @@ async function loadStock(symbol) {
     const latency = (performance.now() - t0).toFixed(0);
     document.getElementById('statusLatency').textContent = `${latency}ms`;
 
+    // Save for calc tab
+    window.__lastBars = data.series || [];
+    window.__lastIndicator = data.last || {};
+
     renderHeader(data);
     renderChart(data.series);
     renderIndicators(data.last);
     renderAnalysis(data.last);
+    
+    // Auto-update Tinh lenh form when symbol changes
+    updateCalcFormForNewSymbol(data);
+    
     showLoading(false);
   } catch (err) {
     showLoading(false);
@@ -537,8 +697,248 @@ document.querySelectorAll('.tabs button').forEach(b => {
   b.addEventListener('click', () => {
     document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
+    
+    // Show/hide content based on tab
+    const tab = b.dataset.tab;
+    const calcSection = document.getElementById('calcSection');
+    const vpaContent = document.querySelectorAll('#tabContent > h4, #tabContent > p, #tabContent > .t2-widget');
+    
+    if (tab === 'calc') {
+      calcSection.style.display = 'block';
+      vpaContent.forEach(el => el.style.display = 'none');
+      // Auto fill entry from current price
+      const priceEl = document.getElementById('priceNow');
+      const priceText = priceEl ? priceEl.textContent.replace(/[,\s]/g, '') : '';
+      const priceVnd = parseFloat(priceText) * 1000;
+      if (priceVnd > 0 && !document.getElementById('calcEntry').value || document.getElementById('calcEntry').value == '0') {
+        document.getElementById('calcEntry').value = Math.round(priceVnd);
+      }
+    } else {
+      calcSection.style.display = 'none';
+      vpaContent.forEach(el => el.style.display = '');
+    }
   });
 });
+
+// === TINH LENH (CALC) ===
+const LS_NAV_KEY = 'vpastock_nav';
+const LS_RISK_KEY = 'vpastock_risk_pct';
+
+// Load saved NAV/risk from localStorage
+(function loadCalcDefaults() {
+  const savedNav = localStorage.getItem(LS_NAV_KEY);
+  const savedRisk = localStorage.getItem(LS_RISK_KEY);
+  if (savedNav) document.getElementById('calcNav').value = savedNav;
+  if (savedRisk) document.getElementById('calcRiskPct').value = savedRisk;
+})();
+
+// Suggest SL by ATR (current price * 5% as fallback, since ATR data is in indicators)
+document.getElementById('btnSuggestSL').addEventListener('click', () => {
+  const entry = parseFloat(document.getElementById('calcEntry').value);
+  if (!entry || entry <= 0) {
+    alert('Vui lòng nhập Entry price trước');
+    return;
+  }
+  // SL = entry - ATR×2. Use 5% as proxy if no ATR data.
+  // Better: use latest ATR from chart data
+  const slPct = 0.055; // ~5.5% (gần ATR×2 cho nến VN)
+  const sl = Math.round(entry * (1 - slPct) / 100) * 100;
+  document.getElementById('calcSL').value = sl;
+});
+
+document.getElementById('btnCalcRun').addEventListener('click', async () => {
+  const nav = parseFloat(document.getElementById('calcNav').value);
+  const riskPct = parseFloat(document.getElementById('calcRiskPct').value);
+  const entry = parseFloat(document.getElementById('calcEntry').value);
+  const sl = parseFloat(document.getElementById('calcSL').value);
+  const target = parseFloat(document.getElementById('calcTarget').value);
+
+  const errEl = document.getElementById('calcError');
+  const resultEl = document.getElementById('calcResult');
+  errEl.classList.remove('show');
+  resultEl.classList.remove('show');
+
+  // Validate
+  if (!nav || nav < 1000000) {
+    showCalcError('NAV phải >= 1,000,000 VND');
+    return;
+  }
+  if (!riskPct || riskPct <= 0 || riskPct > 10) {
+    showCalcError('Risk per trade phải trong khoảng 0.1% - 10%');
+    return;
+  }
+  if (!entry || !sl || !target) {
+    showCalcError('Vui lòng nhập đầy đủ Entry, SL, Target');
+    return;
+  }
+  if (sl >= entry) {
+    showCalcError('Stop loss phải THẤP HƠN entry');
+    return;
+  }
+  if (target <= entry) {
+    showCalcError('Target phải CAO HƠN entry');
+    return;
+  }
+
+  // Save preferences
+  localStorage.setItem(LS_NAV_KEY, nav);
+  localStorage.setItem(LS_RISK_KEY, riskPct);
+
+  // Get latest indicators from current chart data
+  const last = window.__lastBars && window.__lastBars.length > 0 ? window.__lastBars[window.__lastBars.length - 1] : null;
+  const ma20 = last?.ma20 || 0;
+  const ma50 = last?.ma50 || 0;
+  const adx = last?.adx || 0;
+  const plusDi = last?.plus_di || last?.plusDi || 0;
+  const minusDi = last?.minus_di || last?.minusDi || 0;
+  const rsi = last?.rsi || 50;
+  // volume vs MA20
+  let volPct = 0;
+  if (window.__lastBars && window.__lastBars.length > 20) {
+    const recentVols = window.__lastBars.slice(-20).map(b => b.volume || 0);
+    const avgVol = recentVols.reduce((a,b) => a+b, 0) / recentVols.length;
+    const lastVol = last?.volume || 0;
+    if (avgVol > 0) volPct = ((lastVol / avgVol) - 1) * 100;
+  }
+  const vpaSignal = last?.vpa || 'Normal';
+
+  // Call full-calc API
+  try {
+    document.getElementById('btnCalcRun').disabled = true;
+    document.getElementById('btnCalcRun').textContent = '⏳ Đang tính...';
+
+    const res = await fetch(`${API}/api/risk/full-calc`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        nav, risk_pct: riskPct,
+        entry, sl, target,
+        vpa_signal: vpaSignal,
+        vpa_days_ago: 1,
+        ma20: ma20 / 1000,  // ma20 in VND from chart, convert to thousands for comparison
+        ma50: ma50 / 1000,
+        adx, plus_di: plusDi, minus_di: minusDi, rsi,
+        vol_vs_ma20_pct: volPct,
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({detail: `HTTP ${res.status}`}));
+      throw new Error(err.detail || `Lỗi ${res.status}`);
+    }
+
+    const data = await res.json();
+    renderCalcResult(data);
+  } catch (err) {
+    showCalcError('Lỗi: ' + err.message);
+  } finally {
+    document.getElementById('btnCalcRun').disabled = false;
+    document.getElementById('btnCalcRun').textContent = '▶ TÍNH TOÁN';
+  }
+});
+
+function showCalcError(msg) {
+  const errEl = document.getElementById('calcError');
+  errEl.textContent = '⚠ ' + msg;
+  errEl.classList.add('show');
+}
+
+function renderCalcResult(data) {
+  const resultEl = document.getElementById('calcResult');
+  const { position_size: pos, rr, setup_score: ss } = data;
+
+  // Setup score
+  const scoreValueEl = document.getElementById('calcScoreValue');
+  const scoreQualityEl = document.getElementById('calcScoreQuality');
+  const scoreBarEl = document.getElementById('calcScoreBar');
+  const recEl = document.getElementById('calcRec');
+
+  scoreValueEl.textContent = `${ss.total_score}/100`;
+  
+  const qual = (ss.quality || 'weak').toString().replace('SetupQuality.', '').toLowerCase();
+  scoreQualityEl.textContent = qual.toUpperCase();
+  scoreQualityEl.className = 'calc-score-quality ' + qual;
+  scoreBarEl.style.width = ss.total_score + '%';
+  recEl.textContent = ss.recommendation;
+  recEl.className = 'calc-rec ' + qual;
+  resultEl.className = 'calc-result show ' + qual;
+
+  // Position stats
+  if (pos.error) {
+    document.getElementById('calcShares').textContent = '⚠ ' + pos.error;
+    document.getElementById('calcCapital').textContent = '--';
+    document.getElementById('calcCapitalPct').textContent = '--';
+    document.getElementById('calcMaxLoss').textContent = '--';
+    document.getElementById('calcMaxLossPct').textContent = '--';
+  } else {
+    document.getElementById('calcShares').textContent = pos.shares_human;
+    document.getElementById('calcCapital').textContent = formatVnd(pos.capital_used);
+    document.getElementById('calcCapitalPct').textContent = pos.capital_pct.toFixed(2) + '%';
+    document.getElementById('calcMaxLoss').textContent = formatVnd(pos.max_loss);
+    document.getElementById('calcMaxLossPct').textContent = ((pos.max_loss / pos.nav) * 100).toFixed(2) + '%';
+  }
+
+  // R:R
+  const rrEl = document.getElementById('calcRR');
+  if (rr.error) {
+    rrEl.textContent = '⚠ ' + rr.error;
+  } else {
+    rrEl.textContent = rr.rr_ratio_human + ' (' + rr.quality + ')';
+    rrEl.className = 'calc-stat-value ' + (rr.quality === 'poor' ? 'danger' : rr.quality === 'acceptable' ? 'warn' : 'success');
+  }
+
+  // Breakdown
+  const bdEl = document.getElementById('calcBreakdown');
+  if (ss.breakdown) {
+    const labels = { vpa: 'VPA', ma: 'MA', adx: 'ADX', rsi: 'RSI', volume: 'VOL' };
+    bdEl.innerHTML = Object.entries(ss.breakdown).map(([key, val]) => `
+      <div class="calc-bd-item">
+        <span class="calc-bd-name">${labels[key] || key.toUpperCase()}</span>
+        <span class="calc-bd-score">${val.score}/${val.max}</span>
+        <span class="calc-bd-note">${val.note || ''}</span>
+      </div>
+    `).join('');
+  }
+}
+
+function formatVnd(n) {
+  if (n == null) return '--';
+  return Math.round(n).toLocaleString('vi-VN') + ' VND';
+}
+
+// Auto-update form when symbol changes
+function updateCalcFormForNewSymbol(data) {
+  const last = (data.series && data.series.length > 0) ? data.series[data.series.length - 1] : null;
+  if (!last) return;
+  const lastPrice = last.close || 0;
+  if (lastPrice <= 0) return;
+  
+  const entryVnd = Math.round(lastPrice * 1000);  // chart price in K, convert to VND
+  
+  // Always update Entry to new symbol's price
+  const entryEl = document.getElementById('calcEntry');
+  if (entryEl) {
+    entryEl.value = entryVnd;
+  }
+  
+  // Auto-suggest SL (ATR×2 ≈ 5.5%) and Target (+15%)
+  const slEl = document.getElementById('calcSL');
+  const targetEl = document.getElementById('calcTarget');
+  if (slEl) {
+    const sl = Math.round(entryVnd * 0.945 / 100) * 100;
+    slEl.value = sl;
+  }
+  if (targetEl) {
+    const tgt = Math.round(entryVnd * 1.15 / 100) * 100;
+    targetEl.value = tgt;
+  }
+  
+  // Reset result section (hide old result)
+  const resultEl = document.getElementById('calcResult');
+  const errEl = document.getElementById('calcError');
+  if (resultEl) resultEl.classList.remove('show');
+  if (errEl) errEl.classList.remove('show');
+}
 
 // === T+2 SETTLEMENT WIDGET ===
 let t2CountdownInterval = null;
