@@ -82,6 +82,13 @@ td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--border)}
 td.left{text-align:left}
 tr{transition:background .1s}
 tbody tr:hover{background:var(--bg3);cursor:pointer}
+
+/* === STAR (WATCHLIST) === */
+.star-btn{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:var(--text3);transition:color .15s}
+.star-btn:hover{color:var(--yellow)}
+.star-btn.active{color:var(--yellow)}
+.star-cell{text-align:center;padding:8px 4px !important;width:30px}
+th.star-th{width:30px;text-align:center}
 .sym{font-weight:700;color:var(--text);font-size:13px}
 .up{color:var(--green-hi);font-weight:600}
 .down{color:var(--red-hi);font-weight:600}
@@ -141,7 +148,7 @@ tbody tr:hover{background:var(--bg3);cursor:pointer}
   <nav class="nav">
     <a href="stock-detail-live.html">Chi tiết CP</a>
     <a href="#" class="active">Bộ lọc</a>
-    <a href="#">Watchlist</a>
+    <a href="watchlist.html">⭐ Watchlist</a>
   </nav>
   <div class="user">H</div>
 </div>
@@ -203,6 +210,105 @@ let currentExchange = 'HOSE';
 let currentData = null;
 let sortColumn = 'vol_ratio';
 let sortDirection = 'desc';
+
+// === WATCHLIST STATE ===
+const watchlistSymbols = new Set();  // symbols đang có trong default watchlist
+let defaultWatchlistId = null;
+
+function getUserFp() {
+  let fp = localStorage.getItem('vpastock_user_fp');
+  if (!fp) {
+    const raw = navigator.userAgent + screen.width + 'x' + screen.height +
+                new Date().getTimezoneOffset() + (navigator.language || '');
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+      hash |= 0;
+    }
+    fp = 'fp_' + Math.abs(hash).toString(36) + '_' + Date.now().toString(36);
+    localStorage.setItem('vpastock_user_fp', fp);
+  }
+  return fp;
+}
+const USER_FP = getUserFp();
+
+// Load default watchlist symbols on page load
+async function loadWatchlistSymbols() {
+  try {
+    const res = await fetch(`${API}/api/watchlist/list?user_fp=${USER_FP}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const wls = data.watchlists || [];
+    if (wls.length === 0) return;
+    
+    // Find default watchlist or use first one
+    const defaultWl = wls.find(w => w.is_default) || wls[0];
+    defaultWatchlistId = defaultWl.id;
+    
+    // Load items
+    const itemsRes = await fetch(`${API}/api/watchlist/${defaultWatchlistId}/items?user_fp=${USER_FP}`);
+    if (!itemsRes.ok) return;
+    const itemsData = await itemsRes.json();
+    watchlistSymbols.clear();
+    (itemsData.items || []).forEach(it => watchlistSymbols.add(it.symbol));
+  } catch (err) {
+    console.warn('Watchlist load failed:', err);
+  }
+}
+
+// Toggle star (add/remove symbol)
+async function toggleStar(symbol, btnEl) {
+  // Auto-create default watchlist if none exists
+  if (!defaultWatchlistId) {
+    try {
+      const res = await fetch(`${API}/api/watchlist/create`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          user_fp: USER_FP,
+          name: 'Theo dõi',
+          description: 'Watchlist mặc định',
+          is_default: true,
+        })
+      });
+      const data = await res.json();
+      defaultWatchlistId = data.id;
+    } catch (err) {
+      alert('Lỗi tạo watchlist: ' + err.message);
+      return;
+    }
+  }
+  
+  const isInList = watchlistSymbols.has(symbol);
+  try {
+    if (isInList) {
+      // Remove
+      await fetch(`${API}/api/watchlist/${defaultWatchlistId}/remove/${symbol}?user_fp=${USER_FP}`, {
+        method: 'DELETE'
+      });
+      watchlistSymbols.delete(symbol);
+      btnEl.classList.remove('active');
+      btnEl.textContent = '☆';
+    } else {
+      // Add
+      const price = currentData?.stocks?.find(s => s.symbol === symbol)?.price || null;
+      await fetch(`${API}/api/watchlist/${defaultWatchlistId}/add?user_fp=${USER_FP}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          symbol,
+          added_price: price ? price * 1000 : null,
+          note: null,
+        })
+      });
+      watchlistSymbols.add(symbol);
+      btnEl.classList.add('active');
+      btnEl.textContent = '★';
+    }
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+}
 
 const PRESETS = [];
 
@@ -305,6 +411,7 @@ function renderTable(stocks) {
     <table>
       <thead>
         <tr>
+          <th class="star-th">⭐</th>
           <th class="left" data-col="symbol">Mã</th>
           <th data-col="price">Giá</th>
           <th data-col="change_pct">% CH</th>
@@ -339,11 +446,20 @@ function renderTable(stocks) {
     });
   });
 
-  // Click row → open detail
+  // Click row → open detail (nhung skip neu click star)
   document.querySelectorAll('tbody tr').forEach(tr => {
-    tr.addEventListener('click', () => {
+    tr.addEventListener('click', (e) => {
+      if (e.target.closest('.star-btn')) return; // skip if click on star
       const sym = tr.dataset.sym;
       window.location.href = `stock-detail-live.html?symbol=${sym}`;
+    });
+  });
+  
+  // Click star → toggle watchlist
+  document.querySelectorAll('.star-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleStar(btn.dataset.sym, btn);
     });
   });
 }
@@ -398,6 +514,7 @@ function renderRow(s) {
 
   return `
     <tr data-sym="${s.symbol}">
+      <td class="star-cell"><button class="star-btn ${watchlistSymbols.has(s.symbol) ? 'active' : ''}" data-sym="${s.symbol}" title="Add to watchlist">${watchlistSymbols.has(s.symbol) ? '★' : '☆'}</button></td>
       <td class="left"><span class="sym">${s.symbol}</span></td>
       <td>${fmt(s.price)}</td>
       <td>${fmtPct(s.change_pct)}</td>
@@ -480,6 +597,7 @@ function formatT2Short(iso) {
 // Auto load presets + T+2 banner
 loadPresets();
 loadT2Banner();
+loadWatchlistSymbols();
 </script>
 </body>
 </html>

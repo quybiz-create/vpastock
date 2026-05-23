@@ -4,16 +4,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from app.config import settings
-from app.api import stock, market, screener, calendar, risk
-
+from app.db.database import init_db
+from app.api import stock, market, screener, calendar, risk, watchlist
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"VPASTOCK starting on {settings.APP_HOST}:{settings.APP_PORT}")
     logger.info(f"Environment: {settings.APP_ENV}")
+    init_db()
+    logger.info("Database initialized")
     yield
     logger.info("VPASTOCK shutting down")
-
 
 app = FastAPI(
     title="VPASTOCK API",
@@ -46,3 +47,5 @@ app.include_router(market.router, prefix="/api/market", tags=["market"])
 app.include_router(screener.router, prefix="/api/screener", tags=["screener"])
 app.include_router(calendar.router, prefix="/api/calendar", tags=["calendar"])
 app.include_router(risk.router, prefix="/api/risk", tags=["risk"])
+app.include_router(watchlist.router, prefix="/api/watchlist", tags=["watchlist"])
+

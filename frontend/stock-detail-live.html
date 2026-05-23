@@ -58,6 +58,10 @@ input{font-family:inherit;color:inherit}
 
 .center{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
 .stock-header{padding:14px 20px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;gap:24px}
+
+.star-btn-big{margin-left:auto;background:none;border:1px solid var(--border);color:var(--text3);cursor:pointer;font-size:22px;width:42px;height:42px;border-radius:8px;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.star-btn-big:hover{color:var(--yellow);border-color:var(--yellow);background:rgba(255,193,7,0.1)}
+.star-btn-big.active{color:var(--yellow);border-color:var(--yellow);background:rgba(255,193,7,0.15)}
 .stock-meta{display:flex;align-items:baseline;gap:12px}
 .stock-meta .sym-big{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--text)}
 .stock-meta .name{color:var(--text2);font-size:12px}
@@ -205,8 +209,8 @@ input{font-family:inherit;color:inherit}
   <nav class="nav">
     <a href="#" class="active">Chi tiết CP</a>
     <a href="#">Thị trường</a>
-    <a href="#">Bộ lọc</a>
-    <a href="#">Watchlist</a>
+    <a href="screener.html">Bộ lọc</a>
+    <a href="watchlist.html">⭐ Watchlist</a>
   </nav>
   <div class="search">
     <input type="text" placeholder="Nhập mã CP và Enter (VD: VIC)..." id="searchInput" maxlength="5">
@@ -222,39 +226,8 @@ input{font-family:inherit;color:inherit}
 
 <div class="main">
   <aside class="sidebar-l">
-    <div class="sec-title">Watchlist · Demo</div>
-    <div class="wl-item active" data-sym="VIC">
-      <span class="sym">VIC</span>
-      <span class="status">click</span>
-    </div>
-    <div class="wl-item" data-sym="FPT">
-      <span class="sym">FPT</span>
-      <span class="status">click</span>
-    </div>
-    <div class="wl-item" data-sym="HPG">
-      <span class="sym">HPG</span>
-      <span class="status">click</span>
-    </div>
-    <div class="wl-item" data-sym="VCB">
-      <span class="sym">VCB</span>
-      <span class="status">click</span>
-    </div>
-    <div class="wl-item" data-sym="MWG">
-      <span class="sym">MWG</span>
-      <span class="status">click</span>
-    </div>
-    <div class="wl-item" data-sym="MSN">
-      <span class="sym">MSN</span>
-      <span class="status">click</span>
-    </div>
-    <div class="wl-item" data-sym="VHM">
-      <span class="sym">VHM</span>
-      <span class="status">click</span>
-    </div>
-    <div class="wl-item" data-sym="TCB">
-      <span class="sym">TCB</span>
-      <span class="status">click</span>
-    </div>
+    <div class="sec-title" id="watchlistTitle">Watchlist · Demo</div>
+    <div id="watchlistList"></div>
   </aside>
 
   <main class="center">
@@ -271,6 +244,7 @@ input{font-family:inherit;color:inherit}
         </div>
         <div class="session-info" id="sessionInfo">Cập nhật: --</div>
       </div>
+      <button class="star-btn-big" id="btnStar" title="Add to watchlist">☆</button>
     </div>
 
     <div class="chart-wrap">
@@ -436,9 +410,116 @@ input{font-family:inherit;color:inherit}
 
 <script>
 const API = 'http://localhost:8000';
+const WATCHLIST_NAME = 'Demo';
+let watchlistTickers = [];
 let mainChart = null;
 let subChart = null;
 let currentSymbol = 'VIC';
+
+// === WATCHLIST STATE ===
+const wlSymbols = new Set();
+let wlDefaultId = null;
+
+function getUserFp() {
+  let fp = localStorage.getItem('vpastock_user_fp');
+  if (!fp) {
+    const raw = navigator.userAgent + screen.width + 'x' + screen.height +
+                new Date().getTimezoneOffset() + (navigator.language || '');
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+      hash |= 0;
+    }
+    fp = 'fp_' + Math.abs(hash).toString(36) + '_' + Date.now().toString(36);
+    localStorage.setItem('vpastock_user_fp', fp);
+  }
+  return fp;
+}
+const USER_FP = getUserFp();
+
+async function loadUserWatchlist() {
+  try {
+    const res = await fetch(`${API}/api/watchlist/list?user_fp=${USER_FP}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const wls = data.watchlists || [];
+    if (wls.length === 0) return;
+    const defaultWl = wls.find(w => w.is_default) || wls[0];
+    wlDefaultId = defaultWl.id;
+    const itemsRes = await fetch(`${API}/api/watchlist/${wlDefaultId}/items?user_fp=${USER_FP}`);
+    if (!itemsRes.ok) return;
+    const itemsData = await itemsRes.json();
+    wlSymbols.clear();
+    (itemsData.items || []).forEach(it => wlSymbols.add(it.symbol));
+    updateStarButton();
+  } catch (err) {
+    console.warn('Load watchlist failed:', err);
+  }
+}
+
+function updateStarButton() {
+  const btn = document.getElementById('btnStar');
+  if (!btn) return;
+  if (wlSymbols.has(currentSymbol)) {
+    btn.classList.add('active');
+    btn.textContent = '★';
+    btn.title = 'Đã trong watchlist - click để xóa';
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '☆';
+    btn.title = 'Add to watchlist';
+  }
+}
+
+async function toggleWatchlist() {
+  if (!wlDefaultId) {
+    // Auto create default
+    try {
+      const res = await fetch(`${API}/api/watchlist/create`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          user_fp: USER_FP,
+          name: 'Theo dõi',
+          description: 'Watchlist mặc định',
+          is_default: true,
+        })
+      });
+      const data = await res.json();
+      wlDefaultId = data.id;
+    } catch (err) {
+      alert('Lỗi tạo watchlist: ' + err.message);
+      return;
+    }
+  }
+  
+  const isIn = wlSymbols.has(currentSymbol);
+  try {
+    if (isIn) {
+      await fetch(`${API}/api/watchlist/${wlDefaultId}/remove/${currentSymbol}?user_fp=${USER_FP}`, {method: 'DELETE'});
+      wlSymbols.delete(currentSymbol);
+    } else {
+      // Get current price
+      const priceText = (document.getElementById('priceNow').textContent || '').replace(/[,\s]/g, '');
+      const priceVnd = parseFloat(priceText) * 1000;
+      await fetch(`${API}/api/watchlist/${wlDefaultId}/add?user_fp=${USER_FP}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          symbol: currentSymbol,
+          added_price: priceVnd || null,
+          note: null,
+        })
+      });
+      wlSymbols.add(currentSymbol);
+    }
+    updateStarButton();
+    // Refresh sidebar to show updated list
+    await refreshWatchlistSidebar(currentSymbol);
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+}
 
 const STOCK_NAMES = {
   VIC: 'Vingroup JSC', FPT: 'FPT Corp', HPG: 'Hoa Phat Group',
@@ -481,6 +562,9 @@ async function loadStock(symbol) {
     
     // Auto-update Tinh lenh form when symbol changes
     updateCalcFormForNewSymbol(data);
+    
+    // Update star button state
+    updateStarButton();
     
     showLoading(false);
   } catch (err) {
@@ -674,23 +758,155 @@ function renderAnalysis(last) {
   document.getElementById('warningAnalysis').innerHTML = warns.join('<br>');
 }
 
-document.querySelectorAll('.wl-item').forEach(b => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.wl-item').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    loadStock(b.dataset.sym);
-  });
-});
-
-document.getElementById('searchInput').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    const sym = e.target.value.trim().toUpperCase();
-    if (sym.length >= 3) {
+function bindWatchlistClicks() {
+  document.querySelectorAll('.wl-item').forEach(b => {
+    b.addEventListener('click', () => {
       document.querySelectorAll('.wl-item').forEach(x => x.classList.remove('active'));
-      loadStock(sym);
-      e.target.value = '';
+      b.classList.add('active');
+      loadStock(b.dataset.sym);
+    });
+  });
+}
+
+function renderWatchlistSidebar(tickers, activeSym) {
+  watchlistTickers = tickers.slice();
+  const list = document.getElementById('watchlistList');
+  list.innerHTML = '';
+  if (!tickers.length) {
+    list.innerHTML = '<p class="muted" style="padding:8px;font-size:11px">Danh muc trong. Nhap ma o tren va Enter de them.</p>';
+    return;
+  }
+  const active = activeSym || tickers[0];
+  tickers.forEach((sym) => {
+    const row = document.createElement('div');
+    row.className = 'wl-item' + (sym === active ? ' active' : '');
+    row.dataset.sym = sym;
+    row.innerHTML = `<span class="sym">${sym}</span><span class="status">click</span>`;
+    list.appendChild(row);
+  });
+  bindWatchlistClicks();
+}
+
+async function refreshWatchlistSidebar(activeSym) {
+  // Use Phase 3 API: list user's default watchlist
+  try {
+    const wlRes = await fetch(`${API}/api/watchlist/list?user_fp=${USER_FP}`);
+    if (!wlRes.ok) throw new Error(`HTTP ${wlRes.status}`);
+    const wlData = await wlRes.json();
+    const wls = wlData.watchlists || [];
+    
+    if (wls.length === 0) {
+      // No watchlist yet - show empty state
+      renderWatchlistSidebar([], activeSym);
+      return [];
+    }
+    
+    const defaultWl = wls.find(w => w.is_default) || wls[0];
+    wlDefaultId = defaultWl.id;
+    
+    // Get items
+    const itemsRes = await fetch(`${API}/api/watchlist/${wlDefaultId}/items?user_fp=${USER_FP}`);
+    if (!itemsRes.ok) throw new Error(`HTTP ${itemsRes.status}`);
+    const itemsData = await itemsRes.json();
+    const tickers = (itemsData.items || []).map(it => it.symbol);
+    
+    // Update wlSymbols set
+    wlSymbols.clear();
+    tickers.forEach(t => wlSymbols.add(t));
+    
+    renderWatchlistSidebar(tickers, activeSym);
+    return tickers;
+  } catch (err) {
+    console.warn('refreshWatchlistSidebar:', err);
+    renderWatchlistSidebar([], activeSym);
+    return [];
+  }
+}
+
+async function addTickerToWatchlist(sym) {
+  // Use Phase 3 API: add symbol to default watchlist
+  if (!wlDefaultId) {
+    // Auto create default watchlist
+    try {
+      const res = await fetch(`${API}/api/watchlist/create`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          user_fp: USER_FP,
+          name: 'Theo dõi',
+          description: 'Watchlist mặc định',
+          is_default: true,
+        })
+      });
+      const data = await res.json();
+      wlDefaultId = data.id;
+    } catch (err) {
+      console.warn('Create watchlist failed:', err);
+      return false;
     }
   }
+  
+  try {
+    const res = await fetch(`${API}/api/watchlist/${wlDefaultId}/add?user_fp=${USER_FP}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ symbol: sym, added_price: null, note: null })
+    });
+    if (res.ok || res.status === 409) {
+      // 409 = already in list, OK
+      await refreshWatchlistSidebar(sym);
+      return true;
+    }
+    const err = await res.json().catch(() => ({}));
+    const detail = typeof err.detail === 'string' ? err.detail : '';
+    if (res.status === 400 && detail.includes('da co')) {
+      await refreshWatchlistSidebar(sym);
+      return true;
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  } catch (err) {
+    console.warn('Them watchlist:', err);
+    if (!watchlistTickers.includes(sym)) {
+      watchlistTickers.push(sym);
+    }
+    renderWatchlistSidebar(watchlistTickers, sym);
+    return false;
+  }
+}
+
+async function loadWatchlistFromApi() {
+  const title = document.getElementById('watchlistTitle');
+  title.textContent = `Watchlist · ${WATCHLIST_NAME}`;
+  
+  // Check URL params first (?sym=XXX or ?symbol=XXX)
+  const params = new URLSearchParams(window.location.search);
+  const urlSym = (params.get('sym') || params.get('symbol') || '').toUpperCase().trim();
+  
+  try {
+    const tickers = await refreshWatchlistSidebar();
+    if (urlSym && urlSym.length >= 3) {
+      // URL has symbol - load it directly
+      await loadStock(urlSym);
+    } else if (tickers.length > 0) {
+      await loadStock(tickers[0]);
+    }
+  } catch (err) {
+    console.warn('Watchlist API:', err);
+    const fallback = ['VIC', 'FPT', 'HPG', 'VCB', 'MWG', 'MSN', 'VHM', 'TCB'];
+    renderWatchlistSidebar(fallback, fallback[0]);
+    // Even on error, respect URL param
+    await loadStock(urlSym && urlSym.length >= 3 ? urlSym : fallback[0]);
+  }
+}
+
+document.getElementById('searchInput').addEventListener('keydown', async (e) => {
+  if (e.key !== 'Enter') return;
+  const sym = e.target.value.trim().toUpperCase();
+  if (sym.length < 3) return;
+  e.preventDefault();
+  e.target.value = '';
+  await addTickerToWatchlist(sym);
+  await loadStock(sym);
 });
 
 document.querySelectorAll('.tabs button').forEach(b => {
@@ -1035,7 +1251,13 @@ function formatShortDate(iso) {
 }
 
 loadT2Settlement();
-loadStock('VIC');
+loadWatchlistFromApi();
+
+// Star button - add/remove from default watchlist
+document.getElementById('btnStar').addEventListener('click', toggleWatchlist);
+
+// Load user watchlist on init
+loadUserWatchlist();
 </script>
 </body>
 </html>

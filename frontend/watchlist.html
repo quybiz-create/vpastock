@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watchlist - vpastock</title>
+<style>
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2129;--bg4:#262d36;
+  --border:#2a313c;--text:#e6edf3;--text2:#94a3b8;--text3:#6b7280;
+  --blue:#2962ff;--blue-hi:#5b8def;
+  --green:#26a69a;--green-hi:#3dd9c4;--green-bg:#0b3530;
+  --red:#ef5350;--red-hi:#ff6b6b;--red-bg:#3d1010;
+  --orange:#ff9800;--yellow:#ffc107;
+  --mono:'Courier New','Consolas',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;line-height:1.5}
+a{color:var(--blue-hi);text-decoration:none}
+
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;gap:20px;height:50px}
+.logo{font-weight:700;color:var(--blue-hi);font-size:15px;letter-spacing:0.08em}
+.nav{display:flex;gap:5px}
+.nav a{padding:8px 14px;border-radius:5px;color:var(--text2);font-size:12px;font-weight:600}
+.nav a:hover{background:var(--bg3);color:var(--text)}
+.nav a.active{background:var(--blue);color:#fff}
+
+.container{max-width:1400px;margin:0 auto;padding:20px;display:grid;grid-template-columns:280px 1fr;gap:16px}
+
+/* Sidebar trái */
+.sidebar{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;height:fit-content}
+.sidebar h3{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;font-weight:600;font-family:var(--mono)}
+.wl-item{padding:10px;border-radius:5px;cursor:pointer;margin-bottom:5px;border:1px solid transparent;transition:all .15s}
+.wl-item:hover{background:var(--bg3);border-color:var(--border)}
+.wl-item.active{background:var(--bg3);border-color:var(--blue)}
+.wl-item-name{font-weight:600;color:var(--text);font-size:13px;display:flex;align-items:center;gap:6px}
+.wl-item-meta{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px}
+.wl-item .default-badge{background:var(--blue);color:#fff;font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:0.04em}
+
+.btn-create{width:100%;background:var(--blue);color:#fff;padding:9px;border-radius:5px;border:none;font-weight:600;cursor:pointer;font-size:12px;margin-top:8px}
+.btn-create:hover{background:var(--blue-hi)}
+
+/* Main content */
+.main{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:18px}
+.main-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.main-title{font-size:18px;font-weight:700;color:var(--text)}
+.main-subtitle{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.main-actions{display:flex;gap:8px}
+.btn{padding:7px 12px;border-radius:5px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:11px;cursor:pointer;font-family:var(--mono);font-weight:600}
+.btn:hover{background:var(--bg4);border-color:var(--blue)}
+.btn.danger{color:var(--red-hi);border-color:var(--red-bg)}
+.btn.danger:hover{background:var(--red-bg)}
+
+.tabs{display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.tabs button{flex:0 0 auto;padding:10px 16px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600;cursor:pointer;font-family:var(--mono)}
+.tabs button.active{color:var(--blue-hi);border-color:var(--blue)}
+.tabs button:hover{color:var(--text)}
+
+/* Items table */
+.items-table{width:100%;border-collapse:collapse}
+.items-table th{background:var(--bg3);color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:0.06em;padding:9px 10px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);font-family:var(--mono)}
+.items-table td{padding:10px;border-bottom:1px solid var(--border);font-size:12px;font-family:var(--mono)}
+.items-table tr:hover td{background:var(--bg3)}
+.items-table .sym{font-weight:700;color:var(--blue-hi);cursor:pointer}
+.items-table .sym:hover{text-decoration:underline}
+.items-table .price-up{color:var(--green-hi)}
+.items-table .price-down{color:var(--red-hi)}
+.items-table .vpa-tag{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:0.04em}
+.vpa-tag.SOS,.vpa-tag.Spring{background:var(--green-bg);color:var(--green-hi)}
+.vpa-tag.UpThrust,.vpa-tag.SOW{background:var(--red-bg);color:var(--red-hi)}
+.vpa-tag.NoSupply{background:#3d2607;color:var(--yellow)}
+
+.btn-remove{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px}
+.btn-remove:hover{color:var(--red-hi)}
+
+.empty-state{padding:60px 20px;text-align:center;color:var(--text3)}
+.empty-state .icon{font-size:36px;margin-bottom:10px;opacity:.5}
+.empty-state .msg{font-size:13px;margin-bottom:6px}
+.empty-state .sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-bg.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;width:400px;max-width:90vw}
+.modal h3{margin-bottom:12px;font-size:14px;color:var(--text)}
+.modal label{display:block;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;font-family:var(--mono);margin-top:10px;margin-bottom:4px}
+.modal input,.modal select,.modal textarea{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:4px;font-size:12px;font-family:var(--mono);outline:none}
+.modal input:focus,.modal select:focus{border-color:var(--blue)}
+.modal-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.modal-actions button{padding:8px 14px;border-radius:5px;border:1px solid var(--border);cursor:pointer;font-size:11px;font-weight:600;font-family:var(--mono)}
+.modal-actions .btn-confirm{background:var(--blue);color:#fff;border-color:var(--blue)}
+.modal-actions .btn-cancel{background:var(--bg3);color:var(--text2)}
+
+/* Alerts */
+.alert-card{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.alert-card .alert-info{flex:1}
+.alert-card .alert-sym{font-weight:700;color:var(--blue-hi);font-size:13px}
+.alert-card .alert-type{font-size:11px;color:var(--text2);margin-top:2px;font-family:var(--mono)}
+.alert-card .alert-note{font-size:10px;color:var(--text3);margin-top:3px}
+.alert-card .alert-status{font-size:10px;padding:3px 8px;border-radius:3px;font-family:var(--mono);font-weight:600}
+.alert-card .alert-status.active{background:var(--green-bg);color:var(--green-hi)}
+.alert-card .alert-status.triggered{background:var(--yellow);color:#000}
+
+@media (max-width: 800px){
+  .container{grid-template-columns:1fr}
+  .items-table th:nth-child(n+5),.items-table td:nth-child(n+5){display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">📊 VPASTOCK</div>
+  <div class="nav">
+    <a href="screener.html">Bộ lọc</a>
+    <a href="stock-detail-live.html">Chi tiết CP</a>
+    <a href="t2-calculator.html">T+2</a>
+    <a href="watchlist.html" class="active">⭐ Watchlist</a>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h3>📁 Danh sách Watchlist</h3>
+    <div id="watchlistList">
+      <div class="empty-state" style="padding:20px 5px"><div class="msg" style="font-size:12px">Chưa có watchlist</div></div>
+    </div>
+    <button class="btn-create" id="btnCreate">+ Tạo Watchlist Mới</button>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="main-header">
+      <div>
+        <div class="main-title" id="mainTitle">Chọn watchlist từ sidebar</div>
+        <div class="main-subtitle" id="mainSubtitle">--</div>
+      </div>
+      <div class="main-actions" id="mainActions" style="display:none">
+        <button class="btn" id="btnAddSymbol">+ Thêm mã</button>
+        <button class="btn" id="btnAddAlert">⚡ Tạo alert</button>
+        <button class="btn danger" id="btnDeleteWL">🗑 Xóa watchlist</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="active" data-tab="items">📈 Mã trong watchlist</button>
+      <button data-tab="alerts">⚡ Alerts</button>
+    </div>
+
+    <div id="tabItems">
+      <div id="itemsContainer">
+        <div class="empty-state">
+          <div class="icon">📋</div>
+          <div class="msg">Chọn watchlist từ sidebar bên trái</div>
+          <div class="sub">Hoặc tạo watchlist mới để bắt đầu</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tabAlerts" style="display:none">
+      <div id="alertsContainer">
+        <div class="empty-state">
+          <div class="icon">⚡</div>
+          <div class="msg">Chưa có alert nào</div>
+          <div class="sub">Tạo alert giá để được thông báo khi giá đạt ngưỡng</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal: Create Watchlist -->
+<div class="modal-bg" id="modalCreate">
+  <div class="modal">
+    <h3>+ Tạo Watchlist Mới</h3>
+    <label>Tên watchlist</label>
+    <input type="text" id="newWLName" placeholder="VD: Theo dõi, Đang giữ, Penny..." maxlength="50">
+    <label>Mô tả (tùy chọn)</label>
+    <input type="text" id="newWLDesc" placeholder="VD: Mã có VPA mạnh">
+    <label><input type="checkbox" id="newWLDefault"> Đặt làm watchlist mặc định</label>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancelCreate">Hủy</button>
+      <button class="btn-confirm" id="confirmCreate">Tạo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Symbol -->
+<div class="modal-bg" id="modalAddSym">
+  <div class="modal">
+    <h3>+ Thêm mã vào watchlist</h3>
+    <label>Mã CP</label>
+    <input type="text" id="newSymCode" placeholder="VD: GAS, VIC, FPT..." maxlength="10" style="text-transform:uppercase">
+    <label>Giá tham chiếu (VND/CP) — tùy chọn</label>
+    <input type="number" id="newSymPrice" placeholder="VD: 89400">
+    <label>Ghi chú (tùy chọn)</label>
+    <input type="text" id="newSymNote" placeholder="VD: SOS hôm 17/05">
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancelAddSym">Hủy</button>
+      <button class="btn-confirm" id="confirmAddSym">Thêm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Create Alert -->
+<div class="modal-bg" id="modalAlert">
+  <div class="modal">
+    <h3>⚡ Tạo Alert Giá</h3>
+    <label>Mã CP</label>
+    <input type="text" id="alertSym" placeholder="VD: GAS" maxlength="10" style="text-transform:uppercase">
+    <label>Loại alert</label>
+    <select id="alertType">
+      <option value="price_above">Giá vượt ngưỡng (price_above)</option>
+      <option value="price_below">Giá xuống dưới ngưỡng (price_below)</option>
+      <option value="pct_change">% thay đổi vượt ngưỡng (pct_change)</option>
+    </select>
+    <label>Ngưỡng</label>
+    <input type="number" id="alertThreshold" placeholder="VD: 95 (VND) hoặc 5 (% thay đổi)" step="0.01">
+    <label>Ghi chú</label>
+    <input type="text" id="alertNote" placeholder="VD: Vượt kháng cự 95">
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancelAlert">Hủy</button>
+      <button class="btn-confirm" id="confirmAlert">Tạo Alert</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+
+// ===== BROWSER FINGERPRINT =====
+function getUserFp() {
+  let fp = localStorage.getItem('vpastock_user_fp');
+  if (!fp) {
+    // Generate fingerprint từ UA + screen + timezone
+    const raw = navigator.userAgent + screen.width + 'x' + screen.height +
+                new Date().getTimezoneOffset() + (navigator.language || '');
+    // Simple hash
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+      hash |= 0;
+    }
+    fp = 'fp_' + Math.abs(hash).toString(36) + '_' + Date.now().toString(36);
+    localStorage.setItem('vpastock_user_fp', fp);
+  }
+  return fp;
+}
+
+const USER_FP = getUserFp();
+let currentWatchlistId = null;
+let currentTab = 'items';
+
+// ===== LOAD WATCHLISTS =====
+async function loadWatchlists() {
+  try {
+    const res = await fetch(`${API}/api/watchlist/list?user_fp=${USER_FP}`);
+    const data = await res.json();
+    renderWatchlistList(data.watchlists || []);
+  } catch (err) {
+    console.error('Load watchlists failed:', err);
+    document.getElementById('watchlistList').innerHTML =
+      '<div class="empty-state" style="padding:15px"><div class="msg" style="font-size:11px;color:var(--red-hi)">Lỗi tải watchlist</div></div>';
+  }
+}
+
+function renderWatchlistList(wls) {
+  const el = document.getElementById('watchlistList');
+  if (wls.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:15px 5px"><div class="msg" style="font-size:11px">Chưa có watchlist</div><div class="sub">Click nút bên dưới để tạo</div></div>';
+    return;
+  }
+  el.innerHTML = wls.map(w => `
+    <div class="wl-item ${w.id === currentWatchlistId ? 'active' : ''}" data-id="${w.id}">
+      <div class="wl-item-name">
+        ${w.is_default ? '<span class="default-badge">DEFAULT</span>' : ''}
+        ${escapeHtml(w.name)}
+      </div>
+      <div class="wl-item-meta">${w.item_count} mã • ${w.description || 'Không có mô tả'}</div>
+    </div>
+  `).join('');
+  
+  // Click handlers
+  el.querySelectorAll('.wl-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const id = parseInt(item.dataset.id);
+      const wl = wls.find(w => w.id === id);
+      selectWatchlist(wl);
+    });
+  });
+}
+
+function selectWatchlist(wl) {
+  currentWatchlistId = wl.id;
+  document.getElementById('mainTitle').textContent = wl.name;
+  document.getElementById('mainSubtitle').textContent = (wl.description || 'Không có mô tả') + ` • ${wl.item_count} mã`;
+  document.getElementById('mainActions').style.display = 'flex';
+  
+  // Refresh sidebar to show active state
+  document.querySelectorAll('.wl-item').forEach(x => {
+    x.classList.toggle('active', parseInt(x.dataset.id) === wl.id);
+  });
+  
+  if (currentTab === 'items') loadItems();
+  else loadAlerts();
+}
+
+// ===== LOAD ITEMS =====
+async function loadItems() {
+  if (!currentWatchlistId) return;
+  const container = document.getElementById('itemsContainer');
+  container.innerHTML = '<div class="empty-state" style="padding:30px"><div class="msg">Đang tải...</div></div>';
+  
+  try {
+    const res = await fetch(`${API}/api/watchlist/${currentWatchlistId}/items?user_fp=${USER_FP}`);
+    const data = await res.json();
+    renderItems(data.items || []);
+  } catch (err) {
+    container.innerHTML = '<div class="empty-state"><div class="msg" style="color:var(--red-hi)">Lỗi tải items</div></div>';
+  }
+}
+
+function renderItems(items) {
+  const container = document.getElementById('itemsContainer');
+  if (items.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📋</div><div class="msg">Watchlist trống</div><div class="sub">Click "+ Thêm mã" để bắt đầu</div></div>';
+    return;
+  }
+  container.innerHTML = `
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>MÃ CP</th>
+          <th>Giá thêm</th>
+          <th>Ghi chú</th>
+          <th>Ngày thêm</th>
+          <th style="width:50px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map(item => `
+          <tr>
+            <td><a class="sym" href="stock-detail-live.html?sym=${item.symbol}" target="_blank">${item.symbol}</a></td>
+            <td>${item.added_price ? item.added_price.toLocaleString('vi-VN') : '--'}</td>
+            <td>${escapeHtml(item.note || '--')}</td>
+            <td>${formatDate(item.added_at)}</td>
+            <td><button class="btn-remove" data-sym="${item.symbol}" title="Xóa">✕</button></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  
+  container.querySelectorAll('.btn-remove').forEach(btn => {
+    btn.addEventListener('click', () => removeItem(btn.dataset.sym));
+  });
+}
+
+async function removeItem(symbol) {
+  if (!confirm(`Xóa ${symbol} khỏi watchlist?`)) return;
+  try {
+    const res = await fetch(`${API}/api/watchlist/${currentWatchlistId}/remove/${symbol}?user_fp=${USER_FP}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) throw new Error('Remove failed');
+    loadItems();
+    loadWatchlists(); // Refresh count
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+}
+
+// ===== ALERTS =====
+async function loadAlerts() {
+  const container = document.getElementById('alertsContainer');
+  container.innerHTML = '<div class="empty-state" style="padding:30px"><div class="msg">Đang tải...</div></div>';
+  
+  try {
+    const res = await fetch(`${API}/api/watchlist/alert/list?user_fp=${USER_FP}&active_only=false`);
+    const data = await res.json();
+    renderAlerts(data.alerts || []);
+  } catch (err) {
+    container.innerHTML = '<div class="empty-state"><div class="msg" style="color:var(--red-hi)">Lỗi tải alerts</div></div>';
+  }
+}
+
+function renderAlerts(alerts) {
+  const container = document.getElementById('alertsContainer');
+  if (alerts.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">⚡</div><div class="msg">Chưa có alert nào</div><div class="sub">Click "⚡ Tạo alert" để bắt đầu</div></div>';
+    return;
+  }
+  const typeLabels = {
+    price_above: 'Giá vượt',
+    price_below: 'Giá xuống dưới',
+    pct_change: '% thay đổi vượt',
+  };
+  container.innerHTML = alerts.map(a => `
+    <div class="alert-card">
+      <div class="alert-info">
+        <div class="alert-sym">${a.symbol}</div>
+        <div class="alert-type">${typeLabels[a.alert_type] || a.alert_type}: ${a.threshold}</div>
+        ${a.note ? `<div class="alert-note">📝 ${escapeHtml(a.note)}</div>` : ''}
+      </div>
+      <div>
+        <span class="alert-status ${a.triggered_at ? 'triggered' : 'active'}">${a.triggered_at ? 'TRIGGERED' : (a.is_active ? 'ACTIVE' : 'OFF')}</span>
+        <button class="btn-remove" onclick="deleteAlert(${a.id})" style="margin-left:6px" title="Xóa">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deleteAlert(alertId) {
+  if (!confirm('Xóa alert này?')) return;
+  try {
+    await fetch(`${API}/api/watchlist/alert/${alertId}?user_fp=${USER_FP}`, {method: 'DELETE'});
+    loadAlerts();
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+}
+
+// ===== MODALS =====
+function showModal(id) {
+  document.getElementById(id).classList.add('show');
+}
+function hideModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// Create watchlist
+document.getElementById('btnCreate').addEventListener('click', () => {
+  document.getElementById('newWLName').value = '';
+  document.getElementById('newWLDesc').value = '';
+  document.getElementById('newWLDefault').checked = false;
+  showModal('modalCreate');
+});
+document.getElementById('cancelCreate').addEventListener('click', () => hideModal('modalCreate'));
+document.getElementById('confirmCreate').addEventListener('click', async () => {
+  const name = document.getElementById('newWLName').value.trim();
+  if (!name) return alert('Nhập tên watchlist');
+  
+  try {
+    await fetch(`${API}/api/watchlist/create`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        user_fp: USER_FP,
+        name,
+        description: document.getElementById('newWLDesc').value.trim() || null,
+        is_default: document.getElementById('newWLDefault').checked,
+      })
+    });
+    hideModal('modalCreate');
+    loadWatchlists();
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+});
+
+// Add symbol
+document.getElementById('btnAddSymbol').addEventListener('click', () => {
+  if (!currentWatchlistId) return;
+  document.getElementById('newSymCode').value = '';
+  document.getElementById('newSymPrice').value = '';
+  document.getElementById('newSymNote').value = '';
+  showModal('modalAddSym');
+});
+document.getElementById('cancelAddSym').addEventListener('click', () => hideModal('modalAddSym'));
+document.getElementById('confirmAddSym').addEventListener('click', async () => {
+  const symbol = document.getElementById('newSymCode').value.trim().toUpperCase();
+  if (!symbol) return alert('Nhập mã CP');
+  
+  try {
+    const res = await fetch(`${API}/api/watchlist/${currentWatchlistId}/add?user_fp=${USER_FP}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        symbol,
+        added_price: parseFloat(document.getElementById('newSymPrice').value) || null,
+        note: document.getElementById('newSymNote').value.trim() || null,
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Add failed');
+    }
+    hideModal('modalAddSym');
+    loadItems();
+    loadWatchlists();
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+});
+
+// Create alert
+document.getElementById('btnAddAlert').addEventListener('click', () => {
+  document.getElementById('alertSym').value = '';
+  document.getElementById('alertThreshold').value = '';
+  document.getElementById('alertNote').value = '';
+  showModal('modalAlert');
+});
+document.getElementById('cancelAlert').addEventListener('click', () => hideModal('modalAlert'));
+document.getElementById('confirmAlert').addEventListener('click', async () => {
+  const symbol = document.getElementById('alertSym').value.trim().toUpperCase();
+  const threshold = parseFloat(document.getElementById('alertThreshold').value);
+  if (!symbol || !threshold) return alert('Nhập đầy đủ mã + ngưỡng');
+  
+  try {
+    await fetch(`${API}/api/watchlist/alert/create`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        user_fp: USER_FP,
+        symbol,
+        alert_type: document.getElementById('alertType').value,
+        threshold,
+        note: document.getElementById('alertNote').value.trim() || null,
+      })
+    });
+    hideModal('modalAlert');
+    if (currentTab === 'alerts') loadAlerts();
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+});
+
+// Delete watchlist
+document.getElementById('btnDeleteWL').addEventListener('click', async () => {
+  if (!currentWatchlistId) return;
+  if (!confirm('Xóa watchlist này? Tất cả mã trong watchlist sẽ bị xóa.')) return;
+  try {
+    await fetch(`${API}/api/watchlist/${currentWatchlistId}?user_fp=${USER_FP}`, {method: 'DELETE'});
+    currentWatchlistId = null;
+    document.getElementById('mainTitle').textContent = 'Chọn watchlist từ sidebar';
+    document.getElementById('mainSubtitle').textContent = '--';
+    document.getElementById('mainActions').style.display = 'none';
+    document.getElementById('itemsContainer').innerHTML = '<div class="empty-state"><div class="icon">📋</div><div class="msg">Watchlist đã xóa</div></div>';
+    loadWatchlists();
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+});
+
+// Tabs
+document.querySelectorAll('.tabs button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    currentTab = b.dataset.tab;
+    document.getElementById('tabItems').style.display = currentTab === 'items' ? 'block' : 'none';
+    document.getElementById('tabAlerts').style.display = currentTab === 'alerts' ? 'block' : 'none';
+    if (currentTab === 'items' && currentWatchlistId) loadItems();
+    else if (currentTab === 'alerts') loadAlerts();
+  });
+});
+
+// Helpers
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&#39;','"':'&quot;'}[c]));
+}
+function formatDate(s) {
+  if (!s) return '--';
+  const d = new Date(s);
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// Init
+loadWatchlists();
+</script>
+</body>
+</html>
