@@ -3,6 +3,7 @@ API endpoints cho stock detail.
 Đây là API quan trọng nhất - phục vụ trang Chi tiết CP.
 """
 import math
+import pandas as pd
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
@@ -165,3 +166,57 @@ async def get_financial(symbol: str):
     except Exception as e:
         logger.exception(f"get_financial loi cho {symbol}")
         raise HTTPException(500, f"Loi: {str(e)}")
+
+# ============================================================
+# RSI COMBO INDICATOR (Phase 3 Day 4)
+# ============================================================
+@router.get("/{symbol}/rsi-combo")
+async def get_rsi_combo(
+    symbol: str,
+    days: int = Query(default=365, ge=60, le=1825),
+):
+    """
+    RSI Combo System: 6 loai signals.
+    """
+    from app.services.rsi_combo import calculate_rsi_combo
+    
+    try:
+        # Reuse Phase 1 vnstock client (handles fallback + cache)
+        from datetime import datetime, timedelta
+        end_date = datetime.now().strftime("%Y-%m-%d")
+        start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+        df = await vnstock_client.get_history(symbol.upper(), start=start_date, end=end_date, interval="1D")
+        
+        if df is None or df.empty:
+            raise HTTPException(404, f"No data for {symbol}")
+        
+        # Build clean DataFrame with explicit 'time' column from index
+        df_clean = pd.DataFrame({
+            "time": pd.to_datetime(df.index).astype("int64") // 1_000_000,
+            "open": df["open"].values,
+            "high": df["high"].values,
+            "low": df["low"].values,
+            "close": df["close"].values,
+        })
+        
+        signals = calculate_rsi_combo(df_clean)
+        
+        return {
+            "symbol": symbol.upper(),
+            "params": {
+                "rsi_length": 14,
+                "rsi_overbought": 70,
+                "rsi_oversold": 30,
+                "fib_level": 0.333,
+                "combo_lookback": 10,
+            },
+            "signals": signals,
+            "counts": {k: len(v) for k, v in signals.items()},
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        logger.error(f"RSI Combo error for {symbol}: {e}\n{traceback.format_exc()}")
+        raise HTTPException(500, f"Failed to calculate: {e}")
+

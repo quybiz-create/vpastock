@@ -79,6 +79,15 @@ input{font-family:inherit;color:inherit}
 .chart-sub{height:130px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px}
 
 .ind-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);padding:1px;border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+
+/* === RSI COMBO TOGGLE BAR === */
+.rsi-combo-bar{display:flex;align-items:center;gap:14px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;flex-wrap:wrap}
+.rcb-title{color:var(--text);font-weight:600;letter-spacing:0.5px}
+.rcb-item{display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text2);transition:color .15s}
+.rcb-item:hover{color:var(--text)}
+.rcb-item input[type=checkbox]{cursor:pointer;accent-color:#2962ff}
+.rcb-icon{font-size:13px;line-height:1}
+.rcb-counts{font-family:'IBM Plex Mono',monospace}
 .ind-cell{background:var(--bg2);padding:9px 12px;display:flex;flex-direction:column;gap:2px}
 .ind-cell .ind-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--mono);font-weight:600}
 .ind-cell .ind-value{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text)}
@@ -213,7 +222,7 @@ input{font-family:inherit;color:inherit}
     <a href="watchlist.html">⭐ Watchlist</a>
   </nav>
   <div class="search">
-    <input type="text" placeholder="Nhập mã CP và Enter (VD: VIC)..." id="searchInput" maxlength="5">
+    <input type="text" placeholder="Nhập mã CP và Enter (VD: VIC, VNINDEX)..." id="searchInput" maxlength="10">
   </div>
   <div class="user">H</div>
 </div>
@@ -233,7 +242,7 @@ input{font-family:inherit;color:inherit}
   <main class="center">
     <div class="stock-header">
       <div class="stock-meta">
-        <div class="sym-big" id="symBig">VIC</div>
+        <div class="sym-big" id="symBig">VNINDEX</div>
         <div class="name" id="stockName">Đang tải...</div>
         <div class="exchange">HOSE</div>
       </div>
@@ -251,6 +260,16 @@ input{font-family:inherit;color:inherit}
       <div id="loadingBox" class="loading" style="display:none">Đang tải dữ liệu</div>
       <div class="chart-main">
         <canvas id="mainChart"></canvas>
+      </div>
+      <div class="rsi-combo-bar" id="rsiComboBar">
+        <span class="rcb-title">🎯 RSI Combo</span>
+        <label class="rcb-item"><input type="checkbox" class="rcb-toggle" data-key="combo_buy" checked> <span class="rcb-icon" style="color:#fbc02d">★</span> Combo Buy</label>
+        <label class="rcb-item"><input type="checkbox" class="rcb-toggle" data-key="combo_exit" checked> <span class="rcb-icon" style="color:#ff6d00">★</span> Combo Exit</label>
+        <label class="rcb-item"><input type="checkbox" class="rcb-toggle" data-key="bull_div"> <span class="rcb-icon" style="color:#4caf50">▲</span> Bull Div</label>
+        <label class="rcb-item"><input type="checkbox" class="rcb-toggle" data-key="bear_div"> <span class="rcb-icon" style="color:#e53935">▼</span> Bear Div</label>
+        <label class="rcb-item"><input type="checkbox" class="rcb-toggle" data-key="rsi_buy"> <span class="rcb-icon" style="color:#4caf50">△</span> RSI Buy</label>
+        <label class="rcb-item"><input type="checkbox" class="rcb-toggle" data-key="rsi_exit"> <span class="rcb-icon" style="color:#ff9800">▽</span> RSI Exit</label>
+        <span class="rcb-counts" id="rcbCounts" style="margin-left:auto;color:#787b86;font-size:10px"></span>
       </div>
       <div class="chart-sub">
         <canvas id="subChart"></canvas>
@@ -422,7 +441,7 @@ const WATCHLIST_NAME = 'Demo';
 let watchlistTickers = [];
 let mainChart = null;
 let subChart = null;
-let currentSymbol = 'VIC';
+let currentSymbol = 'VNINDEX';
 
 // === WATCHLIST STATE ===
 const wlSymbols = new Set();
@@ -574,6 +593,9 @@ async function loadStock(symbol) {
     // Update star button state
     updateStarButton();
     
+    // Fetch RSI Combo signals (async, don't block chart render)
+    fetchAndRenderRsiCombo();
+    
     showLoading(false);
   } catch (err) {
     showLoading(false);
@@ -657,6 +679,121 @@ function renderChart(series) {
     }
   });
 }
+
+// ========== RSI COMBO SYSTEM ==========
+// Cache signals so we can re-render without re-fetch when toggling
+window.__rsiComboData = null;
+
+const RCB_LS_KEY = 'vpastock_rcb_toggles';
+
+// Marker styles theo Pine Script + AmiBroker conventions
+const RCB_STYLES = {
+  combo_buy:  {color: '#fbc02d', textColor: '#000', size: 11, location: 'below', symbol: '★', label: 'BUY'},
+  combo_exit: {color: '#ff6d00', textColor: '#fff', size: 11, location: 'above', symbol: '★', label: 'EXIT'},
+  bull_div:   {color: '#4caf50', textColor: '#fff', size: 8,  location: 'below', symbol: '▲', label: 'Bull Div'},
+  bear_div:   {color: '#e53935', textColor: '#fff', size: 8,  location: 'above', symbol: '▼', label: 'Bear Div'},
+  rsi_buy:    {color: '#66bb6a', textColor: '#fff', size: 7,  location: 'below', symbol: '△', label: 'Buy'},
+  rsi_exit:   {color: '#ffa726', textColor: '#fff', size: 7,  location: 'above', symbol: '▽', label: 'Exit'},
+};
+
+function loadRcbToggles() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(RCB_LS_KEY) || '{}');
+    document.querySelectorAll('.rcb-toggle').forEach(cb => {
+      if (saved.hasOwnProperty(cb.dataset.key)) {
+        cb.checked = saved[cb.dataset.key];
+      }
+    });
+  } catch (e) {}
+}
+
+function saveRcbToggles() {
+  const state = {};
+  document.querySelectorAll('.rcb-toggle').forEach(cb => {
+    state[cb.dataset.key] = cb.checked;
+  });
+  localStorage.setItem(RCB_LS_KEY, JSON.stringify(state));
+}
+
+async function fetchAndRenderRsiCombo() {
+  try {
+    const res = await fetch(`${API}/api/stock/${currentSymbol}/rsi-combo`);
+    if (!res.ok) {
+      console.warn('RSI Combo not available for', currentSymbol);
+      window.__rsiComboData = null;
+      document.getElementById('rcbCounts').textContent = '';
+      renderRsiComboMarkers();
+      return;
+    }
+    const data = await res.json();
+    window.__rsiComboData = data;
+    
+    // Update counts display
+    const c = data.counts || {};
+    document.getElementById('rcbCounts').textContent = 
+      `[Combo: ${c.combo_buy||0}/${c.combo_exit||0} · Div: ${c.bull_div||0}/${c.bear_div||0} · RSI: ${c.rsi_buy||0}/${c.rsi_exit||0}]`;
+    
+    renderRsiComboMarkers();
+  } catch (err) {
+    console.warn('RSI Combo fetch error:', err);
+    window.__rsiComboData = null;
+  }
+}
+
+function renderRsiComboMarkers() {
+  if (!mainChart || !window.__rsiComboData) return;
+  
+  // Remove old RSI Combo datasets (keep candles + MA20 + MA50)
+  // Datasets index 0=candles, 1=MA20, 2=MA50 — anything after is RSI Combo
+  while (mainChart.data.datasets.length > 3) {
+    mainChart.data.datasets.pop();
+  }
+  
+  const signals = window.__rsiComboData.signals || {};
+  
+  // For each enabled toggle, add a scatter dataset
+  document.querySelectorAll('.rcb-toggle').forEach(cb => {
+    if (!cb.checked) return;
+    const key = cb.dataset.key;
+    const arr = signals[key] || [];
+    if (arr.length === 0) return;
+    
+    const style = RCB_STYLES[key];
+    const isAbove = style.location === 'above';
+    
+    // Calculate offset (% of price) to put marker above/below bar
+    const offsetPct = isAbove ? 1.015 : 0.985;
+    
+    mainChart.data.datasets.push({
+      label: `${style.symbol} ${style.label}`,
+      type: 'scatter',
+      data: arr.map(s => ({
+        x: s.time,
+        y: s.price * offsetPct,
+      })),
+      backgroundColor: style.color,
+      borderColor: style.color,
+      pointRadius: style.size,
+      pointHoverRadius: style.size + 2,
+      pointStyle: isAbove ? 'triangle' : 'triangle',
+      rotation: isAbove ? 180 : 0,
+      showLine: false,
+    });
+  });
+  
+  mainChart.update('none');
+}
+
+// Listen to toggle changes
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.rcb-toggle').forEach(cb => {
+    cb.addEventListener('change', () => {
+      saveRcbToggles();
+      renderRsiComboMarkers();
+    });
+  });
+  loadRcbToggles();
+});
 
 function renderIndicators(last) {
   const fmt = (v, dec=2) => v == null ? '--' : v.toFixed(dec);
@@ -891,22 +1028,24 @@ async function loadWatchlistFromApi() {
   const urlSym = (params.get('sym') || params.get('symbol') || '').toUpperCase().trim();
   
   try {
-    const tickers = await refreshWatchlistSidebar();
-    // Decide which symbol to load
+    // Always refresh sidebar (so user sees their watchlist)
+    await refreshWatchlistSidebar();
+    
+    // Decide which symbol to load on initial page load
+    // Priority: URL param > VNINDEX (default for new visit)
+    // Watchlist symbols only load when user clicks them
     let symToLoad;
     if (urlSym && urlSym.length >= 3) {
       symToLoad = urlSym;
-    } else if (tickers.length > 0) {
-      symToLoad = tickers[0];
     } else {
-      symToLoad = 'VIC';  // default fallback for new users
+      symToLoad = 'VNINDEX';  // always default to VNINDEX on first load
     }
     await loadStock(symToLoad);
   } catch (err) {
     console.warn('Watchlist API:', err);
     const fallback = ['VIC', 'FPT', 'HPG', 'VCB', 'MWG', 'MSN', 'VHM', 'TCB'];
     renderWatchlistSidebar(fallback, fallback[0]);
-    await loadStock(urlSym && urlSym.length >= 3 ? urlSym : fallback[0]);
+    await loadStock(urlSym && urlSym.length >= 3 ? urlSym : 'VNINDEX');
   }
 }
 
@@ -915,9 +1054,30 @@ document.getElementById('searchInput').addEventListener('keydown', async (e) => 
   const sym = e.target.value.trim().toUpperCase();
   if (sym.length < 3) return;
   e.preventDefault();
-  e.target.value = '';
-  await addTickerToWatchlist(sym);
-  await loadStock(sym);
+  
+  // Validate symbol exists before clearing input
+  const input = e.target;
+  const originalValue = input.value;
+  input.disabled = true;
+  
+  try {
+    const checkRes = await fetch(`${API}/api/stock/${sym}/indicators`);
+    if (!checkRes.ok) {
+      // Symbol invalid - keep input value, show error
+      input.disabled = false;
+      input.focus();
+      input.select();
+      showError(`Mã "${sym}" không tồn tại hoặc không có data`);
+      return;
+    }
+    // Symbol valid - clear input and load
+    input.value = '';
+    input.disabled = false;
+    await loadStock(sym);
+  } catch (err) {
+    input.disabled = false;
+    showError(`Lỗi kiểm tra mã: ${err.message}`);
+  }
 });
 
 document.querySelectorAll('.tabs button').forEach(b => {
