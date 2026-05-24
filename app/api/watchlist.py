@@ -194,3 +194,46 @@ async def delete_alert(alert_id: int, user_fp: str = Query(..., min_length=8)):
         if cursor.rowcount == 0:
             raise HTTPException(404, "Alert not found")
         return {"message": "Alert deleted"}
+
+# ============================================================
+# ALERT NOTIFICATION (Phase 3 Day 3)
+# ============================================================
+@router.get("/alert/triggered")
+async def get_triggered_alerts(
+    user_fp: str = Query(..., min_length=8),
+    since: Optional[str] = Query(None, description="ISO datetime - chi tra ve alerts trigger sau thoi diem nay"),
+):
+    """
+    Lay alerts da trigger (triggered_at IS NOT NULL).
+    Frontend goi moi 30s, neu co alert moi -> show notification.
+    """
+    with get_db() as conn:
+        sql = """
+            SELECT * FROM alerts 
+            WHERE user_fp = ? AND triggered_at IS NOT NULL AND is_active = 1
+        """
+        params = [user_fp]
+        
+        if since:
+            sql += " AND triggered_at > ?"
+            params.append(since)
+        
+        sql += " ORDER BY triggered_at DESC LIMIT 20"
+        
+        cursor = conn.execute(sql, params)
+        return {"alerts": [dict_from_row(row) for row in cursor.fetchall()]}
+
+
+@router.post("/alert/{alert_id}/ack")
+async def ack_alert(alert_id: int, user_fp: str = Query(..., min_length=8)):
+    """
+    User da thay notification -> set is_active=0 de khong notify nua.
+    """
+    with get_db() as conn:
+        cursor = conn.execute(
+            "UPDATE alerts SET is_active = 0 WHERE id = ? AND user_fp = ?",
+            (alert_id, user_fp),
+        )
+        if cursor.rowcount == 0:
+            raise HTTPException(404, "Alert not found")
+        return {"message": "Alert acknowledged"}

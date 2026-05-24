@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from app.config import settings
 from app.db.database import init_db
+from app.services.alert_scanner import scanner_loop
 from app.api import stock, market, screener, calendar, risk, watchlist
 
 @asynccontextmanager
@@ -13,7 +14,11 @@ async def lifespan(app: FastAPI):
     logger.info(f"Environment: {settings.APP_ENV}")
     init_db()
     logger.info("Database initialized")
+    import asyncio
+    scanner_task = asyncio.create_task(scanner_loop())
+    logger.info("Alert scanner started")
     yield
+    scanner_task.cancel()
     logger.info("VPASTOCK shutting down")
 
 app = FastAPI(
