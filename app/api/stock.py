@@ -316,3 +316,127 @@ async def get_pivots(
         import traceback
         logger.error(f"Pivot error for {symbol}: {e}\n{traceback.format_exc()}")
         raise HTTPException(500, f"Failed: {e}")
+
+#---------------------------------------------------------------------------------
+# ============================================================
+# AI DEEP ANALYSIS - Phase 4 (Streaming SSE)
+# ============================================================
+@router.get("/{symbol}/ai-deep")
+async def ai_deep_analysis(symbol: str):
+    """
+    AI Claude phan tich chuyen sau tong hop 12 features.
+    Stream response qua Server-Sent Events.
+    """
+    from fastapi.responses import StreamingResponse
+    from app.services.ai_deep import analyze_stream
+    from datetime import timedelta
+    
+    symbol = symbol.upper()
+    
+    # === Step 1: Collect data from all features ===
+    data = {}
+    
+    try:
+        # Common date range
+        end_date = datetime.now().strftime("%Y-%m-%d")
+        start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+        
+        # 1. Indicators (last + minimal series)
+        try:
+            df = await vnstock_client.get_history(symbol, start=start_date, end=end_date, interval="1D")
+            if df is not None and not df.empty:
+                from app.core.indicators import compute_all
+                df_ind = compute_all(df)
+                if len(df_ind) > 0:
+                    last_row = df_ind.iloc[-1]
+                    data["indicators"] = {
+                        "last": {
+                            "price": float(last_row.get("close", 0)),
+                            "ma20": _safe_float(last_row.get("ma20")),
+                            "ma50": _safe_float(last_row.get("ma50")),
+                            "ma200": _safe_float(last_row.get("ma200")),
+                            "rsi": _safe_float(last_row.get("rsi")),
+                            "macd": _safe_float(last_row.get("macd")),
+                            "macd_signal": _safe_float(last_row.get("macd_signal")),
+                            "mfi": _safe_float(last_row.get("mfi")),
+                            "adx": _safe_float(last_row.get("adx")),
+                            "plus_di": _safe_float(last_row.get("plus_di")),
+                            "minus_di": _safe_float(last_row.get("minus_di")),
+                            "bb_upper": _safe_float(last_row.get("bb_upper")),
+                            "bb_middle": _safe_float(last_row.get("bb_middle")),
+                            "bb_lower": _safe_float(last_row.get("bb_lower")),
+                            "vol_ratio": _safe_float(last_row.get("vol_ratio")),
+                            "vpa": last_row.get("vpa", "Normal"),
+                        }
+                    }
+        except Exception as e:
+            logger.warning(f"[AI DEEP] indicators fail: {e}")
+        
+        # 2. Build df_clean for indicators
+        if df is not None and not df.empty:
+            df_clean = pd.DataFrame({
+                "time": pd.to_datetime(df.index).astype("int64") // 1_000_000,
+                "open": df["open"].values,
+                "high": df["high"].values,
+                "low": df["low"].values,
+                "close": df["close"].values,
+            })
+            
+            # 3. RSI Combo
+            try:
+                from app.services.rsi_combo import calculate_rsi_combo
+                rsi_result = calculate_rsi_combo(df_clean)
+                data["rsi_combo"] = {"counts": {k: len(v) for k, v in rsi_result.items() if isinstance(v, list)}}
+            except Exception as e:
+                logger.warning(f"[AI DEEP] rsi_combo fail: {e}")
+            
+            # 4. EMA + SuperTrend
+            try:
+                from app.services.ema_supertrend import calculate_ema_cross, calculate_supertrend
+                ema_r = calculate_ema_cross(df_clean)
+                st_r = calculate_supertrend(df_clean)
+                data["ema_supertrend"] = {
+                    "ema": {"counts": ema_r.get("counts", {})},
+                    "supertrend": {"counts": st_r.get("counts", {})},
+                }
+            except Exception as e:
+                logger.warning(f"[AI DEEP] ema_st fail: {e}")
+            
+            # 5. Pivot Finder
+            try:
+                from app.services.pivot_finder import calculate_pivots
+                pivot_r = calculate_pivots(df_clean)
+                data["pivots"] = {
+                    "last_signal": pivot_r.get("last_signal"),
+                    "counts": pivot_r.get("counts", {}),
+                }
+            except Exception as e:
+                logger.warning(f"[AI DEEP] pivot fail: {e}")
+    
+    except Exception as e:
+        logger.error(f"[AI DEEP] Data collection fail for {symbol}: {e}")
+        raise HTTPException(500, f"Data collection failed: {e}")
+    
+    # === Step 2: Stream AI response ===
+    async def event_generator():
+        try:
+            async for chunk in analyze_stream(symbol, data):
+                # SSE format: data: <text>\n\n
+                # Escape newlines in chunk to keep SSE valid
+                safe = chunk.replace("\n", "\\n")
+                yield f"data: {safe}\n\n"
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            logger.error(f"[AI DEEP] Stream error: {e}")
+            yield f"data: \\n\\n⚠️ Loi: {str(e)}\n\n"
+            yield "data: [DONE]\n\n"
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+            "Connection": "keep-alive",
+        },
+    )

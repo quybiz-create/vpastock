@@ -222,6 +222,33 @@ input{font-family:inherit;color:inherit}
 
 .calc-error{padding:10px;background:var(--red-bg);color:var(--red-hi);border-radius:4px;font-size:11px;border-left:3px solid var(--red);margin-top:8px;font-family:var(--mono);display:none}
 .calc-error.show{display:block}
+/* === AI DEEP ANALYSIS === */
+.ai-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.ai-refresh-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);width:28px;height:28px;border-radius:5px;cursor:pointer;font-size:14px;transition:all .15s}
+.ai-refresh-btn:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ai-refresh-btn:disabled{opacity:0.4;cursor:not-allowed}
+.ai-refresh-btn.loading{animation:ai-spin 1s linear infinite}
+
+.ai-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 10px;text-align:center}
+.ai-spinner{width:32px;height:32px;border:3px solid var(--bg3);border-top-color:var(--blue);border-radius:50%;animation:ai-spin 0.8s linear infinite;margin-bottom:12px}
+.ai-loading-text{font-size:13px;color:var(--text);font-weight:500;margin-bottom:4px}
+.ai-loading-sub{font-size:10px;color:var(--text2)}
+@keyframes ai-spin{to{transform:rotate(360deg)}}
+
+.ai-content{font-size:12px;line-height:1.65;color:var(--text);white-space:pre-wrap;word-wrap:break-word;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.ai-content b,.ai-content strong{color:#ffd54f;font-weight:600}
+.ai-content::after{content:'▊';color:var(--blue);animation:ai-blink 1s steps(2) infinite;margin-left:1px;display:none}
+.ai-content.streaming::after{display:inline}
+
+.ai-error{padding:14px;background:rgba(239,68,68,0.1);border:1px solid var(--red);border-radius:5px;color:var(--red);font-size:12px}
+.ai-footer{font-size:10px;color:var(--text3);margin-top:12px;padding-top:10px;border-top:1px solid var(--border);text-align:center}
+.ai-disclaimer{font-style:italic}
+
+@keyframes ai-blink{50%{opacity:0}}
+
+/* Tab AI badge */
+.tabs button[data-tab="ai"]{position:relative}
+
 /* === MOBILE RESPONSIVE - AGGRESSIVE === */
 @media (max-width: 768px) {
   body{font-size:13px}
@@ -481,6 +508,7 @@ input{font-family:inherit;color:inherit}
 
     <div class="tabs">
       <button class="active" data-tab="vpa">VPA</button>
+      <button data-tab="ai">🤖 AI</button>
       <button data-tab="fin">Tài chính</button>
       <button data-tab="info">Info</button>
       <button data-tab="calc">💰 Tính lệnh</button>
@@ -508,6 +536,28 @@ input{font-family:inherit;color:inherit}
           <span class="t2-time" id="t2Countdown">--</span>
         </div>
         <a href="t2-calculator.html" class="t2-link" target="_blank">→ Mở Trình tính T+2 đầy đủ</a>
+      </div>
+
+      <!-- TAB AI DEEP (hidden mac dinh, show khi tab ai active) -->
+      <div id="aiSection" style="display:none">
+        <div class="ai-header">
+          <h4 style="margin:0">🤖 AI Claude phân tích</h4>
+          <button class="ai-refresh-btn" id="btnAiRefresh" title="Phân tích lại">🔄</button>
+        </div>
+        <p style="font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.4">
+          Tổng hợp <b>12 chỉ báo</b> (VPA, MA, RSI, MACD, ADX, BB, VPA, RSI Combo, EMA Cross, SuperTrend, Pivot Finder) thành báo cáo chuyên sâu.
+        </p>
+        <div id="aiLoading" class="ai-loading" style="display:none">
+          <div class="ai-spinner"></div>
+          <div class="ai-loading-text">Đang phân tích <span id="aiLoadingSymbol">--</span>...</div>
+          <div class="ai-loading-sub">Claude AI đang tổng hợp 12 chỉ báo</div>
+        </div>
+        <div id="aiContent" class="ai-content"></div>
+        <div id="aiError" class="ai-error" style="display:none"></div>
+        <div id="aiFooter" class="ai-footer" style="display:none">
+          <span id="aiUpdatedAt"></span>
+          · <span class="ai-disclaimer">Chỉ tham khảo, không phải lời khuyên đầu tư</span>
+        </div>
       </div>
 
       <!-- TAB TINH LENH (hidden mac dinh, show khi tab calc active) -->
@@ -1555,7 +1605,13 @@ document.querySelectorAll('.tabs button').forEach(b => {
     // Show/hide content based on tab
     const tab = b.dataset.tab;
     const calcSection = document.getElementById('calcSection');
+    const aiSection = document.getElementById('aiSection');
     const vpaContent = document.querySelectorAll('#tabContent > h4, #tabContent > p, #tabContent > .t2-widget');
+    
+    // Hide all special sections first
+    calcSection.style.display = 'none';
+    aiSection.style.display = 'none';
+    vpaContent.forEach(el => el.style.display = '');
     
     if (tab === 'calc') {
       calcSection.style.display = 'block';
@@ -1567,12 +1623,152 @@ document.querySelectorAll('.tabs button').forEach(b => {
       if (priceVnd > 0 && !document.getElementById('calcEntry').value || document.getElementById('calcEntry').value == '0') {
         document.getElementById('calcEntry').value = Math.round(priceVnd);
       }
-    } else {
-      calcSection.style.display = 'none';
-      vpaContent.forEach(el => el.style.display = '');
+    } else if (tab === 'ai') {
+      aiSection.style.display = 'block';
+      vpaContent.forEach(el => el.style.display = 'none');
+      // Auto-fetch if no cached data
+      maybeFetchAi();
     }
   });
 });
+
+// ========== AI DEEP ANALYSIS ==========
+const AI_CACHE_TTL = 300000; // 5 phut
+const aiCache = {}; // {symbol: {text, fetchedAt}}
+
+function maybeFetchAi(forceRefresh = false) {
+  const sym = currentSymbol;
+  if (!sym) return;
+  
+  // Check cache
+  const cached = aiCache[sym];
+  const now = Date.now();
+  if (!forceRefresh && cached && (now - cached.fetchedAt) < AI_CACHE_TTL) {
+    renderAiContent(cached.text, cached.fetchedAt);
+    return;
+  }
+  
+  fetchAiDeep(sym);
+}
+
+async function fetchAiDeep(symbol) {
+  const loadingEl = document.getElementById('aiLoading');
+  const contentEl = document.getElementById('aiContent');
+  const errorEl = document.getElementById('aiError');
+  const footerEl = document.getElementById('aiFooter');
+  const refreshBtn = document.getElementById('btnAiRefresh');
+  const symEl = document.getElementById('aiLoadingSymbol');
+  
+  // Reset UI
+  contentEl.textContent = '';
+  contentEl.classList.add('streaming');
+  errorEl.style.display = 'none';
+  footerEl.style.display = 'none';
+  loadingEl.style.display = 'flex';
+  symEl.textContent = symbol;
+  refreshBtn.classList.add('loading');
+  refreshBtn.disabled = true;
+  
+  let fullText = '';
+  let receivedFirstChunk = false;
+  
+  try {
+    const response = await fetch(`${API}/api/stock/${symbol}/ai-deep`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') {
+          contentEl.classList.remove('streaming');
+          break;
+        }
+        // Unescape \n back to newline
+        const chunk = data.replace(/\\n/g, '\n');
+        
+        if (!receivedFirstChunk) {
+          loadingEl.style.display = 'none';
+          receivedFirstChunk = true;
+        }
+        
+        fullText += chunk;
+        contentEl.innerHTML = renderMarkdown(fullText);
+        // Auto-scroll if needed (only if user not manually scrolled up)
+      }
+    }
+    
+    // Cache
+    aiCache[symbol] = { text: fullText, fetchedAt: Date.now() };
+    
+    // Footer
+    const ts = new Date();
+    const hh = String(ts.getHours()).padStart(2,'0');
+    const mm = String(ts.getMinutes()).padStart(2,'0');
+    document.getElementById('aiUpdatedAt').textContent = `Cập nhật ${hh}:${mm}`;
+    footerEl.style.display = 'block';
+  } catch (err) {
+    loadingEl.style.display = 'none';
+    errorEl.textContent = `⚠️ Lỗi: ${err.message}`;
+    errorEl.style.display = 'block';
+    contentEl.classList.remove('streaming');
+  } finally {
+    refreshBtn.classList.remove('loading');
+    refreshBtn.disabled = false;
+  }
+}
+
+function renderAiContent(text, fetchedAt) {
+  const contentEl = document.getElementById('aiContent');
+  const footerEl = document.getElementById('aiFooter');
+  const loadingEl = document.getElementById('aiLoading');
+  const errorEl = document.getElementById('aiError');
+  
+  loadingEl.style.display = 'none';
+  errorEl.style.display = 'none';
+  contentEl.classList.remove('streaming');
+  contentEl.innerHTML = renderMarkdown(text);
+  
+  const ts = new Date(fetchedAt);
+  const hh = String(ts.getHours()).padStart(2,'0');
+  const mm = String(ts.getMinutes()).padStart(2,'0');
+  document.getElementById('aiUpdatedAt').textContent = `Cached ${hh}:${mm}`;
+  footerEl.style.display = 'block';
+}
+
+function renderMarkdown(text) {
+  // Escape HTML
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  // **bold**
+  html = html.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  // Preserve newlines (CSS white-space:pre-wrap handles)
+  return html;
+}
+
+// Refresh button
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('btnAiRefresh');
+  if (btn) btn.addEventListener('click', () => maybeFetchAi(true));
+});
+
+// Clear AI cache when symbol changes (so next time tab opens, fetch fresh)
+// Already handled because cache is by-symbol
+
+
 
 // === TINH LENH (CALC) ===
 const LS_NAV_KEY = 'vpastock_nav';
