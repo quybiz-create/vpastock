@@ -88,6 +88,19 @@ input{font-family:inherit;color:inherit}
 .rcb-item input[type=checkbox]{cursor:pointer;accent-color:#2962ff}
 .rcb-icon{font-size:13px;line-height:1}
 .rcb-counts{font-family:'IBM Plex Mono',monospace}
+
+/* === TRADING SYSTEM BOX === */
+.trading-system-box{position:absolute;top:12px;left:12px;z-index:10;background:rgba(15,21,32,0.92);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;min-width:200px;backdrop-filter:blur(4px);box-shadow:0 4px 12px rgba(0,0,0,0.5)}
+.tsb-title{color:#fbc02d;font-weight:700;font-size:12px;margin-bottom:8px;letter-spacing:0.5px;text-align:center;border-bottom:1px solid #2a313c;padding-bottom:5px}
+.tsb-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;gap:12px}
+.tsb-label{color:#787b86;font-size:10px}
+.tsb-val{color:#e6edf3;font-weight:600;font-size:11px}
+.tsb-val.buy{color:#00e676}
+.tsb-val.sell{color:#ff1744}
+.tsb-val.profit{color:#00e676}
+.tsb-val.loss{color:#ff1744}
+.tsb-divider{height:1px;background:#2a313c;margin:6px 0}
+.tsb-row.tsb-pl .tsb-val{font-size:13px;font-weight:700}
 .ind-cell{background:var(--bg2);padding:9px 12px;display:flex;flex-direction:column;gap:2px}
 .ind-cell .ind-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--mono);font-weight:600}
 .ind-cell .ind-value{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text)}
@@ -258,8 +271,18 @@ input{font-family:inherit;color:inherit}
 
     <div class="chart-wrap">
       <div id="loadingBox" class="loading" style="display:none">Đang tải dữ liệu</div>
-      <div class="chart-main">
+      <div class="chart-main" style="position:relative">
         <canvas id="mainChart"></canvas>
+        <div id="tradingSystemBox" class="trading-system-box" style="display:none">
+          <div class="tsb-title">📈 Trading System</div>
+          <div class="tsb-row"><span class="tsb-label">Last Signal:</span><span class="tsb-val" id="tsbSignal">--</span></div>
+          <div class="tsb-row"><span class="tsb-label">Entry @:</span><span class="tsb-val" id="tsbEntry">--</span></div>
+          <div class="tsb-row"><span class="tsb-label">Bars ago:</span><span class="tsb-val" id="tsbBarsAgo">--</span></div>
+          <div class="tsb-row"><span class="tsb-label">Current:</span><span class="tsb-val" id="tsbCurrent">--</span></div>
+          <div class="tsb-row tsb-pl"><span class="tsb-label">P/L:</span><span class="tsb-val" id="tsbPL">--</span></div>
+          <div class="tsb-divider"></div>
+          <div class="tsb-row"><span class="tsb-label">Pivot Count:</span><span class="tsb-val" id="tsbCounts">--</span></div>
+        </div>
       </div>
       <div class="rsi-combo-bar" id="rsiComboBar">
         <span class="rcb-title">🎯 RSI Combo</span>
@@ -272,13 +295,13 @@ input{font-family:inherit;color:inherit}
         <span class="rcb-counts" id="rcbCounts" style="margin-left:auto;color:#787b86;font-size:10px"></span>
       </div>
       <div class="rsi-combo-bar" id="emaStBar">
-        <span class="rcb-title">📊 EMA + SuperTrend</span>
+        <span class="rcb-title">📊 EMA + SuperTrend + Pivot</span>
         <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="ema_lines" checked> <span class="rcb-icon" style="color:#1e90ff">━</span> EMA 20/40</label>
         <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="golden_cross" checked> <span class="rcb-icon" style="color:#00e676">▲</span> Golden</label>
         <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="death_cross" checked> <span class="rcb-icon" style="color:#ff1744">▼</span> Death</label>
         <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="st_lines"> <span class="rcb-icon" style="color:#1c86ee">━</span> SuperTrend</label>
-        <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="st_buy"> <span class="rcb-icon" style="color:#00e676">▲</span> ST Buy</label>
-        <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="st_sell"> <span class="rcb-icon" style="color:#cd3333">▼</span> ST Sell</label>
+        <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="pivot_buy" checked> <span class="rcb-icon" style="color:#00e676">▲</span> Buy@</label>
+        <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="pivot_sell" checked> <span class="rcb-icon" style="color:#ff1744">▼</span> Sell@</label>
         <span class="rcb-counts" id="estCounts" style="margin-left:auto;color:#787b86;font-size:10px"></span>
       </div>
       <div class="chart-sub">
@@ -609,6 +632,9 @@ async function loadStock(symbol) {
     // Fetch EMA Cross + SuperTrend (async)
     fetchAndRenderEmaSt();
     
+    // Fetch Pivot Finder + update Trading System Box (async)
+    fetchAndRenderPivot();
+    
     showLoading(false);
   } catch (err) {
     showLoading(false);
@@ -860,12 +886,13 @@ async function fetchAndRenderEmaSt() {
 function renderEmaStMarkers() {
   if (!mainChart || !window.__emaStData) return;
   
-  // Remove old EMA/ST datasets (label starts with EMA_/ST_)
+  // Remove old EMA/ST/Pivot datasets
   mainChart.data.datasets = mainChart.data.datasets.filter(ds => {
     return !ds.label || (!ds.label.startsWith('EMA20') && !ds.label.startsWith('EMA40')
                          && !ds.label.startsWith('ST Up') && !ds.label.startsWith('ST Down')
                          && !ds.label.startsWith('▲ Golden') && !ds.label.startsWith('▼ Death')
-                         && !ds.label.startsWith('▲ ST Buy') && !ds.label.startsWith('▼ ST Sell'));
+                         && !ds.label.startsWith('▲ ST Buy') && !ds.label.startsWith('▼ ST Sell')
+                         && !ds.label.startsWith('▲ Buy Pivot') && !ds.label.startsWith('▼ Sell Pivot'));
   });
   
   const ema = window.__emaStData.ema || {};
@@ -961,32 +988,33 @@ function renderEmaStMarkers() {
     });
   }
   
-  // ST Buy markers
-  if (togState.st_buy && (st.buy_signals || []).length > 0) {
+  // ST Buy markers (DEPRECATED - replaced by Pivot)
+  // Pivot Buy markers - chuan AmiBroker, chat luong cao
+  if (togState.pivot_buy && window.__pivotData && (window.__pivotData.pivot_lows || []).length > 0) {
     mainChart.data.datasets.push({
-      label: '▲ ST Buy',
+      label: '▲ Buy Pivot',
       type: 'scatter',
-      data: st.buy_signals.map(s => ({x: s.time, y: s.price * 0.96})),
+      data: window.__pivotData.pivot_lows.map(s => ({x: s.time, y: s.price * 0.96})),
       backgroundColor: '#00c853',
       borderColor: '#00c853',
-      pointRadius: 7,
-      pointHoverRadius: 9,
+      pointRadius: 10,
+      pointHoverRadius: 13,
       pointStyle: 'triangle',
       rotation: 0,
       showLine: false,
     });
   }
   
-  // ST Sell markers
-  if (togState.st_sell && (st.sell_signals || []).length > 0) {
+  // Pivot Sell markers
+  if (togState.pivot_sell && window.__pivotData && (window.__pivotData.pivot_highs || []).length > 0) {
     mainChart.data.datasets.push({
-      label: '▼ ST Sell',
+      label: '▼ Sell Pivot',
       type: 'scatter',
-      data: st.sell_signals.map(s => ({x: s.time, y: s.price * 1.04})),
+      data: window.__pivotData.pivot_highs.map(s => ({x: s.time, y: s.price * 1.04})),
       backgroundColor: '#d50000',
       borderColor: '#d50000',
-      pointRadius: 7,
-      pointHoverRadius: 9,
+      pointRadius: 10,
+      pointHoverRadius: 13,
       pointStyle: 'triangle',
       rotation: 180,
       showLine: false,
@@ -994,6 +1022,80 @@ function renderEmaStMarkers() {
   }
   
   mainChart.update('none');
+}
+
+// ========== PIVOT FINDER + TRADING SYSTEM BOX ==========
+window.__pivotData = null;
+
+async function fetchAndRenderPivot() {
+  try {
+    const res = await fetch(`${API}/api/stock/${currentSymbol}/pivots`);
+    if (!res.ok) {
+      window.__pivotData = null;
+      document.getElementById('tradingSystemBox').style.display = 'none';
+      renderEmaStMarkers();
+      return;
+    }
+    const data = await res.json();
+    window.__pivotData = data;
+    
+    updateTradingSystemBox();
+    renderEmaStMarkers();
+  } catch (err) {
+    console.warn('Pivot fetch error:', err);
+    window.__pivotData = null;
+  }
+}
+
+function updateTradingSystemBox() {
+  if (!window.__pivotData) {
+    document.getElementById('tradingSystemBox').style.display = 'none';
+    return;
+  }
+  
+  const data = window.__pivotData;
+  const box = document.getElementById('tradingSystemBox');
+  box.style.display = 'block';
+  
+  const sig = data.last_signal;
+  if (!sig) {
+    document.getElementById('tsbSignal').textContent = 'NONE';
+    document.getElementById('tsbEntry').textContent = '--';
+    document.getElementById('tsbBarsAgo').textContent = '--';
+    document.getElementById('tsbPL').textContent = '--';
+  } else {
+    const sigEl = document.getElementById('tsbSignal');
+    sigEl.textContent = sig.type;
+    sigEl.className = 'tsb-val ' + (sig.type === 'BUY' ? 'buy' : 'sell');
+    
+    document.getElementById('tsbEntry').textContent = sig.price.toLocaleString('vi-VN', {maximumFractionDigits: 2});
+    document.getElementById('tsbBarsAgo').textContent = sig.bars_ago + ' bars';
+    
+    // Calculate P/L vs current price
+    const currentPrice = parseFloat((document.getElementById('priceNow').textContent || '0').replace(/[,]/g, ''));
+    if (currentPrice && sig.price) {
+      const plPct = ((currentPrice - sig.price) / sig.price) * 100;
+      const plSign = plPct >= 0 ? '+' : '';
+      const plEl = document.getElementById('tsbPL');
+      // If BUY signal: profit when price up; If SELL: profit when price down
+      const isProfit = (sig.type === 'BUY' && plPct >= 0) || (sig.type === 'SELL' && plPct < 0);
+      plEl.textContent = `${plSign}${plPct.toFixed(2)}%`;
+      plEl.className = 'tsb-val ' + (isProfit ? 'profit' : 'loss');
+      
+      document.getElementById('tsbCurrent').textContent = currentPrice.toLocaleString('vi-VN', {maximumFractionDigits: 2});
+    }
+  }
+  
+  const c = data.counts || {};
+  document.getElementById('tsbCounts').textContent = `${c.buy || 0} Buy / ${c.sell || 0} Sell`;
+  
+  // Update est counts to include pivot counts
+  const emaSt = window.__emaStData;
+  if (emaSt) {
+    const ec = emaSt.ema.counts || {};
+    document.getElementById('estCounts').textContent = 
+      `[Cross: ${ec.golden_cross||0}/${ec.death_cross||0} · Pivot: ${c.buy||0}/${c.sell||0}]`;
+  }
 }
 
 // Listen to EMA/ST toggle changes

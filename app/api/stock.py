@@ -272,3 +272,47 @@ async def get_ema_supertrend(
         import traceback
         logger.error(f"EMA/SuperTrend error for {symbol}: {e}\n{traceback.format_exc()}")
         raise HTTPException(500, f"Failed to calculate: {e}")
+   #---------------------------
+# ============================================================
+# PIVOT FINDER - AmiBroker Trading System (Phase 3 Day 6)
+# ============================================================
+@router.get("/{symbol}/pivots")
+async def get_pivots(
+    symbol: str,
+    days: int = Query(default=365, ge=60, le=1825),
+    n_bars: int = Query(default=12, ge=3, le=50),
+    farback: int = Query(default=100, ge=20, le=500),
+):
+    """
+    Pivot High/Low (Buy/Sell signals) chuan AmiBroker.
+    """
+    from app.services.pivot_finder import calculate_pivots
+    
+    try:
+        from datetime import timedelta
+        end_date = datetime.now().strftime("%Y-%m-%d")
+        start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+        df = await vnstock_client.get_history(
+            symbol.upper(), start=start_date, end=end_date, interval="1D"
+        )
+        
+        if df is None or df.empty:
+            raise HTTPException(404, f"No data for {symbol}")
+        
+        df_clean = pd.DataFrame({
+            "time": pd.to_datetime(df.index).astype("int64") // 1_000_000,
+            "open": df["open"].values,
+            "high": df["high"].values,
+            "low": df["low"].values,
+            "close": df["close"].values,
+        })
+        
+        result = calculate_pivots(df_clean, n_bars=n_bars, farback=farback)
+        result["symbol"] = symbol.upper()
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        logger.error(f"Pivot error for {symbol}: {e}\n{traceback.format_exc()}")
+        raise HTTPException(500, f"Failed: {e}")
