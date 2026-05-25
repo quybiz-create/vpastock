@@ -219,4 +219,56 @@ async def get_rsi_combo(
         import traceback
         logger.error(f"RSI Combo error for {symbol}: {e}\n{traceback.format_exc()}")
         raise HTTPException(500, f"Failed to calculate: {e}")
+#---
 
+# ============================================================
+# EMA CROSS + SUPERTREND (Phase 3 Day 5)
+# ============================================================
+@router.get("/{symbol}/ema-supertrend")
+async def get_ema_supertrend(
+    symbol: str,
+    days: int = Query(default=365, ge=60, le=1825),
+    ema_fast: int = Query(default=20, ge=5, le=100),
+    ema_slow: int = Query(default=40, ge=10, le=200),
+    st_period: int = Query(default=5, ge=2, le=30),
+    st_mult: float = Query(default=2.0, ge=0.5, le=10.0),
+):
+    """
+    EMA Cross + SuperTrend - convert tu AmiBroker AFL.
+    """
+    from app.services.ema_supertrend import calculate_ema_cross, calculate_supertrend
+    
+    try:
+        from datetime import timedelta
+        end_date = datetime.now().strftime("%Y-%m-%d")
+        start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+        df = await vnstock_client.get_history(
+            symbol.upper(), start=start_date, end=end_date, interval="1D"
+        )
+        
+        if df is None or df.empty:
+            raise HTTPException(404, f"No data for {symbol}")
+        
+        # Build clean DataFrame
+        df_clean = pd.DataFrame({
+            "time": pd.to_datetime(df.index).astype("int64") // 1_000_000,
+            "open": df["open"].values,
+            "high": df["high"].values,
+            "low": df["low"].values,
+            "close": df["close"].values,
+        })
+        
+        ema_result = calculate_ema_cross(df_clean, fast=ema_fast, slow=ema_slow)
+        st_result = calculate_supertrend(df_clean, period=st_period, multiplier=st_mult)
+        
+        return {
+            "symbol": symbol.upper(),
+            "ema": ema_result,
+            "supertrend": st_result,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        logger.error(f"EMA/SuperTrend error for {symbol}: {e}\n{traceback.format_exc()}")
+        raise HTTPException(500, f"Failed to calculate: {e}")

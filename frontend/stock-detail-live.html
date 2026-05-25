@@ -271,6 +271,16 @@ input{font-family:inherit;color:inherit}
         <label class="rcb-item"><input type="checkbox" class="rcb-toggle" data-key="rsi_exit"> <span class="rcb-icon" style="color:#ff9800">▽</span> RSI Exit</label>
         <span class="rcb-counts" id="rcbCounts" style="margin-left:auto;color:#787b86;font-size:10px"></span>
       </div>
+      <div class="rsi-combo-bar" id="emaStBar">
+        <span class="rcb-title">📊 EMA + SuperTrend</span>
+        <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="ema_lines" checked> <span class="rcb-icon" style="color:#1e90ff">━</span> EMA 20/40</label>
+        <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="golden_cross" checked> <span class="rcb-icon" style="color:#00e676">▲</span> Golden</label>
+        <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="death_cross" checked> <span class="rcb-icon" style="color:#ff1744">▼</span> Death</label>
+        <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="st_lines"> <span class="rcb-icon" style="color:#1c86ee">━</span> SuperTrend</label>
+        <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="st_buy"> <span class="rcb-icon" style="color:#00e676">▲</span> ST Buy</label>
+        <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="st_sell"> <span class="rcb-icon" style="color:#cd3333">▼</span> ST Sell</label>
+        <span class="rcb-counts" id="estCounts" style="margin-left:auto;color:#787b86;font-size:10px"></span>
+      </div>
       <div class="chart-sub">
         <canvas id="subChart"></canvas>
       </div>
@@ -596,6 +606,9 @@ async function loadStock(symbol) {
     // Fetch RSI Combo signals (async, don't block chart render)
     fetchAndRenderRsiCombo();
     
+    // Fetch EMA Cross + SuperTrend (async)
+    fetchAndRenderEmaSt();
+    
     showLoading(false);
   } catch (err) {
     showLoading(false);
@@ -743,11 +756,12 @@ async function fetchAndRenderRsiCombo() {
 function renderRsiComboMarkers() {
   if (!mainChart || !window.__rsiComboData) return;
   
-  // Remove old RSI Combo datasets (keep candles + MA20 + MA50)
-  // Datasets index 0=candles, 1=MA20, 2=MA50 — anything after is RSI Combo
-  while (mainChart.data.datasets.length > 3) {
-    mainChart.data.datasets.pop();
-  }
+  // Remove ONLY RSI Combo datasets (label starts with markers ★ ▲ ▼ △ ▽)
+  const rsiPrefixes = ['★ BUY', '★ EXIT', '▲ Bull', '▼ Bear', '△ Buy', '▽ Exit'];
+  mainChart.data.datasets = mainChart.data.datasets.filter(ds => {
+    if (!ds.label) return true;
+    return !rsiPrefixes.some(p => ds.label.startsWith(p));
+  });
   
   const signals = window.__rsiComboData.signals || {};
   
@@ -793,6 +807,204 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   loadRcbToggles();
+});
+
+// ========== EMA CROSS + SUPERTREND ==========
+window.__emaStData = null;
+const EST_LS_KEY = 'vpastock_est_toggles';
+
+function loadEstToggles() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(EST_LS_KEY) || '{}');
+    document.querySelectorAll('.est-toggle').forEach(cb => {
+      if (saved.hasOwnProperty(cb.dataset.key)) {
+        cb.checked = saved[cb.dataset.key];
+      }
+    });
+  } catch (e) {}
+}
+
+function saveEstToggles() {
+  const state = {};
+  document.querySelectorAll('.est-toggle').forEach(cb => {
+    state[cb.dataset.key] = cb.checked;
+  });
+  localStorage.setItem(EST_LS_KEY, JSON.stringify(state));
+}
+
+async function fetchAndRenderEmaSt() {
+  try {
+    const res = await fetch(`${API}/api/stock/${currentSymbol}/ema-supertrend`);
+    if (!res.ok) {
+      console.warn('EMA/ST not available for', currentSymbol);
+      window.__emaStData = null;
+      document.getElementById('estCounts').textContent = '';
+      renderEmaStMarkers();
+      return;
+    }
+    const data = await res.json();
+    window.__emaStData = data;
+    
+    const ec = data.ema.counts || {};
+    const sc = data.supertrend.counts || {};
+    document.getElementById('estCounts').textContent = 
+      `[Cross: ${ec.golden_cross||0}/${ec.death_cross||0} · ST: ${sc.buy||0}/${sc.sell||0}]`;
+    
+    renderEmaStMarkers();
+  } catch (err) {
+    console.warn('EMA/ST fetch error:', err);
+    window.__emaStData = null;
+  }
+}
+
+function renderEmaStMarkers() {
+  if (!mainChart || !window.__emaStData) return;
+  
+  // Remove old EMA/ST datasets (label starts with EMA_/ST_)
+  mainChart.data.datasets = mainChart.data.datasets.filter(ds => {
+    return !ds.label || (!ds.label.startsWith('EMA20') && !ds.label.startsWith('EMA40')
+                         && !ds.label.startsWith('ST Up') && !ds.label.startsWith('ST Down')
+                         && !ds.label.startsWith('▲ Golden') && !ds.label.startsWith('▼ Death')
+                         && !ds.label.startsWith('▲ ST Buy') && !ds.label.startsWith('▼ ST Sell'));
+  });
+  
+  const ema = window.__emaStData.ema || {};
+  const st = window.__emaStData.supertrend || {};
+  
+  // Get toggle states
+  const togState = {};
+  document.querySelectorAll('.est-toggle').forEach(cb => {
+    togState[cb.dataset.key] = cb.checked;
+  });
+  
+  // EMA lines
+  if (togState.ema_lines) {
+    mainChart.data.datasets.push({
+      label: 'EMA20',
+      type: 'line',
+      data: (ema.ema_fast || []).map(s => ({x: s.time, y: s.value})),
+      borderColor: '#1e90ff',
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      pointRadius: 0,
+      tension: 0,
+      order: 5,
+    });
+    mainChart.data.datasets.push({
+      label: 'EMA40',
+      type: 'line',
+      data: (ema.ema_slow || []).map(s => ({x: s.time, y: s.value})),
+      borderColor: '#0d47a1',
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      pointRadius: 0,
+      tension: 0,
+      order: 6,
+    });
+  }
+  
+  // Golden Cross markers
+  if (togState.golden_cross && (ema.golden_cross || []).length > 0) {
+    mainChart.data.datasets.push({
+      label: '▲ Golden',
+      type: 'scatter',
+      data: ema.golden_cross.map(s => ({x: s.time, y: s.price * 0.97})),
+      backgroundColor: '#00e676',
+      borderColor: '#00e676',
+      pointRadius: 9,
+      pointHoverRadius: 11,
+      pointStyle: 'triangle',
+      rotation: 0,
+      showLine: false,
+    });
+  }
+  
+  // Death Cross markers
+  if (togState.death_cross && (ema.death_cross || []).length > 0) {
+    mainChart.data.datasets.push({
+      label: '▼ Death',
+      type: 'scatter',
+      data: ema.death_cross.map(s => ({x: s.time, y: s.price * 1.03})),
+      backgroundColor: '#ff1744',
+      borderColor: '#ff1744',
+      pointRadius: 9,
+      pointHoverRadius: 11,
+      pointStyle: 'triangle',
+      rotation: 180,
+      showLine: false,
+    });
+  }
+  
+  // SuperTrend lines
+  if (togState.st_lines) {
+    mainChart.data.datasets.push({
+      label: 'ST Up',
+      type: 'line',
+      data: (st.line_up || []).map(s => ({x: s.time, y: s.value})),
+      borderColor: '#1c86ee',
+      backgroundColor: 'transparent',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      tension: 0,
+      order: 7,
+    });
+    mainChart.data.datasets.push({
+      label: 'ST Down',
+      type: 'line',
+      data: (st.line_down || []).map(s => ({x: s.time, y: s.value})),
+      borderColor: '#cd3333',
+      backgroundColor: 'transparent',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      tension: 0,
+      order: 8,
+    });
+  }
+  
+  // ST Buy markers
+  if (togState.st_buy && (st.buy_signals || []).length > 0) {
+    mainChart.data.datasets.push({
+      label: '▲ ST Buy',
+      type: 'scatter',
+      data: st.buy_signals.map(s => ({x: s.time, y: s.price * 0.96})),
+      backgroundColor: '#00c853',
+      borderColor: '#00c853',
+      pointRadius: 7,
+      pointHoverRadius: 9,
+      pointStyle: 'triangle',
+      rotation: 0,
+      showLine: false,
+    });
+  }
+  
+  // ST Sell markers
+  if (togState.st_sell && (st.sell_signals || []).length > 0) {
+    mainChart.data.datasets.push({
+      label: '▼ ST Sell',
+      type: 'scatter',
+      data: st.sell_signals.map(s => ({x: s.time, y: s.price * 1.04})),
+      backgroundColor: '#d50000',
+      borderColor: '#d50000',
+      pointRadius: 7,
+      pointHoverRadius: 9,
+      pointStyle: 'triangle',
+      rotation: 180,
+      showLine: false,
+    });
+  }
+  
+  mainChart.update('none');
+}
+
+// Listen to EMA/ST toggle changes
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.est-toggle').forEach(cb => {
+    cb.addEventListener('change', () => {
+      saveEstToggles();
+      renderEmaStMarkers();
+    });
+  });
+  loadEstToggles();
 });
 
 function renderIndicators(last) {
