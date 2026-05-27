@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VPASTOCK — Live Data</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.2.1/dist/chartjs-chart-financial.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://unpkg.com/lightweight-charts@5.0.5/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root{
   --bg:#131722; --bg2:#1e222d; --bg3:#2a2e39; --bg4:#363a45;
@@ -75,8 +73,8 @@ input{font-family:inherit;color:inherit}
 .price-block .session-info{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px}
 
 .chart-wrap{flex:1;display:flex;flex-direction:column;padding:8px;overflow:hidden;gap:8px;position:relative}
-.chart-main{flex:1;min-height:0;position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px}
-.chart-sub{height:130px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px}
+.chart-main{flex:1;min-height:500px;position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.crosshair-info{position:absolute;top:6px;right:70px;z-index:6;font-size:11px;color:var(--text);font-family:'IBM Plex Mono',monospace;background:rgba(19,23,34,0.85);padding:4px 8px;border-radius:3px;pointer-events:none;display:none}
 
 .ind-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);padding:1px;border-radius:6px;overflow:hidden;border:1px solid var(--border)}
 
@@ -263,9 +261,10 @@ input{font-family:inherit;color:inherit}
   .search input{font-size:12px;width:100%}
   .user{order:4;width:28px;height:28px;font-size:11px;flex-shrink:0}
   
-  /* Ticker strip */
-  .ticker-strip{padding:4px 8px !important;flex-wrap:wrap;gap:6px !important}
-  .ticker-item{font-size:10px}
+  /* Ticker strip - HIDE trên mobile cho gọn */
+  .ticker-strip{
+    display:none !important;
+  }
   
   /* MAIN LAYOUT - FORCE single column */
   .main{
@@ -329,15 +328,32 @@ input{font-family:inherit;color:inherit}
     gap:4px !important;
     overflow:visible !important;
     flex:none !important;
+    display:flex !important;
+    flex-direction:column !important;
   }
   .chart-main{
-    min-height:300px !important;
-    height:50vh !important;
+    min-height:340px !important;
+    height:60vh !important;
+    max-height:500px !important;
     position:relative !important;
+    width:100% !important;
+    flex:none !important;
   }
-  .chart-sub{
-    min-height:80px !important;
-    height:14vh !important;
+  #chartContainer{
+    width:100% !important;
+    height:100% !important;
+    position:absolute !important;
+    inset:0 !important;
+  }
+  .crosshair-info{
+    font-size:9px !important;
+    right:55px !important;
+    top:4px !important;
+    padding:2px 5px !important;
+    max-width:60%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
   }
   
   /* Trading System Box - compact */
@@ -421,7 +437,7 @@ input{font-family:inherit;color:inherit}
 </div>
 
 <div class="ticker-strip">
-  <div class="ticker-item up"><span class="sym">VNI</span><span class="val">đang test...</span></div>
+  <div class="ticker-item up"><span class="sym">VNINDEX</span><span class="val" id="vniValue">--</span></div>
   <div class="ticker-item up"><span class="sym">DATA</span><span class="val">LIVE từ KBS</span></div>
   <div class="ticker-item up"><span class="sym">BACKEND</span><span class="val" id="backendUrl">--</span></div>
 </div>
@@ -452,7 +468,8 @@ input{font-family:inherit;color:inherit}
     <div class="chart-wrap">
       <div id="loadingBox" class="loading" style="display:none">Đang tải dữ liệu</div>
       <div class="chart-main" style="position:relative">
-        <canvas id="mainChart"></canvas>
+        <div id="chartContainer" style="width:100%;height:100%;position:absolute;inset:0"></div>
+        <div id="crosshairInfo" class="crosshair-info"></div>
         <div id="tradingSystemBox" class="trading-system-box" style="display:none">
           <div class="tsb-title">📈 Trading System</div>
           <div class="tsb-row"><span class="tsb-label">Last Signal:</span><span class="tsb-val" id="tsbSignal">--</span></div>
@@ -483,9 +500,6 @@ input{font-family:inherit;color:inherit}
         <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="pivot_buy" checked> <span class="rcb-icon" style="color:#00e676">▲</span> Buy@</label>
         <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="pivot_sell" checked> <span class="rcb-icon" style="color:#ff1744">▼</span> Sell@</label>
         <span class="rcb-counts" id="estCounts" style="margin-left:auto;color:#787b86;font-size:10px"></span>
-      </div>
-      <div class="chart-sub">
-        <canvas id="subChart"></canvas>
       </div>
       <div class="ind-bar" id="indBar">
         <div class="ind-cell"><div class="ind-label">MA20</div><div class="ind-value" id="indMa20">--</div><div class="ind-state neutral" id="indMa20State">--</div></div>
@@ -675,8 +689,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 const WATCHLIST_NAME = 'Demo';
 let watchlistTickers = [];
-let mainChart = null;
-let subChart = null;
 let currentSymbol = 'VNINDEX';
 
 // === WATCHLIST STATE ===
@@ -868,58 +880,194 @@ function renderHeader(data) {
   document.getElementById('sessionInfo').textContent = `Phiên ${lastDate.toLocaleDateString('vi-VN')}`;
 }
 
-function renderChart(series) {
-  const candles = series.map(s => ({x: s.time, o: s.open, h: s.high, l: s.low, c: s.close}));
-  const ma20 = series.map(s => ({x: s.time, y: s.ma20}));
-  const ma50 = series.map(s => ({x: s.time, y: s.ma50}));
-  const rsi = series.map(s => ({x: s.time, y: s.rsi}));
+// ========== LIGHTWEIGHT CHARTS v5 - MULTI-PANE ==========
+let chart = null;
+let candleSeries = null, ma20Series = null, ma50Series = null;
+let volumeSeries = null, rsiSeries = null;
+let emaFastSeries = null, emaSlowSeries = null;
+let stUpSeries = null, stDownSeries = null;
+// Backward compat: keep mainChart/subChart symbols for old code that may reference them
+let mainChart = null, subChart = null;
 
-  if (mainChart) mainChart.destroy();
-  if (subChart) subChart.destroy();
+const CHART_COLORS = {
+  bg: '#1e222d',
+  text: '#d1d4dc',
+  text2: '#787b86',
+  border: '#363a45',
+  grid: '#252a34',
+  up: '#26a69a',
+  down: '#ef5350',
+  ma20: '#2962ff',
+  ma50: '#ff9800',
+  rsi: '#ab47bc',
+  ema_fast: '#1e90ff',
+  ema_slow: '#0d47a1',
+  st_up: '#26a69a',
+  st_down: '#ef5350',
+};
 
-  const mainCtx = document.getElementById('mainChart').getContext('2d');
-  mainChart = new Chart(mainCtx, {
-    type: 'candlestick',
-    data: {
-      datasets: [
-        {
-          label: currentSymbol,
-          data: candles,
-          color: {up: '#26a69a', down: '#ef5350', unchanged: '#787b86'},
-          borderColor: {up: '#26a69a', down: '#ef5350', unchanged: '#787b86'}
-        },
-        {label: 'MA20', type: 'line', data: ma20, borderColor: '#2962ff', backgroundColor: 'transparent', borderWidth: 1.4, pointRadius: 0, tension: 0.1},
-        {label: 'MA50', type: 'line', data: ma50, borderColor: '#ff9800', backgroundColor: 'transparent', borderWidth: 1.4, pointRadius: 0, tension: 0.1}
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: false,
-      scales: {
-        x: {type: 'time', time: {unit: 'day', displayFormats: {day: 'dd/MM'}}, ticks: {color: '#787b86', font: {family: 'IBM Plex Mono', size: 10}, maxTicksLimit: 12}, grid: {color: '#1e222d'}},
-        y: {position: 'right', ticks: {color: '#787b86', font: {family: 'IBM Plex Mono', size: 10}}, grid: {color: '#1e222d'}}
+function ensureChart() {
+  if (chart) return chart;
+  const container = document.getElementById('chartContainer');
+  if (!container) return null;
+  
+  // Fallback dimensions if container not yet sized
+  const w = container.clientWidth || 800;
+  const h = container.clientHeight || 500;
+  
+  chart = LightweightCharts.createChart(container, {
+    width: w,
+    height: h,
+    layout: {
+      background: { type: 'solid', color: CHART_COLORS.bg },
+      textColor: CHART_COLORS.text,
+      attributionLogo: false,
+      panes: {
+        separatorColor: CHART_COLORS.border,
+        separatorHoverColor: '#2962ff',
+        enableResize: true,
       },
-      plugins: {
-        legend: {position: 'top', align: 'start', labels: {color: '#d1d4dc', font: {family: 'IBM Plex Mono', size: 10}, boxWidth: 10, padding: 12}},
-        tooltip: {backgroundColor: '#2a2e39', borderColor: '#363a45', borderWidth: 1, titleColor: '#2962ff', bodyColor: '#d1d4dc'}
+    },
+    grid: {
+      vertLines: { color: CHART_COLORS.grid },
+      horzLines: { color: CHART_COLORS.grid },
+    },
+    rightPriceScale: { borderColor: CHART_COLORS.border },
+    timeScale: {
+      borderColor: CHART_COLORS.border,
+      timeVisible: true,
+      secondsVisible: false,
+    },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+  });
+  
+  // Pane 0: Candles + MA
+  candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+    upColor: CHART_COLORS.up,
+    downColor: CHART_COLORS.down,
+    borderUpColor: CHART_COLORS.up,
+    borderDownColor: CHART_COLORS.down,
+    wickUpColor: CHART_COLORS.up,
+    wickDownColor: CHART_COLORS.down,
+  });
+  
+  ma20Series = chart.addSeries(LightweightCharts.LineSeries, {
+    color: CHART_COLORS.ma20, lineWidth: 1, title: 'MA20',
+    priceLineVisible: false, lastValueVisible: true,
+  });
+  ma50Series = chart.addSeries(LightweightCharts.LineSeries, {
+    color: CHART_COLORS.ma50, lineWidth: 1, title: 'MA50',
+    priceLineVisible: false, lastValueVisible: true,
+  });
+  
+  // Pane 1: Volume
+  volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+    priceFormat: { type: 'volume' },
+    priceScaleId: '',
+    color: CHART_COLORS.up,
+  }, 1);
+  
+  // Pane 2: RSI
+  rsiSeries = chart.addSeries(LightweightCharts.LineSeries, {
+    color: CHART_COLORS.rsi, lineWidth: 1, title: 'RSI',
+    priceLineVisible: false,
+  }, 2);
+  rsiSeries.createPriceLine({ price: 70, color: CHART_COLORS.down, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'OB' });
+  rsiSeries.createPriceLine({ price: 50, color: CHART_COLORS.text2, lineWidth: 1, lineStyle: 3, axisLabelVisible: false });
+  rsiSeries.createPriceLine({ price: 30, color: CHART_COLORS.up, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'OS' });
+  
+  // Pane stretch: main 60%, volume 20%, rsi 20%
+  try {
+    const panes = chart.panes();
+    if (panes && panes.length >= 3) {
+      panes[0].setStretchFactor(6);
+      panes[1].setStretchFactor(2);
+      panes[2].setStretchFactor(2);
+    }
+  } catch (e) { console.warn('stretch:', e); }
+  
+  // Crosshair OHLC info
+  const crosshairInfo = document.getElementById('crosshairInfo');
+  if (crosshairInfo) {
+    chart.subscribeCrosshairMove(param => {
+      if (param.time === undefined) {
+        crosshairInfo.style.display = 'none';
+        return;
       }
+      const data = param.seriesData.get(candleSeries);
+      if (data && param.point) {
+        const date = new Date(data.time * 1000);
+        const dateStr = `${String(date.getUTCDate()).padStart(2,'0')}/${String(date.getUTCMonth()+1).padStart(2,'0')}/${date.getUTCFullYear()}`;
+        crosshairInfo.innerHTML = 
+          `${dateStr} · ` +
+          `O:<b>${data.open?.toFixed(2)}</b> ` +
+          `H:<b style="color:${CHART_COLORS.up}">${data.high?.toFixed(2)}</b> ` +
+          `L:<b style="color:${CHART_COLORS.down}">${data.low?.toFixed(2)}</b> ` +
+          `C:<b style="color:${data.close >= data.open ? CHART_COLORS.up : CHART_COLORS.down}">${data.close?.toFixed(2)}</b>`;
+        crosshairInfo.style.display = 'block';
+      }
+    });
+  }
+  
+  // Responsive - dùng ResizeObserver để chart tự resize khi container đổi size
+  // (window.resize không trigger khi chỉ sidebar collapse hoặc orientation change)
+  const resizeChart = () => {
+    if (!chart) return;
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    if (w > 0 && h > 0) {
+      chart.applyOptions({ width: w, height: h });
     }
-  });
+  };
+  
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => {
+      // Debounce để tránh resize quá nhiều
+      clearTimeout(window.__chartResizeTimer);
+      window.__chartResizeTimer = setTimeout(resizeChart, 50);
+    });
+    ro.observe(container);
+  }
+  window.addEventListener('resize', resizeChart);
+  window.addEventListener('orientationchange', () => setTimeout(resizeChart, 200));
+  
+  mainChart = chart; // backward compat marker
+  return chart;
+}
 
-  const subCtx = document.getElementById('subChart').getContext('2d');
-  subChart = new Chart(subCtx, {
-    type: 'line',
-    data: {
-      datasets: [{label: 'RSI(14)', data: rsi, borderColor: '#ab47bc', backgroundColor: 'rgba(171,71,188,0.08)', borderWidth: 1.4, pointRadius: 0, tension: 0.15, fill: true}]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: false,
-      scales: {
-        x: {type: 'time', time: {unit: 'day'}, ticks: {color: '#787b86', font: {family: 'IBM Plex Mono', size: 9}, maxTicksLimit: 12}, grid: {color: '#1e222d'}},
-        y: {position: 'right', min: 0, max: 100, ticks: {color: '#787b86', font: {family: 'IBM Plex Mono', size: 9}, stepSize: 25}, grid: {color: '#1e222d'}}
-      },
-      plugins: {legend: {display: false}, tooltip: {backgroundColor: '#2a2e39', borderColor: '#363a45', borderWidth: 1}}
-    }
-  });
+function renderChart(series) {
+  const c = ensureChart();
+  if (!c || !series || series.length === 0) return;
+  
+  const candles = series.map(s => ({
+    time: Math.floor(s.time / 1000),
+    open: s.open, high: s.high, low: s.low, close: s.close,
+  }));
+  
+  const ma20Data = series
+    .filter(s => s.ma20 !== null && s.ma20 !== undefined)
+    .map(s => ({ time: Math.floor(s.time / 1000), value: s.ma20 }));
+  const ma50Data = series
+    .filter(s => s.ma50 !== null && s.ma50 !== undefined)
+    .map(s => ({ time: Math.floor(s.time / 1000), value: s.ma50 }));
+  
+  const volumeData = series.map(s => ({
+    time: Math.floor(s.time / 1000),
+    value: s.volume || 0,
+    color: s.close >= s.open ? CHART_COLORS.up + '88' : CHART_COLORS.down + '88',
+  }));
+  
+  const rsiData = series
+    .filter(s => s.rsi !== null && s.rsi !== undefined)
+    .map(s => ({ time: Math.floor(s.time / 1000), value: s.rsi }));
+  
+  candleSeries.setData(candles);
+  ma20Series.setData(ma20Data);
+  ma50Series.setData(ma50Data);
+  volumeSeries.setData(volumeData);
+  rsiSeries.setData(rsiData);
+  
+  c.timeScale().fitContent();
 }
 
 // ========== RSI COMBO SYSTEM ==========
@@ -982,49 +1130,136 @@ async function fetchAndRenderRsiCombo() {
   }
 }
 
-function renderRsiComboMarkers() {
-  if (!mainChart || !window.__rsiComboData) return;
+// Marker primitives instances (one per source for clean isolation)
+let _markersRsiCombo = null;
+let _markersEmaCross = null;
+let _markersPivot = null;
+
+// Build markers from current data + toggle states
+function buildAllMarkers() {
+  const markers = [];
   
-  // Remove ONLY RSI Combo datasets (label starts with markers ★ ▲ ▼ △ ▽)
-  const rsiPrefixes = ['★ BUY', '★ EXIT', '▲ Bull', '▼ Bear', '△ Buy', '▽ Exit'];
-  mainChart.data.datasets = mainChart.data.datasets.filter(ds => {
-    if (!ds.label) return true;
-    return !rsiPrefixes.some(p => ds.label.startsWith(p));
-  });
-  
-  const signals = window.__rsiComboData.signals || {};
-  
-  // For each enabled toggle, add a scatter dataset
-  document.querySelectorAll('.rcb-toggle').forEach(cb => {
-    if (!cb.checked) return;
-    const key = cb.dataset.key;
-    const arr = signals[key] || [];
-    if (arr.length === 0) return;
-    
-    const style = RCB_STYLES[key];
-    const isAbove = style.location === 'above';
-    
-    // Calculate offset (% of price) to put marker above/below bar
-    const offsetPct = isAbove ? 1.015 : 0.985;
-    
-    mainChart.data.datasets.push({
-      label: `${style.symbol} ${style.label}`,
-      type: 'scatter',
-      data: arr.map(s => ({
-        x: s.time,
-        y: s.price * offsetPct,
-      })),
-      backgroundColor: style.color,
-      borderColor: style.color,
-      pointRadius: style.size,
-      pointHoverRadius: style.size + 2,
-      pointStyle: isAbove ? 'triangle' : 'triangle',
-      rotation: isAbove ? 180 : 0,
-      showLine: false,
+  // === RSI Combo markers ===
+  if (window.__rsiComboData) {
+    const signals = window.__rsiComboData.signals || {};
+    document.querySelectorAll('.rcb-toggle').forEach(cb => {
+      if (!cb.checked) return;
+      const key = cb.dataset.key;
+      const arr = signals[key] || [];
+      if (arr.length === 0) return;
+      
+      const style = RCB_STYLES[key];
+      const isAbove = style.location === 'above';
+      
+      arr.forEach(s => {
+        markers.push({
+          time: Math.floor(s.time / 1000),
+          position: isAbove ? 'aboveBar' : 'belowBar',
+          color: style.color,
+          shape: isAbove ? 'arrowDown' : 'arrowUp',
+          text: style.symbol,
+          size: Math.max(1, Math.round(style.size / 5)),
+        });
+      });
     });
-  });
+  }
   
-  mainChart.update('none');
+  return markers;
+}
+
+function buildEmaPivotMarkers() {
+  const markers = [];
+  
+  // EMA Cross markers
+  if (window.__emaStData) {
+    const ema = window.__emaStData.ema || {};
+    const togGolden = document.querySelector('.est-toggle[data-key="golden_cross"]');
+    const togDeath = document.querySelector('.est-toggle[data-key="death_cross"]');
+    
+    if (togGolden && togGolden.checked && (ema.golden_cross || []).length > 0) {
+      ema.golden_cross.forEach(s => {
+        markers.push({
+          time: Math.floor(s.time / 1000),
+          position: 'belowBar',
+          color: '#00e676',
+          shape: 'arrowUp',
+          text: 'G',
+          size: 2,
+        });
+      });
+    }
+    
+    if (togDeath && togDeath.checked && (ema.death_cross || []).length > 0) {
+      ema.death_cross.forEach(s => {
+        markers.push({
+          time: Math.floor(s.time / 1000),
+          position: 'aboveBar',
+          color: '#ff1744',
+          shape: 'arrowDown',
+          text: 'D',
+          size: 2,
+        });
+      });
+    }
+  }
+  
+  // Pivot Buy/Sell markers
+  if (window.__pivotData) {
+    const togPivotBuy = document.querySelector('.est-toggle[data-key="pivot_buy"]');
+    const togPivotSell = document.querySelector('.est-toggle[data-key="pivot_sell"]');
+    
+    if (togPivotBuy && togPivotBuy.checked && (window.__pivotData.pivot_lows || []).length > 0) {
+      window.__pivotData.pivot_lows.forEach(s => {
+        markers.push({
+          time: Math.floor(s.time / 1000),
+          position: 'belowBar',
+          color: '#00c853',
+          shape: 'arrowUp',
+          text: `Buy@${(s.entry_price || s.price).toFixed(2)}`,
+          size: 2,
+        });
+      });
+    }
+    
+    if (togPivotSell && togPivotSell.checked && (window.__pivotData.pivot_highs || []).length > 0) {
+      window.__pivotData.pivot_highs.forEach(s => {
+        markers.push({
+          time: Math.floor(s.time / 1000),
+          position: 'aboveBar',
+          color: '#d50000',
+          shape: 'arrowDown',
+          text: `Sell@${(s.entry_price || s.price).toFixed(2)}`,
+          size: 2,
+        });
+      });
+    }
+  }
+  
+  return markers;
+}
+
+function refreshAllMarkers() {
+  if (!candleSeries || !chart) return;
+  
+  // Combine RSI Combo + EMA/Pivot markers into one sorted list 
+  // (Lightweight Charts requires markers sorted by time)
+  const allMarkers = [...buildAllMarkers(), ...buildEmaPivotMarkers()];
+  allMarkers.sort((a, b) => a.time - b.time);
+  
+  // Use a single markers primitive on candleSeries
+  if (!_markersRsiCombo) {
+    try {
+      _markersRsiCombo = LightweightCharts.createSeriesMarkers(candleSeries, allMarkers);
+    } catch (e) {
+      console.warn('createSeriesMarkers fail:', e);
+    }
+  } else {
+    _markersRsiCombo.setMarkers(allMarkers);
+  }
+}
+
+function renderRsiComboMarkers() {
+  refreshAllMarkers();
 }
 
 // Listen to toggle changes
@@ -1087,144 +1322,72 @@ async function fetchAndRenderEmaSt() {
 }
 
 function renderEmaStMarkers() {
-  if (!mainChart || !window.__emaStData) return;
-  
-  // Remove old EMA/ST/Pivot datasets
-  mainChart.data.datasets = mainChart.data.datasets.filter(ds => {
-    return !ds.label || (!ds.label.startsWith('EMA20') && !ds.label.startsWith('EMA40')
-                         && !ds.label.startsWith('ST Up') && !ds.label.startsWith('ST Down')
-                         && !ds.label.startsWith('▲ Golden') && !ds.label.startsWith('▼ Death')
-                         && !ds.label.startsWith('▲ ST Buy') && !ds.label.startsWith('▼ ST Sell')
-                         && !ds.label.startsWith('▲ Buy Pivot') && !ds.label.startsWith('▼ Sell Pivot'));
-  });
+  if (!chart || !window.__emaStData) return;
   
   const ema = window.__emaStData.ema || {};
   const st = window.__emaStData.supertrend || {};
   
-  // Get toggle states
   const togState = {};
   document.querySelectorAll('.est-toggle').forEach(cb => {
     togState[cb.dataset.key] = cb.checked;
   });
   
-  // EMA lines
+  // === EMA 20/40 lines ===
   if (togState.ema_lines) {
-    mainChart.data.datasets.push({
-      label: 'EMA20',
-      type: 'line',
-      data: (ema.ema_fast || []).map(s => ({x: s.time, y: s.value})),
-      borderColor: '#1e90ff',
-      backgroundColor: 'transparent',
-      borderWidth: 1.5,
-      pointRadius: 0,
-      tension: 0,
-      order: 5,
-    });
-    mainChart.data.datasets.push({
-      label: 'EMA40',
-      type: 'line',
-      data: (ema.ema_slow || []).map(s => ({x: s.time, y: s.value})),
-      borderColor: '#0d47a1',
-      backgroundColor: 'transparent',
-      borderWidth: 1.5,
-      pointRadius: 0,
-      tension: 0,
-      order: 6,
-    });
+    if (!emaFastSeries) {
+      emaFastSeries = chart.addSeries(LightweightCharts.LineSeries, {
+        color: CHART_COLORS.ema_fast, lineWidth: 1, title: 'EMA20',
+        priceLineVisible: false, lastValueVisible: false,
+      });
+    }
+    if (!emaSlowSeries) {
+      emaSlowSeries = chart.addSeries(LightweightCharts.LineSeries, {
+        color: CHART_COLORS.ema_slow, lineWidth: 1, title: 'EMA40',
+        priceLineVisible: false, lastValueVisible: false,
+      });
+    }
+    emaFastSeries.setData((ema.ema_fast || []).map(s => ({
+      time: Math.floor(s.time / 1000), value: s.value
+    })));
+    emaSlowSeries.setData((ema.ema_slow || []).map(s => ({
+      time: Math.floor(s.time / 1000), value: s.value
+    })));
+    if (emaFastSeries) emaFastSeries.applyOptions({ visible: true });
+    if (emaSlowSeries) emaSlowSeries.applyOptions({ visible: true });
+  } else {
+    if (emaFastSeries) emaFastSeries.applyOptions({ visible: false });
+    if (emaSlowSeries) emaSlowSeries.applyOptions({ visible: false });
   }
   
-  // Golden Cross markers
-  if (togState.golden_cross && (ema.golden_cross || []).length > 0) {
-    mainChart.data.datasets.push({
-      label: '▲ Golden',
-      type: 'scatter',
-      data: ema.golden_cross.map(s => ({x: s.time, y: s.price * 0.97})),
-      backgroundColor: '#00e676',
-      borderColor: '#00e676',
-      pointRadius: 9,
-      pointHoverRadius: 11,
-      pointStyle: 'triangle',
-      rotation: 0,
-      showLine: false,
-    });
-  }
-  
-  // Death Cross markers
-  if (togState.death_cross && (ema.death_cross || []).length > 0) {
-    mainChart.data.datasets.push({
-      label: '▼ Death',
-      type: 'scatter',
-      data: ema.death_cross.map(s => ({x: s.time, y: s.price * 1.03})),
-      backgroundColor: '#ff1744',
-      borderColor: '#ff1744',
-      pointRadius: 9,
-      pointHoverRadius: 11,
-      pointStyle: 'triangle',
-      rotation: 180,
-      showLine: false,
-    });
-  }
-  
-  // SuperTrend lines
+  // === SuperTrend lines ===
   if (togState.st_lines) {
-    mainChart.data.datasets.push({
-      label: 'ST Up',
-      type: 'line',
-      data: (st.line_up || []).map(s => ({x: s.time, y: s.value})),
-      borderColor: '#1c86ee',
-      backgroundColor: 'transparent',
-      borderWidth: 2.5,
-      pointRadius: 0,
-      tension: 0,
-      order: 7,
-    });
-    mainChart.data.datasets.push({
-      label: 'ST Down',
-      type: 'line',
-      data: (st.line_down || []).map(s => ({x: s.time, y: s.value})),
-      borderColor: '#cd3333',
-      backgroundColor: 'transparent',
-      borderWidth: 2.5,
-      pointRadius: 0,
-      tension: 0,
-      order: 8,
-    });
+    if (!stUpSeries) {
+      stUpSeries = chart.addSeries(LightweightCharts.LineSeries, {
+        color: CHART_COLORS.st_up, lineWidth: 2, title: 'ST Up',
+        priceLineVisible: false, lastValueVisible: false,
+      });
+    }
+    if (!stDownSeries) {
+      stDownSeries = chart.addSeries(LightweightCharts.LineSeries, {
+        color: CHART_COLORS.st_down, lineWidth: 2, title: 'ST Down',
+        priceLineVisible: false, lastValueVisible: false,
+      });
+    }
+    stUpSeries.setData((st.line_up || []).map(s => ({
+      time: Math.floor(s.time / 1000), value: s.value
+    })));
+    stDownSeries.setData((st.line_down || []).map(s => ({
+      time: Math.floor(s.time / 1000), value: s.value
+    })));
+    stUpSeries.applyOptions({ visible: true });
+    stDownSeries.applyOptions({ visible: true });
+  } else {
+    if (stUpSeries) stUpSeries.applyOptions({ visible: false });
+    if (stDownSeries) stDownSeries.applyOptions({ visible: false });
   }
   
-  // ST Buy markers (DEPRECATED - replaced by Pivot)
-  // Pivot Buy markers - chuan AmiBroker, chat luong cao
-  if (togState.pivot_buy && window.__pivotData && (window.__pivotData.pivot_lows || []).length > 0) {
-    mainChart.data.datasets.push({
-      label: '▲ Buy Pivot',
-      type: 'scatter',
-      data: window.__pivotData.pivot_lows.map(s => ({x: s.time, y: s.price * 0.96})),
-      backgroundColor: '#00c853',
-      borderColor: '#00c853',
-      pointRadius: 10,
-      pointHoverRadius: 13,
-      pointStyle: 'triangle',
-      rotation: 0,
-      showLine: false,
-    });
-  }
-  
-  // Pivot Sell markers
-  if (togState.pivot_sell && window.__pivotData && (window.__pivotData.pivot_highs || []).length > 0) {
-    mainChart.data.datasets.push({
-      label: '▼ Sell Pivot',
-      type: 'scatter',
-      data: window.__pivotData.pivot_highs.map(s => ({x: s.time, y: s.price * 1.04})),
-      backgroundColor: '#d50000',
-      borderColor: '#d50000',
-      pointRadius: 10,
-      pointHoverRadius: 13,
-      pointStyle: 'triangle',
-      rotation: 180,
-      showLine: false,
-    });
-  }
-  
-  mainChart.update('none');
+  // Markers (Golden/Death/Pivot) merged via refreshAllMarkers
+  refreshAllMarkers();
 }
 
 // ========== PIVOT FINDER + TRADING SYSTEM BOX ==========

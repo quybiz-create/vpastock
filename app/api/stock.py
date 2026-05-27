@@ -104,19 +104,24 @@ async def get_indicators(
             "vpa": str(last.get("vpa", "Normal")),
         }
 
+        # Drop rows with NaN OHLC (vnstock đôi khi trả NaN)
+        df_clean = df_full.dropna(subset=["open", "high", "low", "close", "volume"])
         series = []
-        for idx, row in df_full.iterrows():
+        for idx, row in df_clean.iterrows():
+            vpa_val = row.get("vpa", "Normal")
+            if vpa_val is None or (isinstance(vpa_val, float) and math.isnan(vpa_val)):
+                vpa_val = "Normal"
             series.append({
                 "time": int(idx.timestamp() * 1000),
-                "open": float(row["open"]),
-                "high": float(row["high"]),
-                "low": float(row["low"]),
-                "close": float(row["close"]),
-                "volume": int(row["volume"]),
+                "open": _safe_float(row["open"]),
+                "high": _safe_float(row["high"]),
+                "low": _safe_float(row["low"]),
+                "close": _safe_float(row["close"]),
+                "volume": int(row["volume"]) if not math.isnan(row["volume"]) else 0,
                 "ma20": _safe_float(row.get("ma20")),
                 "ma50": _safe_float(row.get("ma50")),
                 "rsi": _safe_float(row.get("rsi")),
-                "vpa": str(row.get("vpa", "Normal")),
+                "vpa": str(vpa_val),
             })
 
         return {
