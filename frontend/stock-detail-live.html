@@ -46,6 +46,8 @@ input{font-family:inherit;color:inherit}
 .main{display:grid;grid-template-columns:240px 1fr 340px;height:calc(100vh - 80px);overflow:hidden}
 
 .sidebar-l{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:12px}
+.mobile-wl-toggle{display:none}
+.mobile-wl-overlay{display:none}
 .sec-title{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin:8px 0 8px 4px;font-weight:600}
 .wl-item{display:grid;grid-template-columns:1fr auto;gap:8px;padding:8px;border-radius:5px;cursor:pointer;align-items:center;transition:background .1s;border-left:2px solid transparent}
 .wl-item:hover{background:var(--bg3)}
@@ -89,6 +91,11 @@ input{font-family:inherit;color:inherit}
 
 /* === TRADING SYSTEM BOX === */
 .trading-system-box{position:absolute;top:12px;left:12px;z-index:10;background:rgba(15,21,32,0.92);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;min-width:200px;backdrop-filter:blur(4px);box-shadow:0 4px 12px rgba(0,0,0,0.5)}
+.tsb-toggle{position:absolute;top:4px;right:6px;background:transparent;border:none;color:var(--text2);cursor:pointer;font-size:14px;width:18px;height:18px;padding:0;line-height:1;display:flex;align-items:center;justify-content:center;border-radius:3px}
+.tsb-toggle:hover{background:rgba(255,255,255,0.1);color:var(--text)}
+.trading-system-box.collapsed .tsb-body{display:none}
+.trading-system-box.collapsed{padding:6px 10px;min-width:auto}
+.trading-system-box .tsb-title{position:relative}
 .tsb-title{color:#fbc02d;font-weight:700;font-size:12px;margin-bottom:8px;letter-spacing:0.5px;text-align:center;border-bottom:1px solid #2a313c;padding-bottom:5px}
 .tsb-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;gap:12px}
 .tsb-label{color:#787b86;font-size:10px}
@@ -275,8 +282,57 @@ input{font-family:inherit;color:inherit}
     overflow:visible !important;
   }
   
-  /* Sidebar trái (watchlist) - ẩn hoàn toàn trên mobile */
-  .sidebar-l{display:none !important}
+  /* Mobile drawer toggle button */
+  .mobile-wl-toggle{
+    display:flex !important;
+    position:fixed !important;
+    bottom:14px;
+    right:14px;
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    background:var(--blue, #2962ff);
+    color:white;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+    z-index:99;
+    box-shadow:0 4px 12px rgba(41,98,255,0.4);
+    cursor:pointer;
+    border:none;
+  }
+  .mobile-wl-overlay{
+    display:none;
+    position:fixed !important;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    z-index:98;
+  }
+  .mobile-wl-overlay.show{display:block}
+  .sidebar-l{
+    display:block !important;
+    position:fixed !important;
+    top:0;
+    right:-280px;
+    left:auto !important;
+    width:260px !important;
+    height:100vh !important;
+    background:var(--bg2) !important;
+    border:none !important;
+    border-left:1px solid var(--border) !important;
+    z-index:100 !important;
+    padding:10px !important;
+    overflow-y:auto !important;
+    transition:right 0.25s ease;
+    box-shadow:-4px 0 12px rgba(0,0,0,0.5);
+  }
+  .sidebar-l.drawer-open{right:0 !important}
+  .wl-item{padding:5px 7px !important;font-size:11px !important;border-radius:4px}
+  .wl-item .wl-sym{font-size:12px !important}
+  .wl-item .wl-price{font-size:11px !important}
+  .wl-item .wl-pct{font-size:10px !important}
+  #watchlistTitle{font-size:12px !important;margin-bottom:6px !important}
+  .wl-item-meta{font-size:9px !important}
   
   /* Sidebar phải (VPA + Tính lệnh) - chuyển xuống dưới chart */
   .sidebar-r{
@@ -287,9 +343,14 @@ input{font-family:inherit;color:inherit}
     border-top:1px solid var(--border);
     max-height:none !important;
     width:100% !important;
-    padding:8px !important;
+    padding:6px !important;
+    padding-bottom:80px !important;
     overflow:visible !important;
   }
+  .tab-content{padding:10px !important;font-size:11px !important;padding-bottom:60px !important}
+  .tab-content h4{font-size:9px !important;margin-top:10px !important;margin-bottom:4px !important}
+  .tab-content p{font-size:10.5px !important;margin-bottom:6px !important;line-height:1.5 !important}
+  .ai-content{font-size:11px !important;line-height:1.55 !important;padding-bottom:60px}
   
   /* Center (chart + indicators) - full width */
   .center{
@@ -298,28 +359,28 @@ input{font-family:inherit;color:inherit}
     overflow:visible !important;
   }
   
-  /* Stock header - horizontal compact */
+  /* Stock header - 2 hàng gọn */
   .stock-header{
-    flex-direction:row !important;
-    align-items:center !important;
-    gap:10px !important;
-    padding:8px 12px !important;
+    flex-direction:column !important;
+    align-items:flex-start !important;
+    gap:2px !important;
+    padding:6px 12px !important;
     position:relative !important;
-    flex-wrap:wrap !important;
   }
-  .stock-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0}
-  .sym-big{font-size:18px !important;font-weight:700}
-  .name{font-size:10px !important;display:none}
-  .price-now{font-size:16px !important;font-weight:700}
-  .price-block{display:flex !important;flex-direction:row !important;align-items:baseline;gap:6px;margin-left:auto}
+  .stock-meta{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+  .sym-big{font-size:17px !important;font-weight:700;line-height:1.1}
+  .name{font-size:9px !important;color:var(--text2)}
+  .price-now{font-size:14px !important;font-weight:700;line-height:1.1}
+  .price-block{display:flex !important;flex-direction:row !important;align-items:baseline;gap:6px;width:auto;align-self:flex-start !important;margin-left:0 !important}
   .price-row{display:flex;align-items:baseline;gap:6px}
+  .change{font-size:11px !important}
   .star-btn-big{
     position:absolute !important;
     top:6px !important;
-    right:10px !important;
-    width:28px !important;
-    height:28px !important;
-    font-size:14px !important;
+    right:50px !important;
+    width:24px !important;
+    height:24px !important;
+    font-size:12px !important;
     margin-left:0 !important;
   }
   
@@ -357,22 +418,24 @@ input{font-family:inherit;color:inherit}
     white-space:nowrap;
   }
   
-  /* Trading System Box - compact */
+  /* Trading System Box - compact, default collapsed on mobile */
   .trading-system-box{
     position:absolute !important;
-    top:4px !important;
-    left:4px !important;
-    padding:5px 7px !important;
+    top:3px !important;
+    left:3px !important;
+    padding:4px 6px !important;
     min-width:auto !important;
     width:auto !important;
-    font-size:9px !important;
+    max-width:55% !important;
+    font-size:8px !important;
     z-index:20;
   }
-  .tsb-title{font-size:10px !important;margin-bottom:3px !important;padding-bottom:2px !important}
-  .tsb-row{padding:1px 0 !important;gap:6px !important}
-  .tsb-label{font-size:8px !important}
-  .tsb-val{font-size:9px !important}
-  .tsb-row.tsb-pl .tsb-val{font-size:11px !important}
+  .tsb-title{font-size:9px !important;margin-bottom:2px !important;padding-bottom:1px !important;padding-right:18px !important}
+  .tsb-row{padding:0 !important;gap:4px !important}
+  .tsb-label{font-size:7px !important}
+  .tsb-val{font-size:8px !important}
+  .tsb-row.tsb-pl .tsb-val{font-size:10px !important}
+  .tsb-toggle{font-size:12px !important;width:16px !important;height:16px !important;top:2px !important;right:3px !important}
   
   /* Toggle bars - horizontal scroll, gọn hơn */
   .rsi-combo-bar{
@@ -439,6 +502,9 @@ input{font-family:inherit;color:inherit}
   <div class="user">H</div>
 </div>
 
+<div class="mobile-wl-overlay" id="mobileWlOverlay"></div>
+<button class="mobile-wl-toggle" id="mobileWlToggle" title="Watchlist">⭐</button>
+
 <div class="ticker-strip">
   <div class="ticker-item up"><span class="sym">VNINDEX</span><span class="val" id="vniValue">--</span></div>
   <div class="ticker-item up"><span class="sym">DATA</span><span class="val">LIVE từ KBS</span></div>
@@ -474,14 +540,19 @@ input{font-family:inherit;color:inherit}
         <div id="chartContainer" style="width:100%;height:100%;position:absolute;inset:0"></div>
         <div id="crosshairInfo" class="crosshair-info"></div>
         <div id="tradingSystemBox" class="trading-system-box" style="display:none">
-          <div class="tsb-title">📈 Trading System</div>
-          <div class="tsb-row"><span class="tsb-label">Last Signal:</span><span class="tsb-val" id="tsbSignal">--</span></div>
-          <div class="tsb-row"><span class="tsb-label">Entry @:</span><span class="tsb-val" id="tsbEntry">--</span></div>
-          <div class="tsb-row"><span class="tsb-label">Bars ago:</span><span class="tsb-val" id="tsbBarsAgo">--</span></div>
-          <div class="tsb-row"><span class="tsb-label">Current:</span><span class="tsb-val" id="tsbCurrent">--</span></div>
-          <div class="tsb-row tsb-pl"><span class="tsb-label">P/L:</span><span class="tsb-val" id="tsbPL">--</span></div>
-          <div class="tsb-divider"></div>
-          <div class="tsb-row"><span class="tsb-label">Pivot Count:</span><span class="tsb-val" id="tsbCounts">--</span></div>
+          <div class="tsb-title">
+            📈 Trading System
+            <button class="tsb-toggle" id="tsbToggle" title="Thu gọn">−</button>
+          </div>
+          <div class="tsb-body" id="tsbBody">
+            <div class="tsb-row"><span class="tsb-label">Last Signal:</span><span class="tsb-val" id="tsbSignal">--</span></div>
+            <div class="tsb-row"><span class="tsb-label">Entry @:</span><span class="tsb-val" id="tsbEntry">--</span></div>
+            <div class="tsb-row"><span class="tsb-label">Bars ago:</span><span class="tsb-val" id="tsbBarsAgo">--</span></div>
+            <div class="tsb-row"><span class="tsb-label">Current:</span><span class="tsb-val" id="tsbCurrent">--</span></div>
+            <div class="tsb-row tsb-pl"><span class="tsb-label">P/L:</span><span class="tsb-val" id="tsbPL">--</span></div>
+            <div class="tsb-divider"></div>
+            <div class="tsb-row"><span class="tsb-label">Pivot Count:</span><span class="tsb-val" id="tsbCounts">--</span></div>
+          </div>
         </div>
       </div>
       <div class="rsi-combo-bar" id="rsiComboBar">
@@ -983,9 +1054,9 @@ function ensureChart() {
   try {
     const panes = chart.panes();
     if (panes && panes.length >= 3) {
-      panes[0].setStretchFactor(6);
-      panes[1].setStretchFactor(2);
-      panes[2].setStretchFactor(2);
+      panes[0].setStretchFactor(10);  // Main 67%
+      panes[1].setStretchFactor(1.5);   // Volume 10%
+      panes[2].setStretchFactor(3.5);   // RSI 23%
     }
   } catch (e) { console.warn('stretch:', e); }
   
@@ -1929,6 +2000,60 @@ function renderMarkdown(text) {
 document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('btnAiRefresh');
   if (btn) btn.addEventListener('click', () => maybeFetchAi(true));
+  
+  // === Mobile Watchlist drawer ===
+  const wlToggle = document.getElementById('mobileWlToggle');
+  const wlOverlay = document.getElementById('mobileWlOverlay');
+  const sidebarL = document.querySelector('.sidebar-l');
+  
+  const openDrawer = () => {
+    if (sidebarL) sidebarL.classList.add('drawer-open');
+    if (wlOverlay) wlOverlay.classList.add('show');
+  };
+  const closeDrawer = () => {
+    if (sidebarL) sidebarL.classList.remove('drawer-open');
+    if (wlOverlay) wlOverlay.classList.remove('show');
+  };
+  
+  if (wlToggle) {
+    wlToggle.addEventListener('click', () => {
+      if (sidebarL && sidebarL.classList.contains('drawer-open')) {
+        closeDrawer();
+      } else {
+        openDrawer();
+      }
+    });
+  }
+  if (wlOverlay) wlOverlay.addEventListener('click', closeDrawer);
+  
+  // Close drawer when click on watchlist item
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.wl-item') && window.innerWidth <= 768) {
+      setTimeout(closeDrawer, 100);
+    }
+  });
+  
+  // === Trading System Box toggle ===
+  const tsbToggle = document.getElementById('tsbToggle');
+  const tsbBox = document.getElementById('tradingSystemBox');
+  
+  // Load saved state
+  const tsbCollapsed = localStorage.getItem('vpastock_tsb_collapsed') === '1';
+  // Default collapsed on mobile
+  const isMobile = window.innerWidth <= 768;
+  if (tsbBox && (tsbCollapsed || isMobile)) {
+    tsbBox.classList.add('collapsed');
+    if (tsbToggle) tsbToggle.textContent = '+';
+  }
+  
+  if (tsbToggle && tsbBox) {
+    tsbToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isCollapsed = tsbBox.classList.toggle('collapsed');
+      tsbToggle.textContent = isCollapsed ? '+' : '−';
+      localStorage.setItem('vpastock_tsb_collapsed', isCollapsed ? '1' : '0');
+    });
+  }
 });
 
 // Clear AI cache when symbol changes (so next time tab opens, fetch fresh)
