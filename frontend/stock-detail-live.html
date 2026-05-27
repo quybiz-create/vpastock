@@ -298,27 +298,28 @@ input{font-family:inherit;color:inherit}
     overflow:visible !important;
   }
   
-  /* Stock header */
+  /* Stock header - horizontal compact */
   .stock-header{
-    flex-direction:column !important;
-    align-items:flex-start !important;
-    gap:6px !important;
-    padding:10px 12px !important;
+    flex-direction:row !important;
+    align-items:center !important;
+    gap:10px !important;
+    padding:8px 12px !important;
     position:relative !important;
+    flex-wrap:wrap !important;
   }
-  .stock-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .sym-big{font-size:20px !important}
-  .name{font-size:11px}
-  .price-now{font-size:18px !important}
-  .price-block{align-self:stretch}
-  .price-row{display:flex;align-items:baseline;gap:8px}
+  .stock-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0}
+  .sym-big{font-size:18px !important;font-weight:700}
+  .name{font-size:10px !important;display:none}
+  .price-now{font-size:16px !important;font-weight:700}
+  .price-block{display:flex !important;flex-direction:row !important;align-items:baseline;gap:6px;margin-left:auto}
+  .price-row{display:flex;align-items:baseline;gap:6px}
   .star-btn-big{
     position:absolute !important;
-    top:10px !important;
-    right:12px !important;
-    width:32px !important;
-    height:32px !important;
-    font-size:16px !important;
+    top:6px !important;
+    right:10px !important;
+    width:28px !important;
+    height:28px !important;
+    font-size:14px !important;
     margin-left:0 !important;
   }
   
@@ -332,9 +333,9 @@ input{font-family:inherit;color:inherit}
     flex-direction:column !important;
   }
   .chart-main{
-    min-height:340px !important;
-    height:60vh !important;
-    max-height:500px !important;
+    min-height:280px !important;
+    height:45vh !important;
+    max-height:420px !important;
     position:relative !important;
     width:100% !important;
     flex:none !important;
@@ -373,27 +374,29 @@ input{font-family:inherit;color:inherit}
   .tsb-val{font-size:9px !important}
   .tsb-row.tsb-pl .tsb-val{font-size:11px !important}
   
-  /* Toggle bars - horizontal scroll */
+  /* Toggle bars - horizontal scroll, gọn hơn */
   .rsi-combo-bar{
-    padding:5px 6px !important;
-    gap:6px !important;
+    padding:4px 6px !important;
+    gap:5px !important;
     flex-wrap:nowrap !important;
     overflow-x:auto !important;
     font-size:9px !important;
     -webkit-overflow-scrolling:touch;
     white-space:nowrap;
+    min-height:26px !important;
   }
   .rsi-combo-bar::-webkit-scrollbar{height:3px}
-  .rcb-title{flex-shrink:0;font-size:10px !important}
-  .rcb-item{flex-shrink:0;font-size:10px !important;gap:3px !important}
-  .rcb-counts{font-size:9px !important;flex-shrink:0;margin-left:6px !important}
+  .rcb-title{flex-shrink:0;font-size:9px !important;font-weight:600}
+  .rcb-item{flex-shrink:0;font-size:9px !important;gap:2px !important}
+  .rcb-icon{font-size:10px !important}
+  .rcb-counts{font-size:8px !important;flex-shrink:0;margin-left:5px !important}
   
-  /* Indicators bar */
-  .ind-bar{grid-template-columns:repeat(2,1fr) !important}
-  .ind-cell{padding:6px !important}
-  .ind-name{font-size:9px !important}
-  .ind-val{font-size:13px !important}
-  .ind-state{font-size:9px !important}
+  /* Indicators bar - 3 columns thay 2 cho gọn hơn */
+  .ind-bar{grid-template-columns:repeat(3,1fr) !important;gap:1px !important}
+  .ind-cell{padding:4px 3px !important}
+  .ind-name,.ind-label{font-size:8px !important}
+  .ind-val,.ind-value{font-size:11px !important}
+  .ind-state{font-size:8px !important}
   
   /* VPA tabs (sidebar right) */
   .vpa-tabs{display:flex;justify-content:space-around;border-bottom:1px solid var(--border)}
