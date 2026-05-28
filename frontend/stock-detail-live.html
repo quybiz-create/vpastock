@@ -377,6 +377,15 @@ input{font-family:inherit;color:inherit}
     display:none !important;
   }
   
+  /* MOBILE - MỞ KHÓA CUỘN (desktop bị khóa overflow:hidden) */
+  html, body{
+    overflow:auto !important;
+    overflow-x:hidden !important;
+    height:auto !important;
+    min-height:100% !important;
+    -webkit-overflow-scrolling:touch;
+  }
+  
   /* MAIN LAYOUT - FORCE single column */
   .main{
     display:block !important;
@@ -485,11 +494,13 @@ input{font-family:inherit;color:inherit}
   .tab-content p{font-size:10.5px !important;margin-bottom:6px !important;line-height:1.5 !important}
   .ai-content{font-size:11px !important;line-height:1.55 !important;padding-bottom:60px}
   
-  /* Center (chart + indicators) - full width */
+  /* Center (chart + indicators) - full width, flex column */
   .center{
     width:100% !important;
-    display:block !important;
+    display:flex !important;
+    flex-direction:column !important;
     overflow:visible !important;
+    height:auto !important;
   }
   
   /* Stock header - 2 hàng gọn */
@@ -588,11 +599,15 @@ input{font-family:inherit;color:inherit}
   .rcb-counts{font-size:8px !important;flex-shrink:0;margin-left:5px !important}
   
   /* Indicators bar - 3 columns thay 2 cho gọn hơn */
-  .ind-bar{grid-template-columns:repeat(3,1fr) !important;gap:1px !important}
+  .ind-bar{grid-template-columns:repeat(3,1fr) !important;gap:1px !important;margin-top:6px !important;flex-shrink:0 !important}
   .ind-cell{padding:4px 3px !important}
   .ind-name,.ind-label{font-size:8px !important}
   .ind-val,.ind-value{font-size:11px !important}
   .ind-state{font-size:8px !important}
+  
+  /* Tabs - KHÔNG sticky trên mobile (gây lỗi hiển thị) */
+  .tabs{position:static !important;flex-wrap:wrap !important}
+  .tabs button{font-size:11px !important;padding:8px 6px !important;flex:1 1 auto !important;min-width:60px}
   
   /* VPA tabs (sidebar right) */
   .vpa-tabs{display:flex;justify-content:space-around;border-bottom:1px solid var(--border)}
