@@ -34,7 +34,24 @@ input{font-family:inherit;color:inherit}
 .search-sidebar input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:12px;outline:none;padding:8px 10px;border-radius:6px;font-family:var(--mono);transition:border-color .15s,box-shadow .15s}
 .search-sidebar input:focus{border-color:#2962ff;box-shadow:0 0 0 2px rgba(41,98,255,.15)}
 .search-sidebar input::placeholder{color:var(--text2)}
-.user{width:32px;height:32px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;font-family:var(--mono)}
+.search-topbar{display:none}
+.search-topbar input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:12px;outline:none;padding:6px 10px;border-radius:6px;font-family:var(--mono)}
+.search-topbar input:focus{border-color:#2962ff}
+.search-topbar input::placeholder{color:var(--text2)}
+.user{width:32px;height:32px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;font-family:var(--mono);cursor:pointer;transition:transform .12s}
+.user:hover{transform:scale(1.1)}
+
+/* Copyright popup */
+.copyright-popup{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center}
+.copyright-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.65)}
+.copyright-box{position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:30px 36px;text-align:center;z-index:2;box-shadow:0 12px 40px rgba(0,0,0,0.5);max-width:90%;width:320px}
+.copyright-close{position:absolute;top:10px;right:12px;background:transparent;border:none;color:var(--text2);font-size:16px;cursor:pointer;width:28px;height:28px;border-radius:6px}
+.copyright-close:hover{background:var(--bg3);color:var(--text)}
+.copyright-logo{font-size:22px;font-weight:700;color:var(--text);margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:6px}
+.copyright-logo .logo-mark{width:30px;height:30px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px}
+.copyright-name{font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px}
+.copyright-phone{font-size:18px;color:var(--blue);font-family:var(--mono);font-weight:600;margin-bottom:16px}
+.copyright-meta{font-size:11px;color:var(--text2);border-top:1px solid var(--border);padding-top:14px}
 
 .ticker-strip{height:32px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:28px;font-family:var(--mono);font-size:11px;overflow:hidden}
 .ticker-item{display:flex;gap:6px;align-items:center;white-space:nowrap}
@@ -347,13 +364,13 @@ input{font-family:inherit;color:inherit}
   
   /* Topbar */
   .topbar{padding:0 8px !important;gap:6px !important;height:auto !important;min-height:44px;flex-wrap:wrap}
-  .logo{font-size:13px;gap:4px}
+  .logo{font-size:13px;gap:4px;order:1;margin-right:auto}
   .logo-mark{width:22px;height:22px;font-size:11px}
   .nav{order:3;width:100%;justify-content:space-around;padding:4px 0;border-top:1px solid var(--border);gap:0}
   .nav a{padding:5px 6px;font-size:10px;flex:1;text-align:center}
-  .user{order:4;width:28px;height:28px;font-size:11px;flex-shrink:0}
-  .search-sidebar{margin-bottom:6px}
-  .search-sidebar input{font-size:11px;padding:6px 8px}
+  /* Search KHÔNG ở topbar - ẩn */
+  .search-topbar{display:none !important}
+  .user{order:2;width:28px;height:28px;font-size:11px;flex-shrink:0}
   
   /* Ticker strip - HIDE trên mobile cho gọn */
   .ticker-strip{
@@ -397,29 +414,58 @@ input{font-family:inherit;color:inherit}
   }
   .mobile-wl-overlay.show{display:block}
   .sidebar-l{
-    display:block !important;
-    position:fixed !important;
-    top:0;
-    right:-280px;
-    left:auto !important;
-    width:260px !important;
-    height:100vh !important;
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+    position:static !important;
+    width:100% !important;
+    height:auto !important;
     background:var(--bg2) !important;
     border:none !important;
-    border-left:1px solid var(--border) !important;
-    z-index:100 !important;
-    padding:10px !important;
-    overflow-y:auto !important;
-    transition:right 0.25s ease;
-    box-shadow:-4px 0 12px rgba(0,0,0,0.5);
+    border-bottom:1px solid var(--border) !important;
+    padding:8px !important;
+    overflow:visible !important;
+    gap:8px !important;
+    box-shadow:none !important;
   }
-  .sidebar-l.drawer-open{right:0 !important}
-  .wl-item{padding:5px 7px !important;font-size:11px !important;border-radius:4px}
-  .wl-item .wl-sym{font-size:12px !important}
-  .wl-item .wl-price{font-size:11px !important}
-  .wl-item .wl-pct{font-size:10px !important}
-  #watchlistTitle{font-size:12px !important;margin-bottom:6px !important}
-  .wl-item-meta{font-size:9px !important}
+  /* Search: hiện full width hàng riêng trong sidebar */
+  .search-sidebar{display:block !important;margin-bottom:0 !important;width:100% !important}
+  .search-sidebar input{font-size:13px !important;padding:8px 12px !important;width:100% !important}
+  /* Watchlist title ẩn */
+  #watchlistTitle{display:none !important}
+  /* Watchlist list chạy ngang FULL hàng dưới search */
+  #watchlistList{
+    display:flex !important;
+    flex-direction:row !important;
+    gap:6px !important;
+    flex-wrap:nowrap !important;
+    width:100% !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:2px;
+  }
+  #watchlistList::-webkit-scrollbar{height:3px}
+  #watchlistList::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+  .wl-item{
+    display:inline-flex !important;
+    flex-direction:column !important;
+    padding:6px 12px !important;
+    font-size:12px !important;
+    border-radius:6px !important;
+    background:var(--bg) !important;
+    border:1px solid var(--border) !important;
+    flex-shrink:0 !important;
+    min-width:auto !important;
+    margin:0 !important;
+  }
+  .wl-item .wl-sym{font-size:14px !important;font-weight:700 !important}
+  .wl-item .wl-price{font-size:12px !important}
+  .wl-item .wl-pct{font-size:12px !important}
+  .wl-item-meta{font-size:10px !important}
+  /* Ẩn drawer toggle + overlay */
+  .mobile-wl-toggle{display:none !important}
+  .mobile-wl-overlay{display:none !important}
   
   /* Sidebar phải (VPA + Tính lệnh) - chuyển xuống dưới chart */
   .sidebar-r{
@@ -583,7 +629,22 @@ input{font-family:inherit;color:inherit}
     <a href="screener.html">Bộ lọc</a>
     <a href="watchlist.html">⭐ Watchlist</a>
   </nav>
-  <div class="user">H</div>
+  <div class="search-topbar">
+    <input type="text" placeholder="🔍 Mã CP..." id="searchInputTop" maxlength="10">
+  </div>
+  <div class="user" id="userBtn" title="Thông tin">H</div>
+</div>
+
+<!-- Popup bản quyền -->
+<div id="copyrightPopup" class="copyright-popup" style="display:none">
+  <div class="copyright-overlay" id="copyrightOverlay"></div>
+  <div class="copyright-box">
+    <button class="copyright-close" id="copyrightClose">✕</button>
+    <div class="copyright-logo"><span class="logo-mark">V</span>VPASTOCK</div>
+    <div class="copyright-name">Henry Nguyen</div>
+    <div class="copyright-phone">📞 0908 008 036</div>
+    <div class="copyright-meta">© 2026 VPASTOCK · Phân tích chứng khoán</div>
+  </div>
 </div>
 
 <div class="mobile-wl-overlay" id="mobileWlOverlay"></div>
@@ -1480,6 +1541,10 @@ function buildAllMarkers() {
   return markers;
 }
 
+// Mobile detection cho marker sizing
+const IS_MOBILE = window.innerWidth <= 768;
+const MARKER_SIZE = IS_MOBILE ? 0 : 2;  // 0 = nhỏ nhất (Lightweight tự scale)
+
 function buildEmaPivotMarkers() {
   const markers = [];
   
@@ -1497,7 +1562,7 @@ function buildEmaPivotMarkers() {
           color: '#00e676',
           shape: 'arrowUp',
           text: 'G',
-          size: 2,
+          size: MARKER_SIZE,
         });
       });
     }
@@ -1510,7 +1575,7 @@ function buildEmaPivotMarkers() {
           color: '#ff1744',
           shape: 'arrowDown',
           text: 'D',
-          size: 2,
+          size: MARKER_SIZE,
         });
       });
     }
@@ -1528,8 +1593,8 @@ function buildEmaPivotMarkers() {
           position: 'belowBar',
           color: '#00c853',
           shape: 'arrowUp',
-          text: `Buy@${(s.entry_price || s.price).toFixed(2)}`,
-          size: 2,
+          text: IS_MOBILE ? 'B' : `Buy@${(s.entry_price || s.price).toFixed(2)}`,
+          size: MARKER_SIZE,
         });
       });
     }
@@ -1541,8 +1606,8 @@ function buildEmaPivotMarkers() {
           position: 'aboveBar',
           color: '#d50000',
           shape: 'arrowDown',
-          text: `Sell@${(s.entry_price || s.price).toFixed(2)}`,
-          size: 2,
+          text: IS_MOBILE ? 'S' : `Sell@${(s.entry_price || s.price).toFixed(2)}`,
+          size: MARKER_SIZE,
         });
       });
     }
@@ -2044,36 +2109,41 @@ async function loadWatchlistFromApi() {
   }
 }
 
-document.getElementById('searchInput').addEventListener('keydown', async (e) => {
+async function handleSearchEnter(e) {
   if (e.key !== 'Enter') return;
   const sym = e.target.value.trim().toUpperCase();
   if (sym.length < 3) return;
   e.preventDefault();
   
-  // Validate symbol exists before clearing input
   const input = e.target;
-  const originalValue = input.value;
   input.disabled = true;
   
   try {
     const checkRes = await fetch(`${API}/api/stock/${sym}/indicators`);
     if (!checkRes.ok) {
-      // Symbol invalid - keep input value, show error
       input.disabled = false;
       input.focus();
       input.select();
       showError(`Mã "${sym}" không tồn tại hoặc không có data`);
       return;
     }
-    // Symbol valid - clear input and load
     input.value = '';
     input.disabled = false;
+    // Clear cả 2 input
+    const si = document.getElementById('searchInput');
+    const st = document.getElementById('searchInputTop');
+    if (si) si.value = '';
+    if (st) st.value = '';
     await loadStock(sym);
   } catch (err) {
     input.disabled = false;
     showError(`Lỗi kiểm tra mã: ${err.message}`);
   }
-});
+}
+
+document.getElementById('searchInput').addEventListener('keydown', handleSearchEnter);
+const searchInputTop = document.getElementById('searchInputTop');
+if (searchInputTop) searchInputTop.addEventListener('keydown', handleSearchEnter);
 
 document.querySelectorAll('.tabs button').forEach(b => {
   b.addEventListener('click', () => {
@@ -2901,12 +2971,18 @@ const MARKET_CACHE_TTL = 300000; // 5 phút
 function openMarketPanel() {
   document.getElementById('marketPanel').style.display = 'block';
   document.body.style.overflow = 'hidden';
+  // Update nav active
+  document.getElementById('navDetail')?.classList.remove('active');
+  document.getElementById('navMarket')?.classList.add('active');
   loadMarketData();
 }
 
 function closeMarketPanel() {
   document.getElementById('marketPanel').style.display = 'none';
   document.body.style.overflow = '';
+  // Update nav active
+  document.getElementById('navMarket')?.classList.remove('active');
+  document.getElementById('navDetail')?.classList.add('active');
 }
 
 async function loadMarketData(force = false) {
@@ -3093,12 +3169,49 @@ document.getElementById('navMarket').addEventListener('click', (e) => {
   openMarketPanel();
 });
 document.getElementById('marketClose').addEventListener('click', closeMarketPanel);
+
+// Nav "Chi tiết CP" → đóng panel Thị trường
+const navDetail = document.getElementById('navDetail');
+if (navDetail) {
+  navDetail.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeMarketPanel();
+  });
+}
+
+// Các nav link khác (Bộ lọc, Watchlist) → đóng panel trước khi chuyển trang
+document.querySelectorAll('.nav a').forEach(link => {
+  const href = link.getAttribute('href');
+  // Chỉ xử lý link thật (không phải #)
+  if (href && href !== '#' && !href.startsWith('#')) {
+    link.addEventListener('click', () => {
+      closeMarketPanel();
+      // Cho navigation diễn ra bình thường
+    });
+  }
+});
+
 // ESC để đóng
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.getElementById('marketPanel').style.display === 'block') {
     closeMarketPanel();
   }
 });
+
+// ========== COPYRIGHT POPUP ==========
+const userBtn = document.getElementById('userBtn');
+const copyrightPopup = document.getElementById('copyrightPopup');
+const copyrightClose = document.getElementById('copyrightClose');
+const copyrightOverlay = document.getElementById('copyrightOverlay');
+
+if (userBtn) {
+  userBtn.addEventListener('click', () => {
+    copyrightPopup.style.display = 'flex';
+  });
+}
+const closeCopyright = () => { copyrightPopup.style.display = 'none'; };
+if (copyrightClose) copyrightClose.addEventListener('click', closeCopyright);
+if (copyrightOverlay) copyrightOverlay.addEventListener('click', closeCopyright);
 </script>
 <script src="alert-poller.js"></script>
 </body>
