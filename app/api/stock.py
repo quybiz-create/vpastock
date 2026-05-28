@@ -105,12 +105,31 @@ async def get_indicators(
         }
 
         # Drop rows with NaN OHLC (vnstock đôi khi trả NaN)
+       # Dedupe + drop NaN OHLC
         df_clean = df_full.dropna(subset=["open", "high", "low", "close", "volume"])
+        # Loại trùng timestamp (giữ row cuối nếu trùng) — VNINDEX hay bị duplicate
+        df_clean = df_clean[~df_clean.index.duplicated(keep='last')]
+        # Sort theo time tăng dần
+        df_clean = df_clean.sort_index()
+        
         series = []
         for idx, row in df_clean.iterrows():
             vpa_val = row.get("vpa", "Normal")
             if vpa_val is None or (isinstance(vpa_val, float) and math.isnan(vpa_val)):
                 vpa_val = "Normal"
+            series.append({
+                "time": int(idx.timestamp() * 1000),
+                "open": _safe_float(row["open"]),
+                "high": _safe_float(row["high"]),
+                "low": _safe_float(row["low"]),
+                "close": _safe_float(row["close"]),
+                "volume": int(row["volume"]) if not math.isnan(row["volume"]) else 0,
+                "ma20": _safe_float(row.get("ma20")),
+                "ma50": _safe_float(row.get("ma50")),
+                "rsi": _safe_float(row.get("rsi")),
+                "vpa": str(vpa_val),
+            })
+
             series.append({
                 "time": int(idx.timestamp() * 1000),
                 "open": _safe_float(row["open"]),
@@ -445,3 +464,27 @@ async def ai_deep_analysis(symbol: str):
             "Connection": "keep-alive",
         },
     )
+
+#-----------------------------------------------------------------
+# ============================================================
+# COMPANY INFO + FINANCIAL - Phase 6
+# ============================================================
+@router.get("/{symbol}/company")
+async def get_company(symbol: str):
+    """
+    Tong hop thong tin doanh nghiep + tai chinh 8 quy.
+    Tu vnstock VCI source:
+    - Overview: name, sector, profile, rating, target...
+    - Stats: market_cap, shares, foreign ownership
+    - Trading: avg vol/val, high/low 1Y
+    - Financial: 12 metrics x 8 quarters + margins
+    """
+    from app.services.company_info import fetch_company
+    
+    try:
+        result = await fetch_company(symbol)
+        return result
+    except Exception as e:
+        import traceback
+        logger.error(f"Company info error for {symbol}: {e}\n{traceback.format_exc()}")
+        raise HTTPException(500, f"Failed: {e}")

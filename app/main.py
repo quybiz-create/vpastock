@@ -45,8 +45,6 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy", "env": settings.APP_ENV}
-
-
 app.include_router(stock.router, prefix="/api/stock", tags=["stock"])
 app.include_router(market.router, prefix="/api/market", tags=["market"])
 app.include_router(screener.router, prefix="/api/screener", tags=["screener"])

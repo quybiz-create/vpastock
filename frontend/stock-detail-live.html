@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VPASTOCK — Live Data</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lightweight-charts@5.0.5/dist/lightweight-charts.standalone.production.js"></script>
+<script src="https://unpkg.com/lightweight-charts@5.0.7/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root{
   --bg:#131722; --bg2:#1e222d; --bg3:#2a2e39; --bg4:#363a45;
@@ -30,10 +30,10 @@ input{font-family:inherit;color:inherit}
 .nav a{padding:6px 12px;font-size:12px;color:var(--text2);text-decoration:none;border-radius:4px;transition:all .15s;font-weight:500}
 .nav a:hover{color:var(--text);background:var(--bg3)}
 .nav a.active{color:#fff;background:var(--blue)}
-.search{margin-left:auto;display:flex;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;width:300px;transition:border .15s}
-.search:focus-within{border-color:var(--blue)}
-.search input{background:none;border:none;outline:none;flex:1;font-size:12px;font-family:var(--mono);color:var(--text);text-transform:uppercase}
-.search::before{content:'\2315';margin-right:8px;color:var(--text3);font-size:14px}
+.search-sidebar{margin-bottom:10px;position:relative}
+.search-sidebar input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:12px;outline:none;padding:8px 10px;border-radius:6px;font-family:var(--mono);transition:border-color .15s,box-shadow .15s}
+.search-sidebar input:focus{border-color:#2962ff;box-shadow:0 0 0 2px rgba(41,98,255,.15)}
+.search-sidebar input::placeholder{color:var(--text2)}
 .user{width:32px;height:32px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;font-family:var(--mono)}
 
 .ticker-strip{height:32px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:28px;font-family:var(--mono);font-size:11px;overflow:hidden}
@@ -254,6 +254,93 @@ input{font-family:inherit;color:inherit}
 /* Tab AI badge */
 .tabs button[data-tab="ai"]{position:relative}
 
+/* === FIN + INFO TABS === */
+.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+.fin-cell{background:var(--bg);padding:8px 10px;border-radius:5px;border:1px solid var(--border);display:flex;flex-direction:column;gap:3px}
+.fin-label{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em}
+.fin-val{font-size:12px;font-weight:600;color:var(--text);font-family:'IBM Plex Mono',monospace}
+.fin-val.profit{color:#26a69a}
+.fin-val.loss{color:#ef5350}
+
+.fin-table-wrap{overflow-x:auto;margin-bottom:14px;border:1px solid var(--border);border-radius:5px;-webkit-overflow-scrolling:touch}
+.fin-table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:10px}
+.fin-table thead th{background:var(--bg2);color:var(--text2);padding:6px 8px;text-align:right;font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap}
+.fin-table thead th:first-child{text-align:left}
+.fin-table tbody td{padding:5px 8px;border-bottom:1px solid var(--bg);color:var(--text);text-align:right;white-space:nowrap}
+.fin-table tbody tr:last-child td{border-bottom:none}
+.fin-row-label{text-align:left !important;color:var(--text2) !important;font-weight:500}
+.fin-cell-num{font-variant-numeric:tabular-nums}
+.fin-cell-num.profit{color:#26a69a}
+.fin-cell-num.loss{color:#ef5350}
+
+.info-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.info-tag{background:var(--bg3);color:var(--text2);font-size:10px;padding:3px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace}
+.info-tag-blue{background:rgba(41,98,255,0.15);color:#2962ff}
+.info-list{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.info-row{display:flex;justify-content:space-between;padding:5px 8px;background:var(--bg);border-radius:4px;font-size:11px}
+.info-label{color:var(--text2)}
+.info-val{color:var(--text);font-weight:500;text-align:right}
+.info-profile{font-size:11px;line-height:1.65;color:var(--text);text-align:justify;background:var(--bg);padding:10px;border-radius:5px;border-left:3px solid var(--blue,#2962ff)}
+.info-empty{text-align:center;padding:30px 20px;background:var(--bg);border-radius:6px;border:1px dashed var(--border)}
+
+/* === MARKET PANEL (Thị trường) === */
+.market-panel{position:fixed;inset:0;top:48px;background:var(--bg);z-index:50;overflow-y:auto;padding:0}
+.market-panel-header{position:sticky;top:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;z-index:2}
+.market-panel-header h2{margin:0;font-size:18px;color:var(--text)}
+.market-close{background:var(--bg3);border:1px solid var(--border);color:var(--text);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.market-close:hover{background:var(--red);color:#fff}
+.market-body{max-width:1000px;margin:0 auto;padding:20px;display:flex;flex-direction:column;gap:20px}
+.market-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.market-card-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:16px}
+.market-loading{text-align:center;padding:30px;color:var(--text2);font-size:13px}
+.market-error{text-align:center;padding:20px;color:var(--red);font-size:12px}
+
+/* Fear & Greed Gauge */
+.fg-gauge-wrap{position:relative;width:260px;margin:0 auto 16px;text-align:center}
+.fg-gauge{width:100%;height:auto}
+.fg-score-display{margin-top:-30px}
+.fg-score-num{font-size:38px;font-weight:700;font-family:var(--mono);line-height:1}
+.fg-score-label{font-size:14px;font-weight:600;margin-top:2px}
+.fg-vnindex{text-align:center;font-size:12px;color:var(--text2);margin-bottom:16px;font-family:var(--mono)}
+.fg-components{display:flex;flex-direction:column;gap:8px}
+.fg-comp-row{display:flex;align-items:center;gap:10px}
+.fg-comp-label{font-size:11px;color:var(--text2);width:90px;flex-shrink:0}
+.fg-comp-bar-wrap{flex:1;height:18px;background:var(--bg);border-radius:9px;overflow:hidden;position:relative}
+.fg-comp-bar{height:100%;border-radius:9px;transition:width .4s ease}
+.fg-comp-val{font-size:10px;color:var(--text);font-family:var(--mono);width:60px;text-align:right;flex-shrink:0}
+
+/* Sector Heatmap */
+.sector-heatmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.sector-box{padding:12px 10px;border-radius:8px;cursor:default;transition:transform .12s;color:#fff;min-height:64px;display:flex;flex-direction:column;justify-content:space-between}
+.sector-box:hover{transform:scale(1.03)}
+.sector-name{font-size:12px;font-weight:600;line-height:1.2;margin-bottom:4px}
+.sector-pct{font-size:18px;font-weight:700;font-family:var(--mono)}
+.sector-meta{font-size:9px;opacity:0.85}
+
+@media (max-width:768px){
+  .market-panel{top:44px}
+  .market-panel-header{padding:10px 14px}
+  .market-panel-header h2{font-size:15px}
+  .market-body{padding:12px;gap:14px}
+  .market-card{padding:12px}
+  .sector-heatmap{grid-template-columns:repeat(2,1fr);gap:6px}
+  .sector-box{min-height:56px;padding:10px 8px}
+  .sector-pct{font-size:16px}
+  .fg-gauge-wrap{width:220px}
+  .fg-score-num{font-size:32px}
+}
+
+@media (max-width:768px){
+  .fin-grid{gap:5px}
+  .fin-cell{padding:6px 8px}
+  .fin-label{font-size:8px}
+  .fin-val{font-size:11px}
+  .fin-table{font-size:9px}
+  .fin-table thead th, .fin-table tbody td{padding:4px 6px}
+  .info-row{font-size:10px;padding:4px 6px}
+  .info-profile{font-size:10.5px;line-height:1.5;padding:8px}
+}
+
 /* === MOBILE RESPONSIVE - AGGRESSIVE === */
 @media (max-width: 768px) {
   body{font-size:13px}
@@ -264,9 +351,9 @@ input{font-family:inherit;color:inherit}
   .logo-mark{width:22px;height:22px;font-size:11px}
   .nav{order:3;width:100%;justify-content:space-around;padding:4px 0;border-top:1px solid var(--border);gap:0}
   .nav a{padding:5px 6px;font-size:10px;flex:1;text-align:center}
-  .search{order:2;flex:1;min-width:0 !important;width:auto !important;margin-left:auto !important;padding:4px 8px !important}
-  .search input{font-size:12px;width:100%}
   .user{order:4;width:28px;height:28px;font-size:11px;flex-shrink:0}
+  .search-sidebar{margin-bottom:6px}
+  .search-sidebar input{font-size:11px;padding:6px 8px}
   
   /* Ticker strip - HIDE trên mobile cho gọn */
   .ticker-strip{
@@ -491,19 +578,51 @@ input{font-family:inherit;color:inherit}
 <div class="topbar">
   <div class="logo"><span class="logo-mark">V</span>VPASTOCK</div>
   <nav class="nav">
-    <a href="#" class="active">Chi tiết CP</a>
-    <a href="#">Thị trường</a>
+    <a href="#" class="active" id="navDetail">Chi tiết CP</a>
+    <a href="#" id="navMarket">Thị trường</a>
     <a href="screener.html">Bộ lọc</a>
     <a href="watchlist.html">⭐ Watchlist</a>
   </nav>
-  <div class="search">
-    <input type="text" placeholder="Nhập mã CP và Enter (VD: VIC, VNINDEX)..." id="searchInput" maxlength="10">
-  </div>
   <div class="user">H</div>
 </div>
 
 <div class="mobile-wl-overlay" id="mobileWlOverlay"></div>
 <button class="mobile-wl-toggle" id="mobileWlToggle" title="Watchlist">⭐</button>
+
+<!-- MARKET PANEL (Thị trường) -->
+<div id="marketPanel" class="market-panel" style="display:none">
+  <div class="market-panel-header">
+    <h2>📊 Tổng quan thị trường</h2>
+    <button id="marketClose" class="market-close">✕</button>
+  </div>
+  <div class="market-body">
+    <!-- Fear & Greed -->
+    <div class="market-card">
+      <div class="market-card-title">😱 Chỉ số Sợ hãi & Tham lam (Fear & Greed)</div>
+      <div id="fgLoading" class="market-loading">Đang tính toán...</div>
+      <div id="fgContent" style="display:none">
+        <div class="fg-gauge-wrap">
+          <svg id="fgGauge" viewBox="0 0 200 120" class="fg-gauge"></svg>
+          <div class="fg-score-display">
+            <div class="fg-score-num" id="fgScoreNum">--</div>
+            <div class="fg-score-label" id="fgScoreLabel">--</div>
+          </div>
+        </div>
+        <div class="fg-vnindex" id="fgVnindex"></div>
+        <div class="fg-components" id="fgComponents"></div>
+      </div>
+      <div id="fgError" class="market-error" style="display:none"></div>
+    </div>
+    
+    <!-- Sector Heatmap -->
+    <div class="market-card">
+      <div class="market-card-title">🔥 Bản đồ nhiệt ngành (Sector Heatmap)</div>
+      <div id="shLoading" class="market-loading">Đang tải dữ liệu ngành...</div>
+      <div id="shContent" class="sector-heatmap" style="display:none"></div>
+      <div id="shError" class="market-error" style="display:none"></div>
+    </div>
+  </div>
+</div>
 
 <div class="ticker-strip">
   <div class="ticker-item up"><span class="sym">VNINDEX</span><span class="val" id="vniValue">--</span></div>
@@ -513,6 +632,9 @@ input{font-family:inherit;color:inherit}
 
 <div class="main">
   <aside class="sidebar-l">
+    <div class="search-sidebar">
+      <input type="text" placeholder="🔍 Nhập mã (VD: VIC, HSG)..." id="searchInput" maxlength="10">
+    </div>
     <div class="sec-title" id="watchlistTitle">Watchlist · Demo</div>
     <div id="watchlistList"></div>
   </aside>
@@ -646,6 +768,99 @@ input{font-family:inherit;color:inherit}
           <span id="aiUpdatedAt"></span>
           · <span class="ai-disclaimer">Chỉ tham khảo, không phải lời khuyên đầu tư</span>
         </div>
+      </div>
+
+      <!-- TAB TAI CHINH (hidden, show khi tab fin active) -->
+      <div id="finSection" style="display:none">
+        <div id="finLoading" class="ai-loading" style="display:none">
+          <div class="ai-spinner"></div>
+          <div class="ai-loading-text">Đang tải tài chính...</div>
+        </div>
+        <div id="finContent" style="display:none">
+          <h4 style="margin-top:0">💰 Định giá hiện tại</h4>
+          <div class="fin-grid">
+            <div class="fin-cell"><span class="fin-label">Vốn hóa</span><span class="fin-val" id="finMarketCap">--</span></div>
+            <div class="fin-cell"><span class="fin-label">CP lưu hành</span><span class="fin-val" id="finIssueShare">--</span></div>
+            <div class="fin-cell"><span class="fin-label">Free Float</span><span class="fin-val" id="finFreeFloat">--</span></div>
+            <div class="fin-cell"><span class="fin-label">Rating</span><span class="fin-val" id="finRating">--</span></div>
+            <div class="fin-cell"><span class="fin-label">Giá mục tiêu</span><span class="fin-val" id="finTargetPrice">--</span></div>
+            <div class="fin-cell"><span class="fin-label">Upside</span><span class="fin-val" id="finUpside">--</span></div>
+          </div>
+          
+          <h4>📊 Doanh thu 8 quý (tỷ VND)</h4>
+          <div class="fin-table-wrap">
+            <table class="fin-table" id="finTable">
+              <thead><tr id="finQuartersHead"></tr></thead>
+              <tbody>
+                <tr data-row="revenue"><td class="fin-row-label">Doanh thu</td></tr>
+                <tr data-row="gross_profit"><td class="fin-row-label">LN gộp</td></tr>
+                <tr data-row="pretax_profit"><td class="fin-row-label">LN trước thuế</td></tr>
+                <tr data-row="net_profit"><td class="fin-row-label">LN sau thuế</td></tr>
+                <tr data-row="owner_profit"><td class="fin-row-label">LN cổ đông Mẹ</td></tr>
+                <tr data-row="eps_basic"><td class="fin-row-label">EPS (VND)</td></tr>
+                <tr data-row="gross_margin"><td class="fin-row-label">Biên LN gộp %</td></tr>
+                <tr data-row="net_margin"><td class="fin-row-label">Biên LN ròng %</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4>📈 Giao dịch 1 năm</h4>
+          <div class="fin-grid">
+            <div class="fin-cell"><span class="fin-label">Cao 1Y</span><span class="fin-val" id="finHigh1Y">--</span></div>
+            <div class="fin-cell"><span class="fin-label">Thấp 1Y</span><span class="fin-val" id="finLow1Y">--</span></div>
+            <div class="fin-cell"><span class="fin-label">KL TB 1M</span><span class="fin-val" id="finAvgVol">--</span></div>
+            <div class="fin-cell"><span class="fin-label">GT TB 1M</span><span class="fin-val" id="finAvgVal">--</span></div>
+          </div>
+          
+          <h4>👥 Sở hữu</h4>
+          <div class="fin-grid">
+            <div class="fin-cell"><span class="fin-label">Nước ngoài</span><span class="fin-val" id="finForeignPct">--</span></div>
+            <div class="fin-cell"><span class="fin-label">Trần NN</span><span class="fin-val" id="finMaxForeignPct">--</span></div>
+            <div class="fin-cell"><span class="fin-label">Nhà nước</span><span class="fin-val" id="finStatePct">--</span></div>
+            <div class="fin-cell"><span class="fin-label">Cổ tức/CP</span><span class="fin-val" id="finDividend">--</span></div>
+          </div>
+        </div>
+        <div id="finError" class="ai-error" style="display:none"></div>
+      </div>
+
+      <!-- TAB INFO (hidden, show khi tab info active) -->
+      <div id="infoSection" style="display:none">
+        <div id="infoLoading" class="ai-loading" style="display:none">
+          <div class="ai-spinner"></div>
+          <div class="ai-loading-text">Đang tải thông tin...</div>
+        </div>
+        <div id="infoContent" style="display:none">
+          <h4 style="margin-top:0" id="infoName">--</h4>
+          <div class="info-meta">
+            <span class="info-tag" id="infoSymbol">--</span>
+            <span class="info-tag" id="infoExchange">--</span>
+            <span class="info-tag info-tag-blue" id="infoSector">--</span>
+          </div>
+          
+          <h4>📋 Thông tin cơ bản</h4>
+          <div class="info-list">
+            <div class="info-row"><span class="info-label">Mã CP:</span><span class="info-val" id="infoSym">--</span></div>
+            <div class="info-row"><span class="info-label">Tên ngắn:</span><span class="info-val" id="infoShortName">--</span></div>
+            <div class="info-row"><span class="info-label">Sàn:</span><span class="info-val" id="infoExch">--</span></div>
+            <div class="info-row"><span class="info-label">Ngày niêm yết:</span><span class="info-val" id="infoListingDate">--</span></div>
+            <div class="info-row"><span class="info-label">Ngành (ICB lv2):</span><span class="info-val" id="infoIcb2">--</span></div>
+            <div class="info-row"><span class="info-label">Ngành (ICB lv4):</span><span class="info-val" id="infoIcb4">--</span></div>
+          </div>
+          
+          <h4>🎯 Khuyến nghị (Analyst)</h4>
+          <div class="info-list">
+            <div class="info-row"><span class="info-label">Rating:</span><span class="info-val" id="infoRating">--</span></div>
+            <div class="info-row"><span class="info-label">Giá mục tiêu:</span><span class="info-val" id="infoTarget">--</span></div>
+            <div class="info-row"><span class="info-label">Giá hiện tại:</span><span class="info-val" id="infoCurrent">--</span></div>
+            <div class="info-row"><span class="info-label">Upside:</span><span class="info-val" id="infoUpsidePct">--</span></div>
+            <div class="info-row"><span class="info-label">Analyst:</span><span class="info-val" id="infoAnalyst">--</span></div>
+            <div class="info-row"><span class="info-label">Cập nhật:</span><span class="info-val" id="infoRatingDate">--</span></div>
+          </div>
+          
+          <h4>📝 Giới thiệu doanh nghiệp</h4>
+          <p id="infoProfile" class="info-profile">--</p>
+        </div>
+        <div id="infoError" class="ai-error" style="display:none"></div>
       </div>
 
       <!-- TAB TINH LENH (hidden mac dinh, show khi tab calc active) -->
@@ -985,10 +1200,10 @@ function ensureChart() {
   const container = document.getElementById('chartContainer');
   if (!container) return null;
   
-  // Fallback dimensions if container not yet sized
   const w = container.clientWidth || 800;
   const h = container.clientHeight || 500;
   
+  // Tạo chart minimal - KHÔNG truyền panes options ở createChart (gây bug v5.0.8)
   chart = LightweightCharts.createChart(container, {
     width: w,
     height: h,
@@ -996,11 +1211,6 @@ function ensureChart() {
       background: { type: 'solid', color: CHART_COLORS.bg },
       textColor: CHART_COLORS.text,
       attributionLogo: false,
-      panes: {
-        separatorColor: CHART_COLORS.border,
-        separatorHoverColor: '#2962ff',
-        enableResize: true,
-      },
     },
     grid: {
       vertLines: { color: CHART_COLORS.grid },
@@ -1050,15 +1260,17 @@ function ensureChart() {
   rsiSeries.createPriceLine({ price: 50, color: CHART_COLORS.text2, lineWidth: 1, lineStyle: 3, axisLabelVisible: false });
   rsiSeries.createPriceLine({ price: 30, color: CHART_COLORS.up, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'OS' });
   
-  // Pane stretch: main 60%, volume 20%, rsi 20%
-  try {
-    const panes = chart.panes();
-    if (panes && panes.length >= 3) {
-      panes[0].setStretchFactor(10);  // Main 67%
-      panes[1].setStretchFactor(1.5);   // Volume 10%
-      panes[2].setStretchFactor(3.5);   // RSI 23%
-    }
-  } catch (e) { console.warn('stretch:', e); }
+  // Set pane stretch (defer to next tick để pane đã sẵn sàng)
+  setTimeout(() => {
+    try {
+      const panes = chart.panes();
+      if (panes && panes.length >= 3 && typeof panes[0].setStretchFactor === 'function') {
+        panes[0].setStretchFactor(10);  // Main 67%
+        panes[1].setStretchFactor(1.5);   // Volume 10%
+        panes[2].setStretchFactor(3.5);   // RSI 23%
+      }
+    } catch (e) { console.warn('stretch:', e); }
+  }, 100);
   
   // Crosshair OHLC info
   const crosshairInfo = document.getElementById('crosshairInfo');
@@ -1083,20 +1295,18 @@ function ensureChart() {
     });
   }
   
-  // Responsive - dùng ResizeObserver để chart tự resize khi container đổi size
-  // (window.resize không trigger khi chỉ sidebar collapse hoặc orientation change)
+  // Responsive
   const resizeChart = () => {
     if (!chart) return;
     const w = container.clientWidth;
     const h = container.clientHeight;
     if (w > 0 && h > 0) {
-      chart.applyOptions({ width: w, height: h });
+      try { chart.applyOptions({ width: w, height: h }); } catch(e){}
     }
   };
   
   if (typeof ResizeObserver !== 'undefined') {
     const ro = new ResizeObserver(() => {
-      // Debounce để tránh resize quá nhiều
       clearTimeout(window.__chartResizeTimer);
       window.__chartResizeTimer = setTimeout(resizeChart, 50);
     });
@@ -1105,7 +1315,7 @@ function ensureChart() {
   window.addEventListener('resize', resizeChart);
   window.addEventListener('orientationchange', () => setTimeout(resizeChart, 200));
   
-  mainChart = chart; // backward compat marker
+  mainChart = chart;
   return chart;
 }
 
@@ -1113,26 +1323,55 @@ function renderChart(series) {
   const c = ensureChart();
   if (!c || !series || series.length === 0) return;
   
-  const candles = series.map(s => ({
+  // Helper: kiểm tra giá trị hợp lệ
+  const isValid = (v) => v !== null && v !== undefined && !isNaN(v) && isFinite(v);
+  
+  // Filter bars có OHLC đầy đủ (không null/NaN)
+  const validSeries = series.filter(s =>
+    isValid(s.time) && isValid(s.open) && isValid(s.high) &&
+    isValid(s.low) && isValid(s.close)
+  );
+  
+  if (validSeries.length === 0) {
+    console.warn('No valid bars to render');
+    return;
+  }
+  
+  // === DEDUPE bằng timestamp - keep last bar mỗi timestamp ===
+  const dedupeMap = new Map();
+  validSeries.forEach(s => {
+    const t = Math.floor(s.time / 1000);
+    dedupeMap.set(t, s);  // ghi đè nếu trùng → keep last
+  });
+  // Sắp xếp theo time tăng dần (Lightweight yêu cầu)
+  const dedupedSeries = Array.from(dedupeMap.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([t, s]) => s);
+  
+  console.log(`Chart: ${series.length} -> ${validSeries.length} valid -> ${dedupedSeries.length} unique`);
+  
+  const candles = dedupedSeries.map(s => ({
     time: Math.floor(s.time / 1000),
     open: s.open, high: s.high, low: s.low, close: s.close,
   }));
   
-  const ma20Data = series
-    .filter(s => s.ma20 !== null && s.ma20 !== undefined)
+  const ma20Data = dedupedSeries
+    .filter(s => isValid(s.ma20))
     .map(s => ({ time: Math.floor(s.time / 1000), value: s.ma20 }));
-  const ma50Data = series
-    .filter(s => s.ma50 !== null && s.ma50 !== undefined)
+  const ma50Data = dedupedSeries
+    .filter(s => isValid(s.ma50))
     .map(s => ({ time: Math.floor(s.time / 1000), value: s.ma50 }));
   
-  const volumeData = series.map(s => ({
-    time: Math.floor(s.time / 1000),
-    value: s.volume || 0,
-    color: s.close >= s.open ? CHART_COLORS.up + '88' : CHART_COLORS.down + '88',
-  }));
+  const volumeData = dedupedSeries
+    .filter(s => isValid(s.volume))
+    .map(s => ({
+      time: Math.floor(s.time / 1000),
+      value: s.volume || 0,
+      color: s.close >= s.open ? CHART_COLORS.up + '88' : CHART_COLORS.down + '88',
+    }));
   
-  const rsiData = series
-    .filter(s => s.rsi !== null && s.rsi !== undefined)
+  const rsiData = dedupedSeries
+    .filter(s => isValid(s.rsi))
     .map(s => ({ time: Math.floor(s.time / 1000), value: s.rsi }));
   
   candleSeries.setData(candles);
@@ -1420,12 +1659,13 @@ function renderEmaStMarkers() {
         priceLineVisible: false, lastValueVisible: false,
       });
     }
-    emaFastSeries.setData((ema.ema_fast || []).map(s => ({
-      time: Math.floor(s.time / 1000), value: s.value
-    })));
-    emaSlowSeries.setData((ema.ema_slow || []).map(s => ({
-      time: Math.floor(s.time / 1000), value: s.value
-    })));
+    const isValid = (v) => v !== null && v !== undefined && !isNaN(v) && isFinite(v);
+    emaFastSeries.setData((ema.ema_fast || [])
+      .filter(s => isValid(s.value) && isValid(s.time))
+      .map(s => ({ time: Math.floor(s.time / 1000), value: s.value })));
+    emaSlowSeries.setData((ema.ema_slow || [])
+      .filter(s => isValid(s.value) && isValid(s.time))
+      .map(s => ({ time: Math.floor(s.time / 1000), value: s.value })));
     if (emaFastSeries) emaFastSeries.applyOptions({ visible: true });
     if (emaSlowSeries) emaSlowSeries.applyOptions({ visible: true });
   } else {
@@ -1447,12 +1687,13 @@ function renderEmaStMarkers() {
         priceLineVisible: false, lastValueVisible: false,
       });
     }
-    stUpSeries.setData((st.line_up || []).map(s => ({
-      time: Math.floor(s.time / 1000), value: s.value
-    })));
-    stDownSeries.setData((st.line_down || []).map(s => ({
-      time: Math.floor(s.time / 1000), value: s.value
-    })));
+    const isValid = (v) => v !== null && v !== undefined && !isNaN(v) && isFinite(v);
+    stUpSeries.setData((st.line_up || [])
+      .filter(s => isValid(s.value) && isValid(s.time))
+      .map(s => ({ time: Math.floor(s.time / 1000), value: s.value })));
+    stDownSeries.setData((st.line_down || [])
+      .filter(s => isValid(s.value) && isValid(s.time))
+      .map(s => ({ time: Math.floor(s.time / 1000), value: s.value })));
     stUpSeries.applyOptions({ visible: true });
     stDownSeries.applyOptions({ visible: true });
   } else {
@@ -1843,11 +2084,15 @@ document.querySelectorAll('.tabs button').forEach(b => {
     const tab = b.dataset.tab;
     const calcSection = document.getElementById('calcSection');
     const aiSection = document.getElementById('aiSection');
+    const finSection = document.getElementById('finSection');
+    const infoSection = document.getElementById('infoSection');
     const vpaContent = document.querySelectorAll('#tabContent > h4, #tabContent > p, #tabContent > .t2-widget');
     
     // Hide all special sections first
     calcSection.style.display = 'none';
     aiSection.style.display = 'none';
+    if (finSection) finSection.style.display = 'none';
+    if (infoSection) infoSection.style.display = 'none';
     vpaContent.forEach(el => el.style.display = '');
     
     if (tab === 'calc') {
@@ -1863,8 +2108,15 @@ document.querySelectorAll('.tabs button').forEach(b => {
     } else if (tab === 'ai') {
       aiSection.style.display = 'block';
       vpaContent.forEach(el => el.style.display = 'none');
-      // Auto-fetch if no cached data
       maybeFetchAi();
+    } else if (tab === 'fin') {
+      finSection.style.display = 'block';
+      vpaContent.forEach(el => el.style.display = 'none');
+      maybeFetchCompany('fin');
+    } else if (tab === 'info') {
+      infoSection.style.display = 'block';
+      vpaContent.forEach(el => el.style.display = 'none');
+      maybeFetchCompany('info');
     }
   });
 });
@@ -1872,6 +2124,264 @@ document.querySelectorAll('.tabs button').forEach(b => {
 // ========== AI DEEP ANALYSIS ==========
 const AI_CACHE_TTL = 300000; // 5 phut
 const aiCache = {}; // {symbol: {text, fetchedAt}}
+
+// ========== COMPANY INFO + FINANCIAL ==========
+const COMPANY_CACHE_TTL = 600000; // 10 phut (data ít thay đổi)
+const companyCache = {}; // {symbol: {data, fetchedAt}}
+
+function maybeFetchCompany(targetTab) {
+  // targetTab: 'fin' or 'info' - quyết định section nào render
+  const sym = currentSymbol;
+  if (!sym) return;
+  
+  const cached = companyCache[sym];
+  const now = Date.now();
+  if (cached && (now - cached.fetchedAt) < COMPANY_CACHE_TTL) {
+    renderCompanyData(cached.data, targetTab);
+    return;
+  }
+  
+  fetchCompanyData(sym, targetTab);
+}
+
+async function fetchCompanyData(symbol, targetTab) {
+  // Show loading for both sections that need it
+  const finLoading = document.getElementById('finLoading');
+  const finContent = document.getElementById('finContent');
+  const finError = document.getElementById('finError');
+  const infoLoading = document.getElementById('infoLoading');
+  const infoContent = document.getElementById('infoContent');
+  const infoError = document.getElementById('infoError');
+  
+  if (targetTab === 'fin') {
+    finLoading.style.display = 'flex';
+    finContent.style.display = 'none';
+    finError.style.display = 'none';
+  } else if (targetTab === 'info') {
+    infoLoading.style.display = 'flex';
+    infoContent.style.display = 'none';
+    infoError.style.display = 'none';
+  }
+  
+  try {
+    const res = await fetch(`${API}/api/stock/${symbol}/company`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    
+    // Cache
+    companyCache[symbol] = { data, fetchedAt: Date.now() };
+    
+    renderCompanyData(data, targetTab);
+  } catch (err) {
+    console.error('Company fetch error:', err);
+    const errEl = targetTab === 'fin' ? finError : infoError;
+    const loadEl = targetTab === 'fin' ? finLoading : infoLoading;
+    errEl.textContent = `⚠️ Lỗi: ${err.message}`;
+    errEl.style.display = 'block';
+    loadEl.style.display = 'none';
+  }
+}
+
+// Format helpers
+function fmtBN(v) {
+  if (v == null || isNaN(v)) return '--';
+  if (Math.abs(v) >= 1e12) return (v / 1e12).toFixed(2) + ' nghìn tỷ';
+  if (Math.abs(v) >= 1e9) return (v / 1e9).toFixed(2) + ' tỷ';
+  if (Math.abs(v) >= 1e6) return (v / 1e6).toFixed(2) + ' triệu';
+  if (Math.abs(v) >= 1e3) return (v / 1e3).toFixed(0) + 'k';
+  return v.toFixed(0);
+}
+function fmtNum(v, dec=0) {
+  if (v == null || isNaN(v)) return '--';
+  return v.toLocaleString('vi-VN', {maximumFractionDigits: dec, minimumFractionDigits: dec});
+}
+function fmtPct(v, dec=2) {
+  if (v == null || isNaN(v)) return '--';
+  return (v * 100).toFixed(dec) + '%';
+}
+function fmtPrice(v) {
+  if (v == null || isNaN(v)) return '--';
+  return (v / 1000).toFixed(2) + 'k';
+}
+function fmtDate(d) {
+  if (!d) return '--';
+  try {
+    const parts = d.split('T')[0].split('-');
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  } catch(e) { return d; }
+}
+
+function renderCompanyData(data, targetTab) {
+  // Hide loading
+  document.getElementById('finLoading').style.display = 'none';
+  document.getElementById('infoLoading').style.display = 'none';
+  
+  // Kiểm tra có overview không (mã chỉ số không có)
+  const hasData = data && data.overview && data.overview.name;
+  
+  if (!hasData) {
+    // Là chỉ số, không có data DN
+    const msg = `<div class="info-empty">
+      <div style="font-size:32px;margin-bottom:8px">📊</div>
+      <div style="font-size:13px;color:var(--text);margin-bottom:6px">Mã <b>${data?.symbol || '--'}</b> là chỉ số, không có thông tin doanh nghiệp</div>
+      <div style="font-size:11px;color:var(--text2)">Tìm mã cổ phiếu (HSG, FPT, VIC, MWG...) để xem chi tiết</div>
+    </div>`;
+    
+    if (targetTab === 'fin' || !targetTab) {
+      document.getElementById('finContent').innerHTML = msg;
+      document.getElementById('finContent').style.display = 'block';
+    }
+    if (targetTab === 'info' || !targetTab) {
+      document.getElementById('infoContent').innerHTML = msg;
+      document.getElementById('infoContent').style.display = 'block';
+    }
+    return;
+  }
+  
+  if (targetTab === 'fin' || !targetTab) {
+    renderFinSection(data);
+    document.getElementById('finContent').style.display = 'block';
+  }
+  if (targetTab === 'info' || !targetTab) {
+    renderInfoSection(data);
+    document.getElementById('infoContent').style.display = 'block';
+  }
+}
+
+function renderFinSection(data) {
+  const o = data.overview || {};
+  const s = data.stats || {};
+  const t = data.trading || {};
+  const f = data.financial || {};
+  
+  // Stats
+  document.getElementById('finMarketCap').textContent = fmtBN(s.market_cap) + (s.market_cap ? ' VND' : '');
+  document.getElementById('finIssueShare').textContent = fmtNum(s.issue_share);
+  document.getElementById('finFreeFloat').textContent = fmtNum(s.free_float) + (s.free_float_pct ? ` (${fmtPct(s.free_float_pct, 1)})` : '');
+  
+  const ratingEl = document.getElementById('finRating');
+  ratingEl.textContent = o.rating || '--';
+  ratingEl.className = 'fin-val';
+  if (o.rating) {
+    if (o.rating.includes('B') || o.rating.includes('Buy')) ratingEl.classList.add('profit');
+    else if (o.rating.includes('S') || o.rating.includes('Sell')) ratingEl.classList.add('loss');
+  }
+  
+  document.getElementById('finTargetPrice').textContent = fmtPrice(o.target_price);
+  
+  const upsideEl = document.getElementById('finUpside');
+  if (o.upside_to_target_pct != null) {
+    const pct = o.upside_to_target_pct * 100;
+    upsideEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+    upsideEl.className = 'fin-val ' + (pct >= 0 ? 'profit' : 'loss');
+  } else {
+    upsideEl.textContent = '--';
+    upsideEl.className = 'fin-val';
+  }
+  
+  // Trading
+  document.getElementById('finHigh1Y').textContent = fmtPrice(t.high_1y);
+  document.getElementById('finLow1Y').textContent = fmtPrice(t.low_1y);
+  document.getElementById('finAvgVol').textContent = fmtBN(t.avg_volume_1m);
+  document.getElementById('finAvgVal').textContent = fmtBN(t.avg_value_1m) + ' VND';
+  
+  // Ownership
+  document.getElementById('finForeignPct').textContent = s.foreigner_pct != null ? (s.foreigner_pct * 100).toFixed(2) + '%' : '--';
+  document.getElementById('finMaxForeignPct').textContent = s.max_foreign_pct != null ? (s.max_foreign_pct * 100).toFixed(0) + '%' : '--';
+  document.getElementById('finStatePct').textContent = s.state_pct != null ? (s.state_pct * 100).toFixed(2) + '%' : '--';
+  document.getElementById('finDividend').textContent = s.dividend_per_share != null ? fmtNum(s.dividend_per_share) + ' VND' : '--';
+  
+  // Financial table
+  const quarters = f.quarters || [];
+  
+  // Header row
+  const headRow = document.getElementById('finQuartersHead');
+  headRow.innerHTML = '<th>Chỉ tiêu</th>' + quarters.map(q => `<th>${q}</th>`).join('');
+  
+  // Helper render row - query bằng data-row attribute
+  const renderRow = (rowKey, values, isPct = false, divisor = 1e9) => {
+    const tr = document.querySelector(`tr[data-row="${rowKey}"]`);
+    if (!tr) {
+      console.warn('Row not found:', rowKey);
+      return;
+    }
+    // Clear all old td except first (label)
+    while (tr.children.length > 1) tr.removeChild(tr.lastChild);
+    
+    quarters.forEach((q, i) => {
+      const v = values[i];
+      const cell = document.createElement('td');
+      cell.className = 'fin-cell-num';
+      if (v == null || isNaN(v)) {
+        cell.textContent = '--';
+      } else {
+        if (isPct) {
+          cell.textContent = v.toFixed(1);
+          cell.classList.add(v >= 0 ? 'profit' : 'loss');
+        } else {
+          const scaled = v / divisor;
+          cell.textContent = scaled.toFixed(1);
+          if (rowKey.includes('profit') || rowKey.includes('eps')) {
+            cell.classList.add(scaled >= 0 ? 'profit' : 'loss');
+          }
+        }
+      }
+      tr.appendChild(cell);
+    });
+  };
+  
+  renderRow('revenue', f.revenue || [], false, 1e9);
+  renderRow('gross_profit', f.gross_profit || [], false, 1e9);
+  renderRow('pretax_profit', f.pretax_profit || [], false, 1e9);
+  renderRow('net_profit', f.net_profit || [], false, 1e9);
+  renderRow('owner_profit', f.owner_profit || [], false, 1e9);
+  renderRow('eps_basic', f.eps_basic || [], false, 1);  // EPS = VND
+  renderRow('gross_margin', f.gross_margin || [], true);
+  renderRow('net_margin', f.net_margin || [], true);
+}
+
+function renderInfoSection(data) {
+  const o = data.overview || {};
+  
+  document.getElementById('infoName').textContent = o.name || data.symbol || '--';
+  document.getElementById('infoSymbol').textContent = o.symbol || data.symbol || '--';
+  document.getElementById('infoExchange').textContent = o.exchange || '--';
+  document.getElementById('infoSector').textContent = o.sector || '--';
+  
+  document.getElementById('infoSym').textContent = o.symbol || data.symbol || '--';
+  document.getElementById('infoShortName').textContent = o.short_name || '--';
+  document.getElementById('infoExch').textContent = o.exchange || '--';
+  document.getElementById('infoListingDate').textContent = fmtDate(o.listing_date);
+  document.getElementById('infoIcb2').textContent = o.icb_lv2 || '--';
+  document.getElementById('infoIcb4').textContent = o.icb_lv4 || '--';
+  
+  const ratingEl = document.getElementById('infoRating');
+  ratingEl.textContent = o.rating ? `${o.rating} (${o.rating_as_of || '--'})` : '--';
+  ratingEl.style.color = '';
+  if (o.rating) {
+    if (o.rating.includes('B') || o.rating.includes('Buy') || o.rating.includes('OP')) ratingEl.style.color = '#26a69a';
+    else if (o.rating.includes('S') || o.rating.includes('Sell') || o.rating.includes('UP')) ratingEl.style.color = '#ef5350';
+  }
+  
+  document.getElementById('infoTarget').textContent = o.target_price ? fmtNum(o.target_price) + ' VND' : '--';
+  document.getElementById('infoCurrent').textContent = o.current_price ? fmtNum(o.current_price) + ' VND' : '--';
+  
+  const upsideEl = document.getElementById('infoUpsidePct');
+  if (o.upside_to_target_pct != null) {
+    const pct = o.upside_to_target_pct * 100;
+    upsideEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+    upsideEl.style.color = pct >= 0 ? '#26a69a' : '#ef5350';
+  } else {
+    upsideEl.textContent = '--';
+    upsideEl.style.color = '';
+  }
+  
+  document.getElementById('infoAnalyst').textContent = o.analyst || '--';
+  document.getElementById('infoRatingDate').textContent = o.rating_as_of || '--';
+  document.getElementById('infoProfile').textContent = o.profile || 'Chưa có thông tin giới thiệu.';
+}
+
+// Clear company cache when symbol changes - handled by cache key
 
 function maybeFetchAi(forceRefresh = false) {
   const sym = currentSymbol;
@@ -2383,6 +2893,212 @@ document.getElementById('btnStar').addEventListener('click', toggleWatchlist);
 
 // Load user watchlist on init
 loadUserWatchlist();
+
+// ========== MARKET PANEL (Thị trường) ==========
+const marketCache = { fg: null, sectors: null, fetchedAt: 0 };
+const MARKET_CACHE_TTL = 300000; // 5 phút
+
+function openMarketPanel() {
+  document.getElementById('marketPanel').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  loadMarketData();
+}
+
+function closeMarketPanel() {
+  document.getElementById('marketPanel').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function loadMarketData(force = false) {
+  const now = Date.now();
+  if (!force && marketCache.fg && (now - marketCache.fetchedAt) < MARKET_CACHE_TTL) {
+    renderFearGreed(marketCache.fg);
+    renderSectorHeatmap(marketCache.sectors);
+    return;
+  }
+  
+  // Fear & Greed
+  document.getElementById('fgLoading').style.display = 'block';
+  document.getElementById('fgContent').style.display = 'none';
+  document.getElementById('fgError').style.display = 'none';
+  
+  fetch(`${API}/api/market/fear-greed`)
+    .then(r => r.json())
+    .then(data => {
+      marketCache.fg = data;
+      marketCache.fetchedAt = Date.now();
+      renderFearGreed(data);
+    })
+    .catch(err => {
+      console.error('FG error:', err);
+      document.getElementById('fgLoading').style.display = 'none';
+      document.getElementById('fgError').textContent = `⚠️ Lỗi: ${err.message}`;
+      document.getElementById('fgError').style.display = 'block';
+    });
+  
+  // Sector Heatmap
+  document.getElementById('shLoading').style.display = 'block';
+  document.getElementById('shContent').style.display = 'none';
+  document.getElementById('shError').style.display = 'none';
+  
+  fetch(`${API}/api/market/sectors`)
+    .then(r => r.json())
+    .then(data => {
+      marketCache.sectors = data;
+      renderSectorHeatmap(data);
+    })
+    .catch(err => {
+      console.error('Sectors error:', err);
+      document.getElementById('shLoading').style.display = 'none';
+      document.getElementById('shError').textContent = `⚠️ Lỗi: ${err.message}`;
+      document.getElementById('shError').style.display = 'block';
+    });
+}
+
+function renderFearGreed(data) {
+  document.getElementById('fgLoading').style.display = 'none';
+  
+  if (!data || data.error) {
+    document.getElementById('fgError').textContent = `⚠️ ${data?.error || 'Không có dữ liệu'}`;
+    document.getElementById('fgError').style.display = 'block';
+    return;
+  }
+  
+  document.getElementById('fgContent').style.display = 'block';
+  
+  const score = data.score || 50;
+  
+  // Color theo score
+  const getColor = (s) => {
+    if (s < 25) return '#d32f2f';      // extreme fear - đỏ đậm
+    if (s < 45) return '#f57c00';      // fear - cam
+    if (s < 55) return '#fbc02d';      // neutral - vàng
+    if (s < 75) return '#7cb342';      // greed - xanh lá nhạt
+    return '#388e3c';                   // extreme greed - xanh đậm
+  };
+  const color = getColor(score);
+  
+  // Render gauge SVG (semicircle 180°)
+  const gauge = document.getElementById('fgGauge');
+  const cx = 100, cy = 100, r = 80;
+  const angle = Math.PI - (score / 100) * Math.PI; // 0=left(180°), 100=right(0°)
+  const needleX = cx + r * 0.75 * Math.cos(angle);
+  const needleY = cy - r * 0.75 * Math.sin(angle);
+  
+  // Color zones (5 arcs)
+  const zones = [
+    { from: 0, to: 25, color: '#d32f2f' },
+    { from: 25, to: 45, color: '#f57c00' },
+    { from: 45, to: 55, color: '#fbc02d' },
+    { from: 55, to: 75, color: '#7cb342' },
+    { from: 75, to: 100, color: '#388e3c' },
+  ];
+  
+  const polarToXY = (pct, radius) => {
+    const a = Math.PI - (pct / 100) * Math.PI;
+    return [cx + radius * Math.cos(a), cy - radius * Math.sin(a)];
+  };
+  
+  let arcsHtml = '';
+  zones.forEach(z => {
+    const [x1, y1] = polarToXY(z.from, r);
+    const [x2, y2] = polarToXY(z.to, r);
+    const largeArc = (z.to - z.from) > 50 ? 1 : 0;
+    arcsHtml += `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}" 
+                 fill="none" stroke="${z.color}" stroke-width="14" stroke-linecap="butt"/>`;
+  });
+  
+  gauge.innerHTML = `
+    ${arcsHtml}
+    <line x1="${cx}" y1="${cy}" x2="${needleX}" y2="${needleY}" 
+          stroke="${color}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="6" fill="${color}"/>
+    <text x="20" y="115" fill="#787b86" font-size="9">0</text>
+    <text x="175" y="115" fill="#787b86" font-size="9">100</text>
+  `;
+  
+  // Score display
+  const scoreNum = document.getElementById('fgScoreNum');
+  scoreNum.textContent = Math.round(score);
+  scoreNum.style.color = color;
+  const scoreLabel = document.getElementById('fgScoreLabel');
+  scoreLabel.textContent = `${data.emoji || ''} ${data.label || ''}`;
+  scoreLabel.style.color = color;
+  
+  // VNINDEX info
+  if (data.vnindex) {
+    document.getElementById('fgVnindex').innerHTML = 
+      `VNINDEX: <b>${data.vnindex.value}</b> · Cách MA200: <b style="color:${data.vnindex.pct_above_ma >= 0 ? '#26a69a' : '#ef5350'}">${data.vnindex.pct_above_ma >= 0 ? '+' : ''}${data.vnindex.pct_above_ma}%</b>`;
+  }
+  
+  // Components bars
+  const comps = data.components || {};
+  let compsHtml = '';
+  Object.entries(comps).forEach(([key, c]) => {
+    const cScore = c.score || 0;
+    const cColor = getColor(cScore);
+    const valStr = c.value != null ? c.value : '--';
+    compsHtml += `
+      <div class="fg-comp-row">
+        <span class="fg-comp-label">${c.label} (${c.weight}%)</span>
+        <div class="fg-comp-bar-wrap">
+          <div class="fg-comp-bar" style="width:${cScore}%;background:${cColor}"></div>
+        </div>
+        <span class="fg-comp-val">${valStr}</span>
+      </div>`;
+  });
+  document.getElementById('fgComponents').innerHTML = compsHtml;
+}
+
+function renderSectorHeatmap(data) {
+  document.getElementById('shLoading').style.display = 'none';
+  
+  if (!data || data.error || !data.sectors || data.sectors.length === 0) {
+    document.getElementById('shError').textContent = `⚠️ ${data?.error || 'Không có dữ liệu ngành'}`;
+    document.getElementById('shError').style.display = 'block';
+    return;
+  }
+  
+  const container = document.getElementById('shContent');
+  container.style.display = 'grid';
+  
+  // Color theo % change
+  const getColor = (pct) => {
+    if (pct >= 3) return '#1b5e20';
+    if (pct >= 1.5) return '#388e3c';
+    if (pct >= 0.3) return '#66bb6a';
+    if (pct > -0.3) return '#616161';   // neutral xám
+    if (pct > -1.5) return '#ef5350';
+    if (pct > -3) return '#d32f2f';
+    return '#b71c1c';
+  };
+  
+  container.innerHTML = data.sectors.map(s => {
+    const color = getColor(s.avg_pct);
+    const sign = s.avg_pct >= 0 ? '+' : '';
+    return `
+      <div class="sector-box" style="background:${color}">
+        <div class="sector-name">${s.name}</div>
+        <div>
+          <div class="sector-pct">${sign}${s.avg_pct}%</div>
+          <div class="sector-meta">${s.leaders_count} mã</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// Event listeners
+document.getElementById('navMarket').addEventListener('click', (e) => {
+  e.preventDefault();
+  openMarketPanel();
+});
+document.getElementById('marketClose').addEventListener('click', closeMarketPanel);
+// ESC để đóng
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('marketPanel').style.display === 'block') {
+    closeMarketPanel();
+  }
+});
 </script>
 <script src="alert-poller.js"></script>
 </body>
