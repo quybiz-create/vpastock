@@ -696,6 +696,101 @@ input{font-family:inherit;color:inherit}
   .sidebar-l,.sidebar-r{font-size:11px}
   .sym-big{font-size:22px}
 }
+
+/* ============ MOBILE HARDFIX (cuối style để override) ============ */
+@media (max-width: 768px) {
+  html { font-size: 13px; -webkit-text-size-adjust: 100%; }
+  
+  /* Search input: nhỏ gọn */
+  body .sidebar-l .search-sidebar input,
+  body #searchInput {
+    font-size: 12px !important;
+    padding: 6px 10px !important;
+    height: 32px !important;
+  }
+
+  /* Watchlist items: chật và nhỏ */
+  body #watchlistList .wl-item {
+    padding: 4px 8px !important;
+    min-width: 55px !important;
+    max-width: 90px !important;
+  }
+  body #watchlistList .wl-item .wl-sym {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+  }
+  body #watchlistList .wl-item .wl-price,
+  body #watchlistList .wl-item .wl-pct,
+  body #watchlistList .wl-item .wl-item-meta {
+    font-size: 9px !important;
+  }
+
+  /* Stock header: gọn lại + sym/price nhỏ hơn */
+  body .stock-meta .sym-big,
+  body #symBig {
+    font-size: 16px !important;
+    line-height: 1 !important;
+  }
+  body .stock-meta .name,
+  body #stockName {
+    font-size: 9px !important;
+  }
+  body .stock-meta .exchange {
+    font-size: 8px !important;
+    padding: 1px 4px !important;
+  }
+  body .price-block .price-now,
+  body #priceNow {
+    font-size: 14px !important;
+    line-height: 1 !important;
+  }
+  body .price-block .change,
+  body #priceChange {
+    font-size: 10px !important;
+  }
+  body .price-block .session-info {
+    font-size: 8px !important;
+  }
+
+  /* Trading System Box: ẩn trên mobile (chỉ ưu tiên chart) */
+  body .trading-system-box {
+    display: none !important;
+  }
+
+  /* Chart container - đảm bảo không tràn */
+  body .chart-main,
+  body #chartContainer {
+    overflow: hidden !important;
+  }
+  body .chart-wrap {
+    overflow-x: hidden !important;
+    width: 100% !important;
+  }
+  body main.center {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  /* Settings button - to hơn cho dễ bấm + đặt rõ ràng */
+  body .chart-settings-btn {
+    top: 4px !important;
+    right: 4px !important;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 18px !important;
+    z-index: 100 !important;
+  }
+}
+
+/* ============ MOBILE NHỎ <500px ============ */
+@media (max-width: 500px) {
+  body #watchlistList .wl-item { max-width: 70px !important; padding: 3px 6px !important; }
+  body #watchlistList .wl-item .wl-sym { font-size: 10px !important; }
+  body .stock-meta .sym-big { font-size: 15px !important; }
+  body .price-block .price-now { font-size: 13px !important; }
+}
+
 </style>
 </head>
 <body>
