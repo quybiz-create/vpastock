@@ -95,7 +95,71 @@ input{font-family:inherit;color:inherit}
 .chart-main{flex:1;min-height:500px;position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden}
 .crosshair-info{position:absolute;top:6px;right:70px;z-index:6;font-size:11px;color:var(--text);font-family:'IBM Plex Mono',monospace;background:rgba(19,23,34,0.85);padding:4px 8px;border-radius:3px;pointer-events:none;display:none}
 
-.ind-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);padding:1px;border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.ind-bar{display:grid;grid-template-columns:repeat(9,1fr);gap:1px;background:var(--border);padding:1px;border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.pane-btn{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.06em;padding:3px 8px;border-radius:3px;background:var(--bg3);color:var(--text3);border:1px solid var(--border);cursor:pointer;transition:.15s}
+.pane-btn:hover{color:var(--text);border-color:var(--border-hi)}
+.pane-btn.active{background:var(--blue-bg);color:var(--blue);border-color:var(--blue)}
+
+/* Chart settings button + popup */
+.chart-settings-btn{position:absolute;top:8px;right:10px;z-index:20;width:32px;height:32px;border-radius:6px;background:rgba(30,34,45,0.85);border:1px solid var(--border);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;backdrop-filter:blur(4px)}
+.chart-settings-btn:hover{background:var(--blue-bg);border-color:var(--blue);color:var(--blue);transform:rotate(60deg)}
+.chart-settings-popup{position:absolute;top:48px;right:10px;z-index:9999;width:440px;background:var(--bg2);border:1px solid var(--border-hi);border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,0.6);display:none;animation:cspFadeIn .18s ease-out;max-height:80vh;overflow-y:auto}
+.chart-settings-popup.show{display:block}
+@keyframes cspFadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.csp-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+.csp-title{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text);letter-spacing:.04em}
+.csp-close{background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:2px 6px;border-radius:3px}
+.csp-close:hover{color:var(--text);background:var(--bg3)}
+.csp-body{padding:10px 14px 14px}
+.csp-tabs{display:flex;gap:4px;background:var(--bg);padding:3px;border-radius:6px;margin-bottom:12px}
+.csp-tab{flex:1;padding:7px 10px;border-radius:4px;background:transparent;border:none;color:var(--text3);font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;transition:.15s}
+.csp-tab:hover{color:var(--text)}
+.csp-tab.active{background:var(--bg2);color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.csp-tab-content{display:none}
+.csp-tab-content.active{display:block;animation:cspFadeIn .15s ease-out}
+.csp-counts{font-family:var(--mono);font-size:9px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px}
+.csp-section{margin-bottom:14px}
+.csp-section:last-of-type{margin-bottom:10px}
+.csp-section-title{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:8px}
+.csp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.csp-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:5px;background:var(--bg3);border:1px solid transparent;cursor:pointer;font-size:11px;line-height:1.4;transition:.15s}
+.csp-item:hover{background:var(--bg4);border-color:var(--border-hi)}
+.csp-item input[type=checkbox]{margin:0;cursor:pointer;width:14px;height:14px;accent-color:var(--blue);flex-shrink:0}
+.csp-item input[type=checkbox]:checked ~ span:last-child{color:var(--text)}
+.csp-item span:last-child{color:var(--text2);font-size:11px}
+.csp-item span:last-child b{color:var(--text);font-family:var(--mono);font-size:11px;font-weight:600}
+.csp-item span:last-child small{font-size:9px;color:var(--text3)}
+.csp-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0;border:1px solid rgba(255,255,255,0.1)}
+.csp-footer{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border);margin-top:6px}
+.csp-action{flex:1;padding:8px;border-radius:5px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;transition:.15s}
+.csp-action:hover{background:var(--bg4);border-color:var(--border-hi)}
+.csp-action-primary{background:var(--blue-bg);border-color:var(--blue);color:var(--blue)}
+.csp-action-primary:hover{background:var(--blue);color:#fff}
+@media (max-width: 768px){
+  .chart-settings-popup{
+    position:fixed !important;
+    top:50% !important;
+    left:50% !important;
+    right:auto !important;
+    transform:translate(-50%, -50%) !important;
+    width:calc(100vw - 24px) !important;
+    max-width:420px !important;
+    max-height:85vh !important;
+    z-index:99999 !important;
+    overflow-y:auto !important;
+  }
+  .chart-settings-popup.show{display:block !important}
+  .csp-grid{grid-template-columns:1fr}
+  .chart-settings-backdrop{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    z-index:99998;
+    backdrop-filter:blur(2px);
+  }
+  .chart-settings-backdrop.show{display:block}
+}
 
 /* === RSI COMBO TOGGLE BAR === */
 .rsi-combo-bar{display:flex;align-items:center;gap:14px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;flex-wrap:wrap}
@@ -599,7 +663,7 @@ input{font-family:inherit;color:inherit}
   .rcb-counts{font-size:8px !important;flex-shrink:0;margin-left:5px !important}
   
   /* Indicators bar - 3 columns thay 2 cho gọn hơn */
-  .ind-bar{grid-template-columns:repeat(3,1fr) !important;gap:1px !important;margin-top:6px !important;flex-shrink:0 !important}
+  .ind-bar{grid-template-columns:repeat(4,1fr) !important;gap:1px !important;margin-top:6px !important;flex-shrink:0 !important}
   .ind-cell{padding:4px 3px !important}
   .ind-name,.ind-label{font-size:8px !important}
   .ind-val,.ind-value{font-size:11px !important}
@@ -737,6 +801,71 @@ input{font-family:inherit;color:inherit}
       <div class="chart-main" style="position:relative">
         <div id="chartContainer" style="width:100%;height:100%;position:absolute;inset:0"></div>
         <div id="crosshairInfo" class="crosshair-info"></div>
+        <div id="chartSettingsBackdrop" class="chart-settings-backdrop" onclick="toggleChartSettingsPopup()"></div>
+        <button id="btnChartSettings" class="chart-settings-btn" onclick="toggleChartSettingsPopup()" title="Cài đặt biểu đồ">⚙</button>
+        <div id="chartSettingsPopup" class="chart-settings-popup">
+          <div class="csp-header">
+            <span class="csp-title">⚙ Cài đặt biểu đồ</span>
+            <button class="csp-close" onclick="toggleChartSettingsPopup()" title="Đóng">✕</button>
+          </div>
+          <div class="csp-body">
+            <div class="csp-tabs">
+              <button class="csp-tab active" data-tab="indicators" onclick="cspSwitchTab('indicators')">📈 Chỉ báo</button>
+              <button class="csp-tab" data-tab="signals" onclick="cspSwitchTab('signals')">🎯 Tín hiệu</button>
+            </div>
+
+            <div class="csp-tab-content active" data-tab-content="indicators">
+              <div class="csp-section">
+                <div class="csp-section-title">OVERLAY (trên chart chính)</div>
+                <div class="csp-grid">
+                  <label class="csp-item"><input type="checkbox" id="cspBB" checked onchange="toggleNewOverlay('bb')"> <span class="csp-swatch" style="background:#64b4ff"></span> <span><b>BB(20,2)</b><br><small>Bollinger Bands</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspLR" checked onchange="toggleNewOverlay('lr')"> <span class="csp-swatch" style="background:#ffd54f"></span> <span><b>LinReg(20)</b><br><small>Linear Regression</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspMA200" checked onchange="toggleNewOverlay('ma200')"> <span class="csp-swatch" style="background:#ff4081"></span> <span><b>MA200</b><br><small>Trend dài hạn</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspTrend" checked onchange="toggleNewOverlay('trend')"> <span class="csp-swatch" style="background:linear-gradient(90deg,#ffeb3b,#9c27b0)"></span> <span><b>Trend HMA</b><br><small>Slope Direction Line</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspKeylv" onchange="toggleNewOverlay('keylv')"> <span class="csp-swatch" style="background:linear-gradient(90deg,#ef5350,#26a69a)"></span> <span><b>Key S/R</b><br><small>Hỗ trợ / kháng cự</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspActions" checked onchange="toggleNewOverlay('actions')"> <span class="csp-swatch" style="background:linear-gradient(90deg,#fbc02d,#ff1744)"></span> <span><b>★ Key Actions</b><br><small>RSI/MACD/Smart$ signals</small></span></label>
+                </div>
+              </div>
+              <div class="csp-section">
+                <div class="csp-section-title">SUB PANE (dưới chart)</div>
+                <div class="csp-grid">
+                  <label class="csp-item"><input type="checkbox" id="cspRsi" checked onchange="switchSubChart('rsi')"> <span class="csp-swatch" style="background:#ab47bc"></span> <span><b>RSI(14)</b><br><small>Quá mua / quá bán</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspMacd" onchange="switchSubChart('macd')"> <span class="csp-swatch" style="background:#2962ff"></span> <span><b>MACD</b><br><small>Momentum</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspSm" onchange="switchSubChart('sm')"> <span class="csp-swatch" style="background:#26a69a"></span> <span><b>Smart Money</b><br><small>CMF + A/D Line</small></span></label>
+                </div>
+              </div>
+            </div>
+
+            <div class="csp-tab-content" data-tab-content="signals">
+              <div class="csp-section">
+                <div class="csp-section-title">🎯 RSI Combo <span id="cspRcbCounts" class="csp-counts"></span></div>
+                <div class="csp-grid">
+                  <label class="csp-item"><input type="checkbox" class="csp-rcb" data-key="combo_buy" checked> <span class="csp-swatch" style="background:#fbc02d"></span> <span><b>Combo Buy</b><br><small>★ Buy signal</small></span></label>
+                  <label class="csp-item"><input type="checkbox" class="csp-rcb" data-key="combo_exit" checked> <span class="csp-swatch" style="background:#ff6d00"></span> <span><b>Combo Exit</b><br><small>★ Exit signal</small></span></label>
+                  <label class="csp-item"><input type="checkbox" class="csp-rcb" data-key="bull_div"> <span class="csp-swatch" style="background:#4caf50"></span> <span><b>Bull Divergence</b><br><small>▲ Phân kỳ tăng</small></span></label>
+                  <label class="csp-item"><input type="checkbox" class="csp-rcb" data-key="bear_div"> <span class="csp-swatch" style="background:#e53935"></span> <span><b>Bear Divergence</b><br><small>▼ Phân kỳ giảm</small></span></label>
+                  <label class="csp-item"><input type="checkbox" class="csp-rcb" data-key="rsi_buy"> <span class="csp-swatch" style="background:#4caf50"></span> <span><b>RSI Buy</b><br><small>△ RSI &lt; 30</small></span></label>
+                  <label class="csp-item"><input type="checkbox" class="csp-rcb" data-key="rsi_exit"> <span class="csp-swatch" style="background:#ff9800"></span> <span><b>RSI Exit</b><br><small>▽ RSI &gt; 70</small></span></label>
+                </div>
+              </div>
+              <div class="csp-section">
+                <div class="csp-section-title">📊 EMA + SuperTrend + Pivot <span id="cspEstCounts" class="csp-counts"></span></div>
+                <div class="csp-grid">
+                  <label class="csp-item"><input type="checkbox" class="csp-est" data-key="ema_lines" checked> <span class="csp-swatch" style="background:#1e90ff"></span> <span><b>EMA 20/40</b><br><small>━ EMA lines</small></span></label>
+                  <label class="csp-item"><input type="checkbox" class="csp-est" data-key="golden_cross" checked> <span class="csp-swatch" style="background:#00e676"></span> <span><b>Golden Cross</b><br><small>▲ EMA20 cắt lên</small></span></label>
+                  <label class="csp-item"><input type="checkbox" class="csp-est" data-key="death_cross" checked> <span class="csp-swatch" style="background:#ff1744"></span> <span><b>Death Cross</b><br><small>▼ EMA20 cắt xuống</small></span></label>
+                  <label class="csp-item"><input type="checkbox" class="csp-est" data-key="st_lines"> <span class="csp-swatch" style="background:#1c86ee"></span> <span><b>SuperTrend</b><br><small>━ ST lines</small></span></label>
+                  <label class="csp-item"><input type="checkbox" class="csp-est" data-key="pivot_buy" checked> <span class="csp-swatch" style="background:#00e676"></span> <span><b>Pivot Buy</b><br><small>▲ Pivot @</small></span></label>
+                  <label class="csp-item"><input type="checkbox" class="csp-est" data-key="pivot_sell" checked> <span class="csp-swatch" style="background:#ff1744"></span> <span><b>Pivot Sell</b><br><small>▼ Pivot @</small></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="csp-footer">
+              <button class="csp-action" onclick="resetChartSettings()">↺ Mặc định</button>
+              <button class="csp-action csp-action-primary" onclick="toggleChartSettingsPopup()">Đóng</button>
+            </div>
+          </div>
+        </div>
         <div id="tradingSystemBox" class="trading-system-box" style="display:none">
           <div class="tsb-title">
             📈 Trading System
@@ -753,7 +882,7 @@ input{font-family:inherit;color:inherit}
           </div>
         </div>
       </div>
-      <div class="rsi-combo-bar" id="rsiComboBar">
+      <div class="rsi-combo-bar" id="rsiComboBar" style="display:none">
         <span class="rcb-title">🎯 RSI Combo</span>
         <label class="rcb-item"><input type="checkbox" class="rcb-toggle" data-key="combo_buy" checked> <span class="rcb-icon" style="color:#fbc02d">★</span> Combo Buy</label>
         <label class="rcb-item"><input type="checkbox" class="rcb-toggle" data-key="combo_exit" checked> <span class="rcb-icon" style="color:#ff6d00">★</span> Combo Exit</label>
@@ -763,7 +892,7 @@ input{font-family:inherit;color:inherit}
         <label class="rcb-item"><input type="checkbox" class="rcb-toggle" data-key="rsi_exit"> <span class="rcb-icon" style="color:#ff9800">▽</span> RSI Exit</label>
         <span class="rcb-counts" id="rcbCounts" style="margin-left:auto;color:#787b86;font-size:10px"></span>
       </div>
-      <div class="rsi-combo-bar" id="emaStBar">
+      <div class="rsi-combo-bar" id="emaStBar" style="display:none">
         <span class="rcb-title">📊 EMA + SuperTrend + Pivot</span>
         <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="ema_lines" checked> <span class="rcb-icon" style="color:#1e90ff">━</span> EMA 20/40</label>
         <label class="rcb-item"><input type="checkbox" class="est-toggle" data-key="golden_cross" checked> <span class="rcb-icon" style="color:#00e676">▲</span> Golden</label>
@@ -776,6 +905,9 @@ input{font-family:inherit;color:inherit}
       <div class="ind-bar" id="indBar">
         <div class="ind-cell"><div class="ind-label">MA20</div><div class="ind-value" id="indMa20">--</div><div class="ind-state neutral" id="indMa20State">--</div></div>
         <div class="ind-cell"><div class="ind-label">MA50</div><div class="ind-value" id="indMa50">--</div><div class="ind-state neutral" id="indMa50State">--</div></div>
+        <div class="ind-cell"><div class="ind-label">MA200</div><div class="ind-value" id="indMa200">--</div><div class="ind-state neutral" id="indMa200State">--</div></div>
+        <div class="ind-cell"><div class="ind-label">BB Width</div><div class="ind-value" id="indBb">--</div><div class="ind-state neutral" id="indBbState">--</div></div>
+        <div class="ind-cell"><div class="ind-label">Smart $</div><div class="ind-value" id="indSm">--</div><div class="ind-state neutral" id="indSmState">--</div></div>
         <div class="ind-cell"><div class="ind-label">RSI(14)</div><div class="ind-value" id="indRsi">--</div><div class="ind-state neutral" id="indRsiState">--</div></div>
         <div class="ind-cell"><div class="ind-label">ADX(14)</div><div class="ind-value" id="indAdx">--</div><div class="ind-state neutral" id="indAdxState">--</div></div>
         <div class="ind-cell"><div class="ind-label">VOL/MA20</div><div class="ind-value" id="indVol">--</div><div class="ind-state neutral" id="indVolState">--</div></div>
@@ -1251,6 +1383,277 @@ let candleSeries = null, ma20Series = null, ma50Series = null;
 let volumeSeries = null, rsiSeries = null;
 let emaFastSeries = null, emaSlowSeries = null;
 let stUpSeries = null, stDownSeries = null;
+// New overlay series
+let ma200Series = null, bbUpperSeries = null, bbMidSeries = null, bbLowerSeries = null;
+let lrSeries = null, macdSeries = null, macdSignalSeries = null, macdHistSeries = null;
+let cmfSeries = null, adSeries = null;
+let _trendBgMarkers = [];
+// Overlay state
+let newOverlays = { bb: true, lr: true, ma200: true, trend: true, keylv: false, actions: true };
+let subPanes = { rsi: true, macd: false, sm: false };  // multi-toggle
+let cachedBarsForOverlay = [];
+
+// ===== INDICATOR MATH =====
+const Calc = {
+  ma(arr, n) {
+    return arr.map((_, i) => i < n-1 ? null : arr.slice(i-n+1,i+1).reduce((a,b)=>a+b,0)/n);
+  },
+  ema(arr, n) {
+    const k = 2/(n+1), r = Array(arr.length).fill(null);
+    let s = false;
+    for (let i=0; i<arr.length; i++) {
+      if (!s) { if (i>=n-1) { r[i]=arr.slice(0,i+1).reduce((a,b)=>a+b,0)/(i+1); s=true; } }
+      else r[i] = arr[i]*k + r[i-1]*(1-k);
+    }
+    return r;
+  },
+  bb(closes, n=20, mult=2) {
+    const mid = this.ma(closes, n);
+    return mid.map((m,i) => {
+      if (m===null) return {upper:null,mid:null,lower:null,width:null};
+      const sl = closes.slice(i-n+1,i+1);
+      const std = Math.sqrt(sl.reduce((s,v)=>s+(v-m)**2,0)/n);
+      return {upper:m+mult*std, mid:m, lower:m-mult*std, width:(4*std)/m};
+    });
+  },
+  linearReg(closes, n=50) {
+    return closes.map((_,i) => {
+      if (i<n-1) return null;
+      const sl = closes.slice(i-n+1,i+1);
+      const mx=(n-1)/2, my=sl.reduce((a,v)=>a+v,0)/n;
+      let num=0,den=0;
+      sl.forEach((v,j)=>{num+=(j-mx)*(v-my);den+=(j-mx)**2;});
+      const slope=den?num/den:0, intercept=my-slope*mx;
+      return intercept+slope*(n-1);
+    });
+  },
+  adLine(bars) {
+    let ad=0;
+    return bars.map(b=>{
+      const hl=b.high-b.low;
+      if(hl===0) return ad;
+      ad+=((b.close-b.low)-(b.high-b.close))/hl*(b.volume||0);
+      return ad;
+    });
+  },
+  cmf(bars, n=20) {
+    const adl=this.adLine(bars);
+    return bars.map((_,i)=>{
+      if(i<n-1) return null;
+      const sl=bars.slice(i-n+1,i+1);
+      const sumVol=sl.reduce((a,b)=>a+(b.volume||0),0);
+      if(!sumVol) return null;
+      let sumMfv=0;
+      sl.forEach((b,j)=>{
+        const hl=b.high-b.low;
+        if(hl===0) return;
+        sumMfv+=((b.close-b.low)-(b.high-b.close))/hl*(b.volume||0);
+      });
+      return sumMfv/sumVol;
+    });
+  },
+  macd(closes, fast=12, slow=26, sig=9) {
+    const ef=this.ema(closes,fast), es=this.ema(closes,slow);
+    const ml=ef.map((f,i)=>f!==null&&es[i]!==null?f-es[i]:null);
+    const valid=ml.filter(v=>v!==null);
+    const rawSig=this.ema(valid,sig);
+    let si=0;
+    const sl=ml.map(v=>v===null?null:rawSig[si++]||null);
+    const hist=ml.map((v,i)=>v!==null&&sl[i]!==null?v-sl[i]:null);
+    return {macd:ml,signal:sl,hist};
+  },
+  // Trend Long Confirmation System
+  // BULL: EMA50>EMA200 + close>EMA50 + ADX>=adxMin + close>BB_mid
+  // BEAR: EMA50<EMA200 + close<EMA50 + ADX>=adxMin + close<BB_mid
+  trendState(closes, highs, lows, adxArr, bbMidArr, adxMin) {
+    if (adxMin === undefined) adxMin = 20;
+    const e50 = this.ema(closes, 50);
+    const e200 = this.ema(closes, 200);
+    return closes.map((c, i) => {
+      if (!e50[i] || !e200[i]) return null;
+      const adxOk = !adxArr || adxArr[i] == null ? true : (adxArr[i] >= adxMin);
+      const bbMid = bbMidArr ? bbMidArr[i] : null;
+      const bbBull = bbMid == null ? true : c > bbMid;
+      const bbBear = bbMid == null ? true : c < bbMid;
+      if (e50[i] > e200[i] && c > e50[i] && adxOk && bbBull) return 'bull';
+      if (e50[i] < e200[i] && c < e50[i] && adxOk && bbBear) return 'bear';
+      return null;
+    });
+  },
+  // WMA (Weighted Moving Average)
+  wma(arr, n) {
+    const r = Array(arr.length).fill(null);
+    const denom = n * (n + 1) / 2;
+    for (let i = n - 1; i < arr.length; i++) {
+      let sum = 0;
+      for (let j = 0; j < n; j++) sum += arr[i - j] * (n - j);
+      r[i] = sum / denom;
+    }
+    return r;
+  },
+  // T-S-R Big Trend / Slope Direction Line
+  // Logic (theo MQ4):
+  //   vect[x] = 2*WMA(x, p/2) - WMA(x, p)
+  //   hma[x]  = WMA(vect, sqrt(p))
+  //   slope[x]: tăng = uptrend, giảm = downtrend
+  // Trả về { hma: [], trend: [] } với trend = 1 (up), -1 (down), 0 (flat)
+  hmaSlope(closes, period) {
+    if (period === undefined) period = 80;
+    const p2 = Math.floor(period / 2);
+    const pSqrt = Math.max(2, Math.floor(Math.sqrt(period)));
+    const wmaHalf = this.wma(closes, p2);
+    const wmaFull = this.wma(closes, period);
+    const vect = closes.map((_, i) => {
+      if (wmaHalf[i] == null || wmaFull[i] == null) return null;
+      return 2 * wmaHalf[i] - wmaFull[i];
+    });
+    // Smooth lại bằng WMA(sqrt(period))
+    const vectClean = vect.map(v => v == null ? 0 : v);
+    const hma = this.wma(vectClean, pSqrt);
+    // Set null cho period đầu
+    for (let i = 0; i < period + pSqrt; i++) hma[i] = null;
+    // Tính trend từ slope
+    const trend = Array(closes.length).fill(0);
+    for (let i = 1; i < hma.length; i++) {
+      if (hma[i] == null || hma[i-1] == null) { trend[i] = 0; continue; }
+      if (hma[i] > hma[i-1]) trend[i] = 1;       // uptrend
+      else if (hma[i] < hma[i-1]) trend[i] = -1; // downtrend
+      else trend[i] = trend[i-1];                // giữ trend cũ nếu flat
+    }
+    return { hma, trend };
+  },
+
+    // === KEY ACTION DETECTOR: phát hiện điểm hành động quan trọng ===
+  keyActions(bars, closes, ma50, rsiArr, macdData, cmfArr) {
+    const events = [];
+    const len = closes.length;
+    // 1. RSI extreme × MA50 confluence (chỉ marker khi cả 2 ĐỒNG QUAN TRỌNG)
+    for (let i = 5; i < len; i++) {
+      const r = rsiArr[i];
+      if (r == null || ma50[i] == null) continue;
+      // RSI bật khỏi vùng oversold trong uptrend
+      if (rsiArr[i-1] < 30 && r >= 30 && closes[i] > ma50[i]) {
+        events.push({i, time: bars[i].time, type: 'rsi_buy', text: '★ RSI Buy', color: '#00e676', pos: 'belowBar', shape: 'arrowUp'});
+      }
+      // RSI cắt khỏi overbought trong downtrend
+      if (rsiArr[i-1] > 70 && r <= 70 && closes[i] < ma50[i]) {
+        events.push({i, time: bars[i].time, type: 'rsi_sell', text: '★ RSI Sell', color: '#ff5252', pos: 'aboveBar', shape: 'arrowDown'});
+      }
+    }
+    // 2. MACD histogram zero-cross với độ lớn lớn (lọc noise)
+    const hist = macdData.hist;
+    // Tính trung bình |hist| để lọc nhiễu
+    const histAbs = hist.filter(v => v !== null).map(Math.abs);
+    const histAvg = histAbs.length ? histAbs.reduce((a,b)=>a+b,0)/histAbs.length : 0;
+    const minMagnitude = histAvg * 0.5;
+    for (let i = 5; i < len; i++) {
+      if (hist[i] == null || hist[i-1] == null) continue;
+      // Cross từ - sang +
+      if (hist[i-1] < 0 && hist[i] > 0 && Math.abs(hist[i]) > minMagnitude) {
+        events.push({i, time: bars[i].time, type: 'macd_bull', text: '▲', color: '#26a69a', pos: 'belowBar', shape: 'circle'});
+      }
+      // Cross từ + sang -
+      if (hist[i-1] > 0 && hist[i] < 0 && Math.abs(hist[i]) > minMagnitude) {
+        events.push({i, time: bars[i].time, type: 'macd_bear', text: '▼', color: '#ef5350', pos: 'aboveBar', shape: 'circle'});
+      }
+    }
+    // 3. Smart Money Divergence: so sánh swing high/low giá vs CMF
+    // Tìm swing trong cửa sổ ~14 bar (phù hợp CK VN giao dịch ~22 ngày/tháng)
+    const win = 7;
+    for (let i = win * 2; i < len; i++) {
+      const slicePrices = closes.slice(i - win, i);
+      const sliceCmf = cmfArr.slice(i - win, i);
+      const prevSlicePrices = closes.slice(i - 2*win, i - win);
+      const prevSliceCmf = cmfArr.slice(i - 2*win, i - win);
+      if (sliceCmf.some(v => v == null) || prevSliceCmf.some(v => v == null)) continue;
+      const currHigh = Math.max(...slicePrices);
+      const prevHigh = Math.max(...prevSlicePrices);
+      const currLow = Math.min(...slicePrices);
+      const prevLow = Math.min(...prevSlicePrices);
+      const currCmfHigh = Math.max(...sliceCmf);
+      const prevCmfHigh = Math.max(...prevSliceCmf);
+      const currCmfLow = Math.min(...sliceCmf);
+      const prevCmfLow = Math.min(...prevSliceCmf);
+      // Bearish divergence: giá đỉnh cao hơn nhưng CMF đỉnh thấp hơn → Distribution
+      if (currHigh > prevHigh * 1.01 && currCmfHigh < prevCmfHigh - 0.05) {
+        if (!events.some(e => e.type === 'sm_dist' && Math.abs(e.i - i) < win)) {
+          events.push({i, time: bars[i].time, type: 'sm_dist', text: '★ Xả ngầm', color: '#ff1744', pos: 'aboveBar', shape: 'square'});
+        }
+      }
+      // Bullish divergence: giá đáy thấp hơn nhưng CMF đáy cao hơn → Accumulation
+      if (currLow < prevLow * 0.99 && currCmfLow > prevCmfLow + 0.05) {
+        if (!events.some(e => e.type === 'sm_acc' && Math.abs(e.i - i) < win)) {
+          events.push({i, time: bars[i].time, type: 'sm_acc', text: '★ Gom ngầm', color: '#00e676', pos: 'belowBar', shape: 'square'});
+        }
+      }
+    }
+    return events;
+  },
+
+    // Compute ADX(14) - Welles Wilder
+  adx(highs, lows, closes, n) {
+    if (n === undefined) n = 14;
+    const len = closes.length;
+    const tr = Array(len).fill(0);
+    const plusDM = Array(len).fill(0);
+    const minusDM = Array(len).fill(0);
+    for (let i = 1; i < len; i++) {
+      const h = highs[i], l = lows[i], pc = closes[i-1], ph = highs[i-1], pl = lows[i-1];
+      tr[i] = Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc));
+      const up = h - ph, dn = pl - l;
+      plusDM[i] = (up > dn && up > 0) ? up : 0;
+      minusDM[i] = (dn > up && dn > 0) ? dn : 0;
+    }
+    // Wilder smoothing
+    const smoothTR = Array(len).fill(0);
+    const smoothPlus = Array(len).fill(0);
+    const smoothMinus = Array(len).fill(0);
+    let sumTR = 0, sumP = 0, sumM = 0;
+    for (let i = 1; i <= n; i++) { sumTR += tr[i]; sumP += plusDM[i]; sumM += minusDM[i]; }
+    smoothTR[n] = sumTR; smoothPlus[n] = sumP; smoothMinus[n] = sumM;
+    for (let i = n + 1; i < len; i++) {
+      smoothTR[i] = smoothTR[i-1] - (smoothTR[i-1] / n) + tr[i];
+      smoothPlus[i] = smoothPlus[i-1] - (smoothPlus[i-1] / n) + plusDM[i];
+      smoothMinus[i] = smoothMinus[i-1] - (smoothMinus[i-1] / n) + minusDM[i];
+    }
+    const dx = Array(len).fill(null);
+    for (let i = n; i < len; i++) {
+      const pdi = smoothTR[i] ? (smoothPlus[i] / smoothTR[i]) * 100 : 0;
+      const mdi = smoothTR[i] ? (smoothMinus[i] / smoothTR[i]) * 100 : 0;
+      dx[i] = (pdi + mdi) ? Math.abs(pdi - mdi) / (pdi + mdi) * 100 : 0;
+    }
+    const adx = Array(len).fill(null);
+    let firstAdx = null;
+    for (let i = 2 * n; i < len; i++) {
+      if (firstAdx === null) {
+        let s = 0;
+        for (let j = n; j <= 2 * n; j++) s += dx[j] || 0;
+        firstAdx = s / (n + 1);
+        adx[i] = firstAdx;
+      } else {
+        adx[i] = (adx[i-1] * (n - 1) + (dx[i] || 0)) / n;
+      }
+    }
+    return adx;
+  },
+  keyLevels(bars, lb=120) {
+    const sl=bars.slice(-lb); const lvs=[];
+    for(let i=2;i<sl.length-2;i++){
+      if(sl[i].high>sl[i-1].high&&sl[i].high>sl[i-2].high&&sl[i].high>sl[i+1].high&&sl[i].high>sl[i+2].high) lvs.push({p:sl[i].high,t:'R'});
+      if(sl[i].low<sl[i-1].low&&sl[i].low<sl[i-2].low&&sl[i].low<sl[i+1].low&&sl[i].low<sl[i+2].low) lvs.push({p:sl[i].low,t:'S'});
+    }
+    const used=new Set(), out=[];
+    lvs.forEach((lv,i)=>{
+      if(used.has(i)) return;
+      const grp=[lv]; 
+      lvs.forEach((o,j)=>{if(i!==j&&!used.has(j)&&Math.abs(o.p-lv.p)/lv.p<0.005){grp.push(o);used.add(j);}});
+      used.add(i);
+      const avg=grp.reduce((a,v)=>a+v.p,0)/grp.length;
+      out.push({price:avg,type:grp.filter(g=>g.t==='R').length>=grp.length/2?'R':'S',strength:grp.length});
+    });
+    return out.sort((a,b)=>b.strength-a.strength).slice(0,8);
+  }
+};
 // Backward compat: keep mainChart/subChart symbols for old code that may reference them
 let mainChart = null, subChart = null;
 
@@ -1335,15 +1738,40 @@ function ensureChart() {
   rsiSeries.createPriceLine({ price: 70, color: CHART_COLORS.down, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'OB' });
   rsiSeries.createPriceLine({ price: 50, color: CHART_COLORS.text2, lineWidth: 1, lineStyle: 3, axisLabelVisible: false });
   rsiSeries.createPriceLine({ price: 30, color: CHART_COLORS.up, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'OS' });
+
+  // ===== NEW OVERLAY SERIES (Pane 0) =====
+  ma200Series = chart.addSeries(LightweightCharts.LineSeries, {
+    color: '#ff4081', lineWidth: 2, lineStyle: 1, title: 'MA200',
+    priceLineVisible: false, lastValueVisible: true,
+  });
+  bbUpperSeries = chart.addSeries(LightweightCharts.LineSeries, {
+    color: 'rgba(100,180,255,0.55)', lineWidth: 1, title: 'BB↑',
+    priceLineVisible: false, lastValueVisible: false,
+  });
+  bbMidSeries = chart.addSeries(LightweightCharts.LineSeries, {
+    color: 'rgba(100,180,255,0.22)', lineWidth: 1, lineStyle: 3, title: '',
+    priceLineVisible: false, lastValueVisible: false,
+  });
+  bbLowerSeries = chart.addSeries(LightweightCharts.LineSeries, {
+    color: 'rgba(100,180,255,0.55)', lineWidth: 1, title: 'BB↓',
+    priceLineVisible: false, lastValueVisible: false,
+  });
+  lrSeries = chart.addSeries(LightweightCharts.LineSeries, {
+    color: '#ffd54f', lineWidth: 1, lineStyle: 1, title: 'LinReg(20)',
+    priceLineVisible: false, lastValueVisible: true,
+  });
+
+  // MACD và Smart Money series sẽ được tạo động khi bật trong popup
+  // (createMacdPane / removeMacdPane / createSmPane / removeSmPane)
   
   // Set pane stretch (defer to next tick để pane đã sẵn sàng)
   setTimeout(() => {
     try {
       const panes = chart.panes();
       if (panes && panes.length >= 3 && typeof panes[0].setStretchFactor === 'function') {
-        panes[0].setStretchFactor(10);  // Main 67%
-        panes[1].setStretchFactor(1.5);   // Volume 10%
-        panes[2].setStretchFactor(3.5);   // RSI 23%
+        panes[0].setStretchFactor(10);
+        panes[1].setStretchFactor(1.5);
+        panes[2].setStretchFactor(3.5);
       }
     } catch (e) { console.warn('stretch:', e); }
   }, 100);
@@ -1457,6 +1885,547 @@ function renderChart(series) {
   rsiSeries.setData(rsiData);
   
   c.timeScale().fitContent();
+
+  // Render new overlays
+  renderNewOverlays(dedupedSeries);
+}
+
+// ========== NEW OVERLAYS: BB, LinReg, MA200, Trend, MACD, Smart Money ==========
+function renderNewOverlays(series) {
+  if (!series || !series.length) return;
+  cachedBarsForOverlay = series;
+
+  const isValid = v => v !== null && v !== undefined && !isNaN(v) && isFinite(v);
+  const closes = series.map(s => s.close);
+  const highs = series.map(s => s.high);
+  const lows = series.map(s => s.low);
+  const bars = series.map(s => ({ high: s.high, low: s.low, close: s.close, volume: s.volume || 0 }));
+  const times = series.map(s => Math.floor(s.time / 1000));
+
+  // === MA200 (compute frontend) ===
+  const ma200computed = Calc.ma(closes, 200);
+  // Fallback: nếu chưa đủ 200 bars, dùng MA của số bars có sẵn (tối thiểu 100)
+  const minBars = Math.min(200, Math.max(100, Math.floor(closes.length * 0.8)));
+  const ma200vals = closes.length >= 200 ? ma200computed : Calc.ma(closes, minBars);
+  const ma200Data = ma200vals.map((v,i) => v !== null && isValid(v) ? {time: times[i], value: v} : null).filter(Boolean);
+  console.log('MA200 data points:', ma200Data.length, 'from', closes.length, 'bars');
+  if (ma200Series) {
+    ma200Series.setData(ma200Data);
+    ma200Series.applyOptions({ visible: newOverlays.ma200, lineWidth: 2, color: '#ff4081' });
+  }
+
+  // === Bollinger Bands ===
+  const bbVals = Calc.bb(closes, 20, 2);
+  if (bbUpperSeries) {
+    bbUpperSeries.setData(bbVals.map((b,i) => b.upper!==null ? {time:times[i],value:b.upper} : null).filter(Boolean));
+    bbMidSeries.setData(bbVals.map((b,i) => b.mid!==null ? {time:times[i],value:b.mid} : null).filter(Boolean));
+    bbLowerSeries.setData(bbVals.map((b,i) => b.lower!==null ? {time:times[i],value:b.lower} : null).filter(Boolean));
+    bbUpperSeries.applyOptions({ visible: newOverlays.bb });
+    bbMidSeries.applyOptions({ visible: newOverlays.bb });
+    bbLowerSeries.applyOptions({ visible: newOverlays.bb });
+  }
+  // Cache BB for indicator bar
+  window.__lastBb = bbVals[bbVals.length - 1];
+
+  // === Linear Regression ===
+  const lrVals = Calc.linearReg(closes, 20);
+  if (lrSeries) {
+    lrSeries.setData(lrVals.map((v,i) => v!==null ? {time:times[i],value:v} : null).filter(Boolean));
+    lrSeries.applyOptions({ visible: newOverlays.lr });
+  }
+
+  // === T-S-R Big Trend: HMA Slope Direction Line (như MT4) ===
+  // Vẽ 2 line: uptrend (xanh) + downtrend (đỏ). Không đổi màu nến.
+  // Reset candle về màu chuẩn (đề phòng version cũ đã đổi màu)
+  if (candleSeries) {
+    const standardCandles = series.map((s,i) => ({
+      time: times[i],
+      open: s.open, high: s.high, low: s.low, close: s.close,
+    }));
+    try { candleSeries.setData(standardCandles); } catch(e) {}
+
+    if (newOverlays.trend) {
+      // HMA Slope - period 50 (tối ưu cho CK Việt Nam, ngắn hạn hơn forex)
+      const { hma, trend } = Calc.hmaSlope(closes, 50);
+      // 1 line duy nhất, đổi MÀU theo segment (per-point color)
+      // Cleanup 2 series cũ nếu có
+      try {
+        if (window.__trendUpSeries) { chart.removeSeries(window.__trendUpSeries); window.__trendUpSeries = null; }
+        if (window.__trendDownSeries) { chart.removeSeries(window.__trendDownSeries); window.__trendDownSeries = null; }
+      } catch(e) {}
+
+      // Lightweight Charts v5: dùng custom Series với color array
+      // Cách đơn giản & ổn định: tạo nhiều segments liên tiếp cùng màu
+      // Mỗi khi trend đổi → kết thúc segment hiện tại + bắt đầu segment mới
+      try {
+        // Cleanup segments cũ
+        if (window.__trendSegments) {
+          window.__trendSegments.forEach(s => { try { chart.removeSeries(s); } catch(e){} });
+        }
+        window.__trendSegments = [];
+
+        // Group thành các segment cùng màu
+        const segments = [];
+        let currentSeg = null;
+        for (let i = 0; i < hma.length; i++) {
+          if (hma[i] == null) continue;
+          const dir = trend[i] >= 0 ? 1 : -1;
+          if (!currentSeg || currentSeg.dir !== dir) {
+            // Bắt đầu segment mới - nối với điểm cuối segment trước
+            if (currentSeg) {
+              currentSeg.data.push({ time: times[i], value: hma[i] }); // điểm cuối segment cũ
+              segments.push(currentSeg);
+            }
+            currentSeg = {
+              dir,
+              data: [{ time: times[i], value: hma[i] }],
+            };
+          } else {
+            currentSeg.data.push({ time: times[i], value: hma[i] });
+          }
+        }
+        if (currentSeg) segments.push(currentSeg);
+
+        // Render từng segment
+        segments.forEach((seg, idx) => {
+          const s = chart.addSeries(LightweightCharts.LineSeries, {
+            color: seg.dir > 0 ? '#42a5f5' : '#ef5350',
+            lineWidth: 3,
+            title: idx === 0 ? 'Trend HMA' : '',
+            priceLineVisible: false,
+            lastValueVisible: idx === segments.length - 1,
+            crosshairMarkerVisible: false,
+          });
+          s.setData(seg.data);
+          window.__trendSegments.push(s);
+        });
+        console.log('[Trend HMA] segments:', segments.length);
+      } catch(e) { console.warn('Trend HMA:', e); }
+    } else {
+      // Tắt trend → xoá hết segments
+      try {
+        if (window.__trendSegments) {
+          window.__trendSegments.forEach(s => { try { chart.removeSeries(s); } catch(e){} });
+          window.__trendSegments = [];
+        }
+      } catch(e) {}
+    }
+
+    // Cleanup trend line cũ nếu có (đã disable)
+    try {
+      if (window.__trendLine) { candleSeries.removePriceLine(window.__trendLine); window.__trendLine = null; }
+    } catch(e) {}
+
+    // Cleanup markers cũ (đã bỏ hệ thống markers, giờ chỉ dùng HMA line)
+    try { if (window.__trendChangeMarkers) { window.__trendChangeMarkers.setMarkers([]); } } catch(e){}
+  }
+
+  // === Key Support/Resistance: chỉ vẽ nếu user bật ===
+  if (newOverlays.keylv) renderKeyLevels(bars.map((b,i)=>({...b, time:times[i]})), series[series.length - 1]?.close);
+  else if (window.__keyLevelLines) { window.__keyLevelLines.forEach(l => { try { candleSeries.removePriceLine(l); } catch(e){} }); window.__keyLevelLines = []; }
+
+  // === MACD ===
+  const macdData = Calc.macd(closes);
+  if (macdHistSeries) {
+    macdHistSeries.setData(macdData.hist.map((v,i) => v!==null ? {
+      time:times[i], value:v,
+      color: v >= 0 ? 'rgba(38,166,154,0.7)' : 'rgba(239,83,80,0.7)'
+    } : null).filter(Boolean));
+    macdSeries.setData(macdData.macd.map((v,i) => v!==null ? {time:times[i],value:v} : null).filter(Boolean));
+    macdSignalSeries.setData(macdData.signal.map((v,i) => v!==null ? {time:times[i],value:v} : null).filter(Boolean));
+  }
+
+  // === CMF (Smart Money) ===
+  const cmfVals = Calc.cmf(bars, 20);
+  const cmfLast = cmfVals.filter(v=>v!==null).slice(-1)[0];
+  window.__lastCmf = cmfLast;
+  if (cmfSeries) {
+    cmfSeries.setData(cmfVals.map((v,i) => v!==null ? {
+      time:times[i], value:v,
+      color: v > 0.05 ? '#26a69a' : v < -0.05 ? '#ef5350' : '#787b86'
+    } : null).filter(Boolean));
+  }
+
+  // A/D Line normalized
+  const adVals = Calc.adLine(bars);
+  const adValid = adVals.filter(v => isFinite(v));
+  const adMin = Math.min(...adValid), adMax = Math.max(...adValid);
+  if (adSeries) {
+    adSeries.setData(adVals.map((v,i) => ({
+      time: times[i],
+      value: adMax===adMin ? 0 : ((v-adMin)/(adMax-adMin)-0.5)*0.8
+    })));
+  }
+
+  // === KEY ACTION MARKERS trên chart chính (RSI cross, MACD reversal, Smart Money divergence) ===
+  if (newOverlays.actions !== false) {
+    try {
+      const ma50arr = Calc.ma(closes, 50);
+      const rsiArr = series.map(s => s.rsi != null ? s.rsi : null);
+      const actions = Calc.keyActions(bars.map((b,i)=>({...b, time: times[i]})), closes, ma50arr, rsiArr, macdData, cmfVals);
+      // Convert to marker format (LightweightCharts)
+      const actionMarkers = actions.map(e => ({
+        time: e.time, position: e.pos, color: e.color, shape: e.shape, text: e.text, size: 1
+      }));
+      if (window.__actionMarkers) {
+        try { window.__actionMarkers.setMarkers([]); window.__actionMarkers.detach(); } catch(err){}
+      }
+      if (actionMarkers.length && LightweightCharts.createSeriesMarkers) {
+        window.__actionMarkers = LightweightCharts.createSeriesMarkers(candleSeries, actionMarkers);
+        console.log('Key Action Markers:', actionMarkers.length);
+      }
+    } catch(e) { console.warn('Key Actions:', e); }
+  } else {
+    try { if (window.__actionMarkers) window.__actionMarkers.setMarkers([]); } catch(e){}
+  }
+
+  // Apply sub-chart visibility (defer để chắc chắn pane đã render)
+  setTimeout(() => applySub(), 50);
+
+  // Update indicator bar new cells
+  updateNewIndicatorBar();
+}
+
+function renderKeyLevels(bars, lastPrice) {
+  if (!chart || !candleSeries) return;
+  const levels = Calc.keyLevels(bars, 100);  // ~5 tháng giao dịch
+  try {
+    if (window.__keyLevelLines) {
+      window.__keyLevelLines.forEach(l => { try { candleSeries.removePriceLine(l); } catch(e){} });
+    }
+    if (!lastPrice) { window.__keyLevelLines = []; return; }
+    // Lọc Resistance (giá > giá hiện tại) và Support (giá < giá hiện tại)
+    const resistances = levels.filter(l => l.type === 'R' && l.price > lastPrice && (l.price - lastPrice) / lastPrice < 0.15);
+    const supports = levels.filter(l => l.type === 'S' && l.price < lastPrice && (lastPrice - l.price) / lastPrice < 0.15);
+    // Sort theo độ mạnh (strength), lấy top 2 mỗi loại
+    resistances.sort((a, b) => b.strength - a.strength);
+    supports.sort((a, b) => b.strength - a.strength);
+    const picked = [...resistances.slice(0, 2), ...supports.slice(0, 2)];
+    window.__keyLevelLines = picked.map(lv => candleSeries.createPriceLine({
+      price: lv.price,
+      color: lv.type === 'R' ? 'rgba(239,83,80,0.6)' : 'rgba(38,166,154,0.6)',
+      lineWidth: 1, lineStyle: 2,
+      axisLabelVisible: true,
+      title: lv.type + (lv.strength > 1 ? `(${lv.strength})` : ''),
+    }));
+  } catch(e) { console.warn('key levels:', e); }
+}
+
+function applySub() {
+  console.log('[applySub] state:', subPanes);
+
+  // === RSI: create/remove pane động (giống MACD/SM) ===
+  if (subPanes.rsi && !rsiSeries) {
+    createRsiPane();
+    if (window.__lastBars) renderNewOverlays(window.__lastBars);
+  } else if (!subPanes.rsi && rsiSeries) {
+    removeRsiPane();
+  }
+
+  // === MACD: create / remove pane động ===
+  if (subPanes.macd && !macdSeries) {
+    createMacdPane();
+    if (window.__lastBars) renderNewOverlays(window.__lastBars);
+  } else if (!subPanes.macd && macdSeries) {
+    removeMacdPane();
+  }
+
+  // === Smart Money: create / remove pane động ===
+  if (subPanes.sm && !cmfSeries) {
+    createSmPane();
+    if (window.__lastBars) renderNewOverlays(window.__lastBars);
+  } else if (!subPanes.sm && cmfSeries) {
+    removeSmPane();
+  }
+}
+
+function createRsiPane() {
+  if (!chart) return;
+  try {
+    // RSI luôn ở pane index 2 (sau Main=0, Volume=1)
+    rsiSeries = chart.addSeries(LightweightCharts.LineSeries, {
+      color: '#ab47bc', lineWidth: 1.4, title: 'RSI(14)',
+      priceLineVisible: false, lastValueVisible: true,
+    }, 2);
+    rsiSeries.createPriceLine({ price: 70, color: '#ef5350', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'OB' });
+    rsiSeries.createPriceLine({ price: 50, color: '#787b86', lineWidth: 1, lineStyle: 3, axisLabelVisible: false });
+    rsiSeries.createPriceLine({ price: 30, color: '#26a69a', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'OS' });
+    setTimeout(() => {
+      try {
+        const panes = chart.panes();
+        if (panes[2] && panes[2].setStretchFactor) panes[2].setStretchFactor(3.5);
+      } catch(e){}
+    }, 30);
+  } catch(e) { console.error('createRsiPane:', e); }
+}
+
+function removeRsiPane() {
+  try {
+    if (rsiSeries) { chart.removeSeries(rsiSeries); rsiSeries = null; }
+  } catch(e) { console.warn('removeRsiPane:', e); }
+}
+
+function createMacdPane() {
+  if (!chart) return;
+  try {
+    // Tìm pane index tiếp theo (sau RSI pane 2)
+    const nextIdx = chart.panes().length;
+    macdHistSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+      priceFormat: { type: 'price', precision: 4, minMove: 0.0001 },
+      priceScaleId: 'macd',
+    }, nextIdx);
+    macdSeries = chart.addSeries(LightweightCharts.LineSeries, {
+      color: '#2962ff', lineWidth: 1, title: 'MACD',
+      priceLineVisible: false, lastValueVisible: false, priceScaleId: 'macd',
+    }, nextIdx);
+    macdSignalSeries = chart.addSeries(LightweightCharts.LineSeries, {
+      color: '#ff9800', lineWidth: 1, title: 'Signal',
+      priceLineVisible: false, lastValueVisible: false, priceScaleId: 'macd',
+    }, nextIdx);
+    // Set stretch
+    setTimeout(() => {
+      try {
+        const panes = chart.panes();
+        if (panes[nextIdx]) panes[nextIdx].setStretchFactor(3);
+      } catch(e){}
+    }, 30);
+  } catch(e) { console.error('createMacdPane:', e); }
+}
+
+function removeMacdPane() {
+  try {
+    if (macdHistSeries) { chart.removeSeries(macdHistSeries); macdHistSeries = null; }
+    if (macdSeries) { chart.removeSeries(macdSeries); macdSeries = null; }
+    if (macdSignalSeries) { chart.removeSeries(macdSignalSeries); macdSignalSeries = null; }
+  } catch(e) { console.warn('removeMacdPane:', e); }
+}
+
+function createSmPane() {
+  if (!chart) return;
+  try {
+    const nextIdx = chart.panes().length;
+    cmfSeries = chart.addSeries(LightweightCharts.LineSeries, {
+      color: '#26a69a', lineWidth: 1.5, title: 'CMF(20)',
+      priceLineVisible: false, lastValueVisible: true, priceScaleId: 'cmf',
+    }, nextIdx);
+    cmfSeries.createPriceLine({ price: 0.1, color: 'rgba(38,166,154,0.5)', lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
+    cmfSeries.createPriceLine({ price: 0, color: 'rgba(120,123,134,0.4)', lineWidth: 1, lineStyle: 3, axisLabelVisible: false });
+    cmfSeries.createPriceLine({ price: -0.1, color: 'rgba(239,83,80,0.5)', lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
+    adSeries = chart.addSeries(LightweightCharts.LineSeries, {
+      color: 'rgba(255,213,79,0.6)', lineWidth: 1, lineStyle: 3, title: 'A/D',
+      priceLineVisible: false, lastValueVisible: false, priceScaleId: 'ad',
+    }, nextIdx);
+    setTimeout(() => {
+      try {
+        const panes = chart.panes();
+        if (panes[nextIdx]) panes[nextIdx].setStretchFactor(3);
+      } catch(e){}
+    }, 30);
+  } catch(e) { console.error('createSmPane:', e); }
+}
+
+function removeSmPane() {
+  try {
+    if (cmfSeries) { chart.removeSeries(cmfSeries); cmfSeries = null; }
+    if (adSeries) { chart.removeSeries(adSeries); adSeries = null; }
+  } catch(e) { console.warn('removeSmPane:', e); }
+}
+
+function toggleNewOverlay(key) {
+  const cbIds = {bb:'cspBB', lr:'cspLR', ma200:'cspMA200', trend:'cspTrend', keylv:'cspKeylv', actions:'cspActions'};
+  const cb = document.getElementById(cbIds[key]);
+  if (cb) {
+    newOverlays[key] = cb.checked;
+  } else {
+    newOverlays[key] = !newOverlays[key];
+  }
+  console.log('[toggleNewOverlay]', key, '=>', newOverlays[key]);
+
+  if (key === 'bb') {
+    if (bbUpperSeries) { bbUpperSeries.applyOptions({visible:newOverlays.bb}); bbMidSeries.applyOptions({visible:newOverlays.bb}); bbLowerSeries.applyOptions({visible:newOverlays.bb}); }
+  } else if (key === 'lr') {
+    if (lrSeries) lrSeries.applyOptions({visible:newOverlays.lr});
+  } else if (key === 'ma200') {
+    if (ma200Series) ma200Series.applyOptions({visible:newOverlays.ma200});
+  } else if (key === 'trend') {
+    // Re-render để reset màu nến + price line
+    if (!newOverlays.trend && window.__trendLine && candleSeries) {
+      try { candleSeries.removePriceLine(window.__trendLine); window.__trendLine = null; } catch(e){}
+    }
+    if (cachedBarsForOverlay.length) renderNewOverlays(cachedBarsForOverlay);
+  }
+  // Toggle MA200 chú thích trong overlay
+  if (key === 'ma200' && ma200Series) {
+    ma200Series.applyOptions({ visible: newOverlays.ma200 });
+  }
+  // Re-render cho mọi overlay (đảm bảo nhất quán)
+  if (cachedBarsForOverlay && cachedBarsForOverlay.length) {
+    renderNewOverlays(cachedBarsForOverlay);
+  } else if (window.__lastBars && window.__lastBars.length) {
+    cachedBarsForOverlay = window.__lastBars;
+    renderNewOverlays(cachedBarsForOverlay);
+  }
+}
+
+function switchSubChart(sub) {
+  // Đọc state từ checkbox (popup) thay vì đảo
+  const ids = { rsi: 'cspRsi', macd: 'cspMacd', sm: 'cspSm' };
+  const cb = document.getElementById(ids[sub]);
+  if (cb) {
+    subPanes[sub] = cb.checked;
+  } else {
+    subPanes[sub] = !subPanes[sub];
+  }
+  applySub();
+}
+
+function cspSwitchTab(name) {
+  document.querySelectorAll('.csp-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.csp-tab-content').forEach(c => c.classList.toggle('active', c.dataset.tabContent === name));
+}
+
+// Bridge: popup checkbox → checkbox cũ (rsiComboBar / emaStBar)
+function _cspBridgeInit() {
+  console.log('[cspBridge] init');
+  document.querySelectorAll('.csp-rcb').forEach(cb => {
+    if (cb.dataset.bridgeReady === '1') return;
+    cb.dataset.bridgeReady = '1';
+    cb.addEventListener('change', (e) => {
+      const key = e.target.dataset.key;
+      const oldCb = document.querySelector(`#rsiComboBar input[data-key="${key}"]`);
+      console.log('[cspRcb]', key, '=>', e.target.checked, 'oldCb?', !!oldCb);
+      if (oldCb) {
+        oldCb.checked = e.target.checked;
+        oldCb.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  });
+  document.querySelectorAll('.csp-est').forEach(cb => {
+    if (cb.dataset.bridgeReady === '1') return;
+    cb.dataset.bridgeReady = '1';
+    cb.addEventListener('change', (e) => {
+      const key = e.target.dataset.key;
+      const oldCb = document.querySelector(`#emaStBar input[data-key="${key}"]`);
+      console.log('[cspEst]', key, '=>', e.target.checked, 'oldCb?', !!oldCb);
+      if (oldCb) {
+        oldCb.checked = e.target.checked;
+        oldCb.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  });
+  // Sync state ban đầu từ checkbox cũ → popup
+  document.querySelectorAll('.csp-rcb').forEach(cb => {
+    const oldCb = document.querySelector(`#rsiComboBar input[data-key="${cb.dataset.key}"]`);
+    if (oldCb) cb.checked = oldCb.checked;
+  });
+  document.querySelectorAll('.csp-est').forEach(cb => {
+    const oldCb = document.querySelector(`#emaStBar input[data-key="${cb.dataset.key}"]`);
+    if (oldCb) cb.checked = oldCb.checked;
+  });
+  // Sync counts
+  const rcbOld = document.getElementById('rcbCounts');
+  const estOld = document.getElementById('estCounts');
+  const sync = () => {
+    const rcbNew = document.getElementById('cspRcbCounts');
+    const estNew = document.getElementById('cspEstCounts');
+    if (rcbOld && rcbNew) rcbNew.textContent = rcbOld.textContent;
+    if (estOld && estNew) estNew.textContent = estOld.textContent;
+  };
+  sync();
+  // Quan sát thay đổi count để cập nhật popup
+  if (rcbOld) new MutationObserver(sync).observe(rcbOld, {childList: true, characterData: true, subtree: true});
+  if (estOld) new MutationObserver(sync).observe(estOld, {childList: true, characterData: true, subtree: true});
+}
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(_cspBridgeInit, 800);
+  // Retry để chắc chắn DOM ready
+  setTimeout(_cspBridgeInit, 2000);
+  setTimeout(_cspBridgeInit, 4000);
+});
+
+function toggleChartSettingsPopup() {
+  const p = document.getElementById('chartSettingsPopup');
+  const bd = document.getElementById('chartSettingsBackdrop');
+  if (!p) return;
+  p.classList.toggle('show');
+  if (bd) bd.classList.toggle('show', p.classList.contains('show'));
+}
+
+function resetChartSettings() {
+  // Reset overlays về mặc định bật hết
+  ['bb','lr','ma200','trend'].forEach(k => {
+    if (!newOverlays[k]) { newOverlays[k] = true; toggleNewOverlay(k); newOverlays[k] = true; }
+  });
+  // Sync checkbox UI overlay
+  document.getElementById('cspBB').checked = true;
+  document.getElementById('cspLR').checked = true;
+  document.getElementById('cspMA200').checked = true;
+  document.getElementById('cspTrend').checked = true;
+  const cspKL = document.getElementById('cspKeylv'); if (cspKL) cspKL.checked = false;
+  const cspAc = document.getElementById('cspActions'); if (cspAc) cspAc.checked = true;
+  // Re-apply overlays để chắc chắn
+  newOverlays = { bb: true, lr: true, ma200: true, trend: true, keylv: false, actions: true };
+  // Sub panes: chỉ RSI bật
+  subPanes = { rsi: true, macd: false, sm: false };
+  document.getElementById('cspRsi').checked = true;
+  document.getElementById('cspMacd').checked = false;
+  document.getElementById('cspSm').checked = false;
+  applySub();
+  // Re-render overlays
+  if (cachedBarsForOverlay.length) renderNewOverlays(cachedBarsForOverlay);
+}
+
+// Đóng popup khi click ra ngoài
+document.addEventListener('click', (e) => {
+  const popup = document.getElementById('chartSettingsPopup');
+  const btn = document.getElementById('btnChartSettings');
+  if (!popup || !btn) return;
+  if (popup.classList.contains('show') && !popup.contains(e.target) && !btn.contains(e.target)) {
+    popup.classList.remove('show');
+  }
+});
+
+function updateNewIndicatorBar() {
+  const fmt = (v, dec=2) => v==null||isNaN(v) ? '--' : Number(v).toFixed(dec);
+
+  // MA200
+  const ma200El = document.getElementById('indMa200');
+  const ma200St = document.getElementById('indMa200State');
+  if (ma200El && window.__lastBars) {
+    const last = window.__lastIndicator || {};
+    const price = last.price;
+    const m200 = last.ma200;
+    ma200El.textContent = fmt(m200);
+    if (m200 && price) {
+      const s = price > m200 ? 'bull' : 'bear';
+      ma200St.className = 'ind-state ' + s;
+      ma200St.textContent = s==='bull' ? '▲ Trên MA200' : '▼ Dưới MA200';
+    } else { ma200St.className='ind-state neutral'; ma200St.textContent='--'; }
+  }
+
+  // BB Width
+  const bbEl = document.getElementById('indBb');
+  const bbSt = document.getElementById('indBbState');
+  if (bbEl && window.__lastBb) {
+    const bb = window.__lastBb;
+    if (bb && bb.width!=null) {
+      bbEl.textContent = (bb.width*100).toFixed(1)+'%';
+      const squeeze = bb.width < 0.04, expand = bb.width > 0.12;
+      bbSt.className = 'ind-state ' + (squeeze?'bull':expand?'bear':'neutral');
+      bbSt.textContent = squeeze ? '⚡ Squeeze' : expand ? '↔ Nở rộng' : '● Bình thường';
+    } else { bbEl.textContent='--'; bbSt.className='ind-state neutral'; bbSt.textContent='--'; }
+  }
+
+  // Smart Money CMF
+  const smEl = document.getElementById('indSm');
+  const smSt = document.getElementById('indSmState');
+  if (smEl && window.__lastCmf!=null) {
+    const cmf = window.__lastCmf;
+    smEl.textContent = cmf.toFixed(3);
+    const s = cmf>0.1?'bull':cmf<-0.1?'bear':'neutral';
+    smSt.className = 'ind-state '+s;
+    smSt.textContent = cmf>0.15?'▲ Gom mạnh':cmf>0.05?'▲ Gom nhẹ':cmf<-0.15?'▼ Xả mạnh':cmf<-0.05?'▼ Xả nhẹ':'● Trung tính';
+  }
 }
 
 // ========== RSI COMBO SYSTEM ==========
@@ -1944,12 +2913,21 @@ function renderAnalysis(last) {
   if (rsiOk && volStrong && bullishDi) bullScore++;
   if (last.rsi > 75) bearScore++;
 
+  // Smart Money (CMF) & BB Squeeze
+  const cmfScore = window.__lastCmf;
+  if (cmfScore != null && cmfScore > 0.1) bullScore++;
+  if (cmfScore != null && cmfScore < -0.1) bearScore++;
+  const bbLast = window.__lastBb;
+  const bbSqueeze = bbLast && bbLast.width < 0.04;
+
   if (bullScore >= bearScore + 3) { signal = 'BUY'; pillClass = 'buy'; signalText = 'MUA'; }
   else if (bearScore >= bullScore + 2) { signal = 'SELL'; pillClass = 'sell'; signalText = 'BÁN'; }
 
   document.getElementById('signalPill').className = 'signal-pill ' + pillClass;
   document.getElementById('signalPill').textContent = signalText;
-  document.getElementById('signalMeta').textContent = `Bull ${bullScore} / Bear ${bearScore} · Rule-based`;
+  const smTag = cmfScore!=null ? ` · Smart$ ${cmfScore>0.1?'▲':cmfScore<-0.1?'▼':'—'}` : '';
+  const bbTag = bbSqueeze ? ' · ⚡Squeeze' : '';
+  document.getElementById('signalMeta').textContent = `Bull ${bullScore} / Bear ${bearScore} · Rule-based${smTag}${bbTag}`;
 
   if (last.vpa === 'SOS') vpaText = `🎯 <b style="color:var(--green-hi)">Sign of Strength</b> - Cầu lớn xuất hiện. Nến tăng mạnh với volume cao, là dấu hiệu kết thúc tích lũy.`;
   else if (last.vpa === 'Spring') vpaText = `🎯 <b style="color:var(--green-hi)">Spring</b> - Phá đáy giả rồi đảo chiều. Setup cổ điển cho Phase C Wyckoff.`;
@@ -1974,6 +2952,16 @@ function renderAnalysis(last) {
   if (last.rsi < 25) warns.push(`⚠ RSI ${last.rsi.toFixed(1)} - vùng quá bán`);
   if (last.adx < 20) warns.push(`⚠ ADX thấp - không nên trade theo trend`);
   if (last.vol_ratio < 0.5) warns.push(`⚠ Vol quá thấp - thiếu xác nhận`);
+  // Smart Money divergence
+  if (cmfScore != null) {
+    if (price > (last.ma20 || price) && cmfScore < -0.1)
+      warns.push(`🔴 <b style="color:var(--red-hi)">Smart Money DIVERGENCE</b>: Giá tăng nhưng CMF âm (${cmfScore.toFixed(3)}) — dòng tiền ngầm đang <b>rút ra</b>. Cẩn thận phân phối.`);
+    else if (price < (last.ma20 || price) && cmfScore > 0.1)
+      warns.push(`🟢 <b style="color:var(--green-hi)">Smart Money tích lũy ngầm</b>: Giá yếu nhưng CMF dương (${cmfScore.toFixed(3)}) — dòng tiền đang <b>gom hàng</b>.`);
+    else if (cmfScore > 0.1)
+      warns.push(`✅ Smart Money xác nhận xu hướng tăng (CMF: ${cmfScore.toFixed(3)})`);
+  }
+  if (bbSqueeze) warns.push(`⚡ <b style="color:var(--yellow)">BB Squeeze</b>: Biến động đang nén — sẵn sàng bứt phá mạnh. Theo dõi volume xác nhận.`);
   warns.push(`<i style="color:var(--text3)">⚠ Đây là phân tích kỹ thuật, không phải tư vấn đầu tư.</i>`);
   document.getElementById('warningAnalysis').innerHTML = warns.join('<br>');
 }
