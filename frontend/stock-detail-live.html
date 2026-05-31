@@ -791,6 +791,141 @@ input{font-family:inherit;color:inherit}
   body .price-block .price-now { font-size: 13px !important; }
 }
 
+
+/* === FG History Modal (Phase 8D) === */
+.fg-history-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  margin-left: auto;
+  background: var(--bg3, #1e222d);
+  color: var(--text, #d1d4dc);
+  border: 1px solid var(--border, #363a45);
+  border-radius: 4px;
+  font-family: var(--mono, "IBM Plex Mono", monospace);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .15s;
+}
+.fg-history-btn:hover {
+  background: var(--blue-bg, #1a2b4a);
+  color: var(--blue, #2962ff);
+  border-color: var(--blue, #2962ff);
+}
+.market-card-title { display: flex; align-items: center; gap: 6px; }
+
+.fgh-modal-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 99998;
+  backdrop-filter: blur(3px);
+  animation: fghFade .15s ease-out;
+}
+.fgh-modal-backdrop.show { display: flex; align-items: center; justify-content: center; }
+.fgh-modal {
+  background: var(--bg2, #1e222d);
+  border: 1px solid var(--border-hi, #4a4e5a);
+  border-radius: 10px;
+  width: min(900px, 96vw);
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+  display: flex; flex-direction: column;
+}
+.fgh-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border, #363a45);
+}
+.fgh-title { font-weight: 700; font-size: 14px; color: var(--text, #d1d4dc); flex: 1; }
+.fgh-close { background: none; border: none; color: var(--text3, #787b86); font-size: 18px; cursor: pointer; padding: 4px 10px; border-radius: 4px; }
+.fgh-close:hover { color: var(--text, #d1d4dc); background: var(--bg3, #1e222d); }
+
+.fgh-controls {
+  display: flex; gap: 6px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border, #363a45);
+  background: var(--bg, #131722);
+  flex-wrap: wrap;
+}
+.fgh-range-btn {
+  padding: 5px 12px;
+  border-radius: 4px;
+  background: var(--bg3, #1e222d);
+  color: var(--text2, #94a3b8);
+  border: 1px solid var(--border, #363a45);
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .15s;
+}
+.fgh-range-btn:hover { color: var(--text, #d1d4dc); }
+.fgh-range-btn.active { background: var(--blue-bg, #1a2b4a); color: var(--blue-hi, #5b8def); border-color: var(--blue, #2962ff); }
+
+.fgh-body {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  padding: 14px 18px;
+  gap: 10px;
+  overflow-y: auto;
+}
+.fgh-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.fgh-stat {
+  background: var(--bg3, #1e222d);
+  border: 1px solid var(--border, #363a45);
+  padding: 8px 10px;
+  border-radius: 6px;
+  text-align: center;
+}
+.fgh-stat-label { font-size: 9px; color: var(--text3, #787b86); text-transform: uppercase; letter-spacing: .06em; font-family: var(--mono, monospace); margin-bottom: 3px; }
+.fgh-stat-val { font-size: 16px; font-weight: 700; font-family: var(--mono, monospace); color: var(--text, #d1d4dc); }
+.fgh-stat-val.bull { color: var(--green-hi, #5fffc0); }
+.fgh-stat-val.bear { color: var(--red-hi, #ff8a8a); }
+.fgh-stat-val.neutral { color: var(--yellow, #ffeb3b); }
+
+.fgh-chart-wrap {
+  position: relative;
+  height: 320px;
+  width: 100%;
+  background: var(--bg, #131722);
+  border-radius: 6px;
+  border: 1px solid var(--border, #363a45);
+}
+#fgHistChart { width: 100%; height: 100%; }
+.fgh-empty {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%;
+  color: var(--text3, #787b86);
+  font-size: 12px;
+  text-align: center;
+  padding: 30px;
+}
+.fgh-loading {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%;
+  color: var(--blue-hi, #5b8def);
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+}
+
+@keyframes fghFade { from { opacity: 0 } to { opacity: 1 } }
+@media (max-width: 600px) {
+  .fgh-stats { grid-template-columns: repeat(2, 1fr); }
+  .fgh-chart-wrap { height: 240px; }
+  .fgh-modal { width: 98vw; max-height: 95vh; }
+  .fgh-head { padding: 10px 12px; }
+  .fgh-body { padding: 10px 12px; }
+  .fgh-controls { padding: 8px 12px; }
+}
+
 </style>
 </head>
 <body>
@@ -833,7 +968,7 @@ input{font-family:inherit;color:inherit}
   <div class="market-body">
     <!-- Fear & Greed -->
     <div class="market-card">
-      <div class="market-card-title">😱 Chỉ số Sợ hãi & Tham lam (Fear & Greed)</div>
+      <div class="market-card-title">😱 Chỉ số Sợ hãi & Tham lam (Fear & Greed)<button class="fg-history-btn" onclick="openFgHistory()" title="Xem lịch sử F&G">📊 Lịch sử</button></div>
       <div id="fgLoading" class="market-loading">Đang tính toán...</div>
       <div id="fgContent" style="display:none">
         <div class="fg-gauge-wrap">
@@ -4312,5 +4447,205 @@ if (copyrightClose) copyrightClose.addEventListener('click', closeCopyright);
 if (copyrightOverlay) copyrightOverlay.addEventListener('click', closeCopyright);
 </script>
 <script src="alert-poller.js"></script>
+
+<!-- Phase 8D: F&G History Modal -->
+<div id="fghModal" class="fgh-modal-backdrop" onclick="if(event.target===this)closeFgHistory()">
+  <div class="fgh-modal">
+    <div class="fgh-head">
+      <span style="font-size:18px">📊</span>
+      <div class="fgh-title">Lịch sử Sợ hãi & Tham lam (Fear & Greed)</div>
+      <button class="fgh-close" onclick="closeFgHistory()" title="Đóng">✕</button>
+    </div>
+    <div class="fgh-controls">
+      <button class="fgh-range-btn" data-days="7" onclick="loadFgHistory(7)">7 ngày</button>
+      <button class="fgh-range-btn active" data-days="30" onclick="loadFgHistory(30)">30 ngày</button>
+      <button class="fgh-range-btn" data-days="90" onclick="loadFgHistory(90)">3 tháng</button>
+      <button class="fgh-range-btn" data-days="180" onclick="loadFgHistory(180)">6 tháng</button>
+      <button class="fgh-range-btn" data-days="365" onclick="loadFgHistory(365)">1 năm</button>
+    </div>
+    <div class="fgh-body">
+      <div class="fgh-stats" id="fghStats"></div>
+      <div class="fgh-chart-wrap">
+        <div id="fgHistChart"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// ============================================================
+// Phase 8D: Fear & Greed History Modal
+// ============================================================
+(function() {
+  let fghChart = null;
+  let fghScoreSeries = null;
+  let fghBandSeries = null;
+  let currentDays = 30;
+  let isInit = false;
+
+  window.openFgHistory = function() {
+    const modal = document.getElementById('fghModal');
+    if (!modal) return;
+    modal.classList.add('show');
+    if (!isInit) {
+      initFghChart();
+      isInit = true;
+    }
+    loadFgHistory(currentDays);
+  };
+
+  window.closeFgHistory = function() {
+    const modal = document.getElementById('fghModal');
+    if (modal) modal.classList.remove('show');
+  };
+
+  function initFghChart() {
+    const el = document.getElementById('fgHistChart');
+    if (!el || typeof LightweightCharts === 'undefined') return;
+    try {
+      fghChart = LightweightCharts.createChart(el, {
+        layout: {
+          background: { type: 'solid', color: '#131722' },
+          textColor: '#d1d4dc',
+          attributionLogo: false,
+        },
+        grid: {
+          vertLines: { color: '#1e222d' },
+          horzLines: { color: '#1e222d' },
+        },
+        rightPriceScale: {
+          borderColor: '#363a45',
+          scaleMargins: { top: 0.05, bottom: 0.05 },
+        },
+        timeScale: {
+          borderColor: '#363a45',
+          timeVisible: true,
+          secondsVisible: false,
+        },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        autoSize: true,
+      });
+
+      // Main score line
+      fghScoreSeries = fghChart.addSeries(LightweightCharts.LineSeries, {
+        color: '#fbc02d',
+        lineWidth: 2,
+        title: 'F&G Score',
+        priceLineVisible: true,
+        lastValueVisible: true,
+        priceFormat: { type: 'price', precision: 1, minMove: 0.1 },
+      });
+      // Reference lines for zones
+      fghScoreSeries.createPriceLine({ price: 75, color: 'rgba(38,166,154,0.5)', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'Tham lam cực độ' });
+      fghScoreSeries.createPriceLine({ price: 55, color: 'rgba(38,166,154,0.3)', lineWidth: 1, lineStyle: 3, axisLabelVisible: false });
+      fghScoreSeries.createPriceLine({ price: 45, color: 'rgba(239,83,80,0.3)', lineWidth: 1, lineStyle: 3, axisLabelVisible: false });
+      fghScoreSeries.createPriceLine({ price: 25, color: 'rgba(239,83,80,0.5)', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'Sợ hãi cực độ' });
+
+      console.log('[FGH] chart initialized');
+    } catch (e) {
+      console.error('[FGH] init fail:', e);
+    }
+  }
+
+  window.loadFgHistory = async function(days) {
+    currentDays = days;
+    // Update active button
+    document.querySelectorAll('.fgh-range-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.days) === days);
+    });
+
+    const chartEl = document.getElementById('fgHistChart');
+    const statsEl = document.getElementById('fghStats');
+    if (statsEl) statsEl.innerHTML = '<div class="fgh-loading">Đang tải...</div>';
+
+    try {
+      const res = await fetch(`${API}/api/market/fear-greed/history?days=${days}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const points = data.points || [];
+
+      if (points.length === 0) {
+        if (chartEl) chartEl.innerHTML = '<div class="fgh-empty">📭 Chưa có dữ liệu lịch sử<br><small style="opacity:.7;display:block;margin-top:6px">Hệ thống sẽ tự lưu mỗi 30 phút khi có người xem F&G.<br>Quay lại sau vài giờ để xem chart!</small></div>';
+        if (statsEl) statsEl.innerHTML = '';
+        return;
+      }
+
+      // Re-create chart container nếu đã bị empty replace
+      if (!fghChart || chartEl.querySelector('.fgh-empty')) {
+        chartEl.innerHTML = '';
+        initFghChart();
+      }
+
+      // Convert to chart format
+      const seriesData = points.map(p => {
+        const ts = Math.floor(new Date(p.timestamp).getTime() / 1000);
+        return { time: ts, value: p.score };
+      }).sort((a, b) => a.time - b.time);
+
+      // Dedupe by time (sqlite có thể có cùng giây nếu nhiều process)
+      const seen = new Set();
+      const unique = [];
+      for (const p of seriesData) {
+        if (seen.has(p.time)) continue;
+        seen.add(p.time);
+        unique.push(p);
+      }
+
+      fghScoreSeries.setData(unique);
+      fghChart.timeScale().fitContent();
+
+      // Stats
+      const scores = unique.map(p => p.value);
+      const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const min = Math.min(...scores);
+      const max = Math.max(...scores);
+      const last = scores[scores.length - 1];
+
+      const classFor = (v) => v >= 55 ? 'bull' : (v >= 45 ? 'neutral' : 'bear');
+      const lbl = (v) => v >= 75 ? 'Tham lam cực độ' : v >= 55 ? 'Tham lam' : v >= 45 ? 'Trung tính' : v >= 25 ? 'Sợ hãi' : 'Sợ hãi cực độ';
+
+      if (statsEl) {
+        statsEl.innerHTML = `
+          <div class="fgh-stat">
+            <div class="fgh-stat-label">Hiện tại</div>
+            <div class="fgh-stat-val ${classFor(last)}">${last.toFixed(1)}</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px">${lbl(last)}</div>
+          </div>
+          <div class="fgh-stat">
+            <div class="fgh-stat-label">Trung bình</div>
+            <div class="fgh-stat-val ${classFor(avg)}">${avg.toFixed(1)}</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px">${unique.length} điểm</div>
+          </div>
+          <div class="fgh-stat">
+            <div class="fgh-stat-label">Cao nhất</div>
+            <div class="fgh-stat-val bull">${max.toFixed(1)}</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px">${lbl(max)}</div>
+          </div>
+          <div class="fgh-stat">
+            <div class="fgh-stat-label">Thấp nhất</div>
+            <div class="fgh-stat-val bear">${min.toFixed(1)}</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px">${lbl(min)}</div>
+          </div>
+        `;
+      }
+
+      console.log(`[FGH] loaded ${unique.length} points / ${days} days`);
+    } catch (e) {
+      console.error('[FGH] load fail:', e);
+      if (statsEl) statsEl.innerHTML = '<div style="color:var(--red-hi);font-size:11px;padding:8px">⚠️ Lỗi tải dữ liệu: ' + e.message + '</div>';
+    }
+  };
+
+  // ESC để đóng modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('fghModal');
+      if (modal && modal.classList.contains('show')) closeFgHistory();
+    }
+  });
+})();
+
+</script>
 </body>
 </html>

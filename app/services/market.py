@@ -3,6 +3,8 @@ Market Overview module - Phase 7
 Provides:
 - Fear & Greed Index (custom computed)
 - Sector Heatmap (top sectors by % change)
+
+Phase 8D update: auto-save F&G snapshots into SQLite history.
 """
 from __future__ import annotations
 import math
@@ -48,7 +50,10 @@ def _safe_float(v: Any) -> Optional[float]:
 # ============================================================
 
 async def compute_fear_greed() -> Dict[str, Any]:
-    """Compute Fear & Greed Index from VNINDEX indicators."""
+    """Compute Fear & Greed Index from VNINDEX indicators.
+    
+    Side effect (Phase 8D): persists the result into SQLite history
+    (idempotent within 25 minutes to dedupe rapid calls)."""
     try:
         from app.data.vnstock_client import vnstock_client
         from app.core.indicators import compute_all
@@ -69,7 +74,16 @@ async def compute_fear_greed() -> Dict[str, Any]:
         if len(df_full) < 20:
             return {"score": 50, "label": "N/A", "components": {}, "error": "Insufficient data"}
         
-        return _calc_fg_from_df(df_full)
+        result = _calc_fg_from_df(df_full)
+
+        # === Phase 8D: persist snapshot to history (best-effort, never fail compute) ===
+        try:
+            from app.services import fg_history
+            fg_history.save_snapshot(result)
+        except Exception as e:
+            logger.warning(f"[market] fg_history save_snapshot failed (non-fatal): {e}")
+
+        return result
     except Exception as e:
         logger.exception(f"Fear&Greed compute fail: {e}")
         return {"score": 50, "label": "N/A", "error": str(e), "components": {}}
