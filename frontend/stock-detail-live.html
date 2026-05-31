@@ -926,6 +926,150 @@ input{font-family:inherit;color:inherit}
   .fgh-controls { padding: 8px 12px; }
 }
 
+
+/* === Phase 8E: Sector expand panel === */
+.sector-box {
+  position: relative;
+  cursor: pointer !important;
+}
+.sector-box:hover { transform: scale(1.03); }
+.sector-box.active {
+  outline: 2px solid var(--blue-hi, #5b8def);
+  outline-offset: -2px;
+}
+.sector-box-toggle {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 10px;
+  opacity: 0.7;
+  font-family: var(--mono, monospace);
+}
+
+.sector-expand-panel {
+  grid-column: 1 / -1;
+  background: var(--bg2, #1e222d);
+  border: 1px solid var(--border-hi, #4a4e5a);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 4px 0 8px;
+  animation: sxpFadeIn .15s ease-out;
+}
+.sxp-head {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border, #363a45);
+}
+.sxp-title {
+  font-weight: 700; font-size: 13px;
+  color: var(--text, #d1d4dc);
+  flex: 1;
+}
+.sxp-meta {
+  display: flex; gap: 8px;
+  font-size: 10px;
+  font-family: var(--mono, monospace);
+  color: var(--text2, #94a3b8);
+}
+.sxp-meta b { font-weight: 700; font-size: 11px; }
+.sxp-meta .up { color: var(--green-hi, #5fffc0); }
+.sxp-meta .dn { color: var(--red-hi, #ff8a8a); }
+.sxp-meta .nt { color: var(--text3, #787b86); }
+.sxp-close {
+  background: none; border: none;
+  color: var(--text3, #787b86);
+  font-size: 14px; cursor: pointer;
+  padding: 2px 8px; border-radius: 3px;
+}
+.sxp-close:hover { color: var(--text); background: var(--bg3); }
+
+.sxp-loading {
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  color: var(--blue-hi, #5b8def);
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+}
+
+.sxp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 6px;
+}
+.sxp-stock {
+  background: var(--bg3, #1e222d);
+  border: 1px solid var(--border, #363a45);
+  border-radius: 5px;
+  padding: 7px 9px;
+  cursor: pointer;
+  transition: .12s;
+  text-decoration: none;
+  color: var(--text, #d1d4dc);
+  display: flex; flex-direction: column;
+  gap: 2px;
+}
+.sxp-stock:hover {
+  border-color: var(--blue, #2962ff);
+  background: var(--blue-bg, #1a2b4a);
+  transform: translateY(-1px);
+}
+.sxp-stock-sym {
+  font-family: var(--mono, monospace);
+  font-weight: 700; font-size: 12px;
+  color: var(--text, #d1d4dc);
+}
+.sxp-stock-price {
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  color: var(--text2, #94a3b8);
+}
+.sxp-stock-pct {
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 1px;
+}
+.sxp-stock-pct.up { color: #26a69a; }
+.sxp-stock-pct.dn { color: #ef5350; }
+.sxp-stock-pct.nt { color: var(--text3, #787b86); }
+.sxp-stock-vol {
+  font-size: 9px;
+  color: var(--text3, #787b86);
+  font-family: var(--mono, monospace);
+}
+
+.sxp-note {
+  font-size: 10px;
+  color: var(--yellow, #ffeb3b);
+  font-style: italic;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border, #363a45);
+}
+.sxp-empty {
+  text-align: center;
+  color: var(--text3, #787b86);
+  font-size: 11px;
+  padding: 16px;
+}
+
+@keyframes sxpFadeIn {
+  from { opacity: 0; transform: translateY(-4px) }
+  to { opacity: 1; transform: translateY(0) }
+}
+
+@media (max-width: 600px) {
+  .sxp-grid { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .sxp-stock { padding: 5px 6px; }
+  .sxp-stock-sym { font-size: 11px; }
+  .sxp-stock-price { font-size: 10px; }
+  .sxp-stock-pct { font-size: 9px; }
+  .sxp-stock-vol { display: none; }
+  .sxp-head { flex-wrap: wrap; gap: 6px; }
+  .sxp-title { font-size: 12px; width: 100%; }
+}
+
 </style>
 </head>
 <body>
@@ -4385,12 +4529,14 @@ function renderSectorHeatmap(data) {
   container.innerHTML = data.sectors.map(s => {
     const color = getColor(s.avg_pct);
     const sign = s.avg_pct >= 0 ? '+' : '';
+    const totalStocks = s.stocks_count || s.leaders_count;
     return `
-      <div class="sector-box" style="background:${color}">
+      <div class="sector-box" style="background:${color}" data-sector-key="${s.key}" onclick="toggleSectorStocks(this, '${s.key}', '${s.name.replace(/'/g, "\\'")}')">
+        <div class="sector-box-toggle">▼</div>
         <div class="sector-name">${s.name}</div>
         <div>
           <div class="sector-pct">${sign}${s.avg_pct}%</div>
-          <div class="sector-meta">${s.leaders_count} mã</div>
+          <div class="sector-meta">${totalStocks} mã ↓</div>
         </div>
       </div>`;
   }).join('');
@@ -4644,6 +4790,137 @@ if (copyrightOverlay) copyrightOverlay.addEventListener('click', closeCopyright)
       if (modal && modal.classList.contains('show')) closeFgHistory();
     }
   });
+})();
+
+</script>
+<script>
+
+// ============================================================
+// Phase 8E: Sector → Stocks Expand
+// ============================================================
+(function() {
+  let currentExpandedKey = null;
+  const cache = {};
+
+  window.toggleSectorStocks = async function(boxEl, sectorKey, sectorName) {
+    const container = document.getElementById('shContent');
+    if (!container) return;
+
+    // Đóng panel cũ nếu có
+    const oldPanel = container.querySelector('.sector-expand-panel');
+    const wasOpenForThis = (currentExpandedKey === sectorKey);
+    if (oldPanel) oldPanel.remove();
+    // Reset active state trên tất cả ô
+    container.querySelectorAll('.sector-box.active').forEach(el => el.classList.remove('active'));
+    container.querySelectorAll('.sector-box-toggle').forEach(el => el.textContent = '▼');
+
+    if (wasOpenForThis) {
+      currentExpandedKey = null;
+      return; // click lại để đóng
+    }
+
+    // Mở panel mới
+    currentExpandedKey = sectorKey;
+    boxEl.classList.add('active');
+    const toggleEl = boxEl.querySelector('.sector-box-toggle');
+    if (toggleEl) toggleEl.textContent = '▲';
+
+    const panel = document.createElement('div');
+    panel.className = 'sector-expand-panel';
+    panel.innerHTML = `
+      <div class="sxp-head">
+        <div class="sxp-title">${sectorName}</div>
+        <div class="sxp-meta" id="sxpMeta-${sectorKey.replace(/\s/g, '_')}"></div>
+        <button class="sxp-close" onclick="closeSectorPanel()" title="Đóng">✕</button>
+      </div>
+      <div id="sxpBody-${sectorKey.replace(/\s/g, '_')}">
+        <div class="sxp-loading">Đang tải danh sách mã...</div>
+      </div>
+    `;
+    // Insert panel ngay sau box được click
+    boxEl.insertAdjacentElement('afterend', panel);
+
+    // Fetch data
+    await loadSectorStocks(sectorKey);
+  };
+
+  window.closeSectorPanel = function() {
+    const container = document.getElementById('shContent');
+    if (!container) return;
+    const panel = container.querySelector('.sector-expand-panel');
+    if (panel) panel.remove();
+    container.querySelectorAll('.sector-box.active').forEach(el => el.classList.remove('active'));
+    container.querySelectorAll('.sector-box-toggle').forEach(el => el.textContent = '▼');
+    currentExpandedKey = null;
+  };
+
+  async function loadSectorStocks(sectorKey) {
+    const safeKey = sectorKey.replace(/\s/g, '_');
+    const bodyEl = document.getElementById(`sxpBody-${safeKey}`);
+    const metaEl = document.getElementById(`sxpMeta-${safeKey}`);
+    if (!bodyEl) return;
+
+    try {
+      // Cache 3 phút frontend
+      const cached = cache[sectorKey];
+      let data;
+      if (cached && (Date.now() - cached.at) < 180000) {
+        data = cached.data;
+      } else {
+        const url = `${API}/api/market/sectors/${encodeURIComponent(sectorKey)}/stocks`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        data = await res.json();
+        cache[sectorKey] = { at: Date.now(), data };
+      }
+
+      const stocks = data.stocks || [];
+      if (stocks.length === 0) {
+        bodyEl.innerHTML = '<div class="sxp-empty">📭 Không có dữ liệu mã nào</div>';
+        return;
+      }
+
+      // Meta stats
+      if (metaEl && data.stats) {
+        const s = data.stats;
+        const sign = s.avg_pct >= 0 ? '+' : '';
+        metaEl.innerHTML = `
+          <span><b class="up">↑ ${s.winners}</b></span>
+          <span><b class="dn">↓ ${s.losers}</b></span>
+          <span><b class="nt">— ${s.flat}</b></span>
+          <span>TB <b class="${s.avg_pct >= 0 ? 'up' : 'dn'}">${sign}${s.avg_pct}%</b></span>
+        `;
+      }
+
+      const fmtPrice = (p) => p == null ? '--' : p.toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+      const fmtVolume = (v) => {
+        if (v == null) return '';
+        if (v >= 1000000) return (v / 1000000).toFixed(1) + 'M';
+        if (v >= 1000) return (v / 1000).toFixed(0) + 'K';
+        return String(v);
+      };
+
+      const html = stocks.map(s => {
+        const cls = s.pct > 0 ? 'up' : (s.pct < 0 ? 'dn' : 'nt');
+        const sign = s.pct >= 0 ? '+' : '';
+        return `
+          <a class="sxp-stock" href="stock-detail-live.html?sym=${s.ticker}" title="Xem chi tiết ${s.ticker}">
+            <div class="sxp-stock-sym">${s.ticker}</div>
+            <div class="sxp-stock-price">${fmtPrice(s.price)}</div>
+            <div class="sxp-stock-pct ${cls}">${sign}${s.pct}%</div>
+            ${s.volume ? `<div class="sxp-stock-vol">KL ${fmtVolume(s.volume)}</div>` : ''}
+          </a>
+        `;
+      }).join('');
+
+      const note = data.partial ? `<div class="sxp-note">⚠️ ${data.note || 'Dữ liệu một phần'}</div>` : '';
+      bodyEl.innerHTML = `<div class="sxp-grid">${html}</div>${note}`;
+      console.log(`[SXP] loaded ${stocks.length} stocks for ${sectorKey}`);
+    } catch (e) {
+      console.error('[SXP] load fail:', e);
+      bodyEl.innerHTML = `<div class="sxp-empty" style="color:var(--red-hi)">⚠️ Lỗi tải dữ liệu: ${e.message}</div>`;
+    }
+  }
 })();
 
 </script>
