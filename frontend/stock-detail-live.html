@@ -1764,9 +1764,9 @@ let lrSeries = null, macdSeries = null, macdSignalSeries = null, macdHistSeries 
 let cmfSeries = null, adSeries = null;
 let _trendBgMarkers = [];
 // Overlay state
-// Phase 8F: Mobile auto-hide price labels
+// Phase 8F/8G: TẮT mặc định nhãn giá các đường (chỉ giá realtime hiển thị)
 const _isMobile = window.matchMedia('(max-width: 768px)').matches;
-let newOverlays = { bb: true, lr: true, ma200: true, trend: true, keylv: false, actions: true, pricelabels: !_isMobile };
+let newOverlays = { bb: true, lr: true, ma200: true, trend: true, keylv: false, actions: true, pricelabels: false };
 let subPanes = { rsi: true, macd: false, sm: false };  // multi-toggle
 let cachedBarsForOverlay = [];
 
@@ -2771,9 +2771,9 @@ function resetChartSettings() {
   document.getElementById('cspTrend').checked = true;
   const cspKL = document.getElementById('cspKeylv'); if (cspKL) cspKL.checked = false;
   const cspAc = document.getElementById('cspActions'); if (cspAc) cspAc.checked = true;
-  const cspPL = document.getElementById('cspPriceLabels'); if (cspPL) cspPL.checked = !_isMobile;
+  const cspPL = document.getElementById('cspPriceLabels'); if (cspPL) cspPL.checked = false;
   // Re-apply overlays để chắc chắn (mobile: ẩn price labels, desktop: hiện)
-  newOverlays = { bb: true, lr: true, ma200: true, trend: true, keylv: false, actions: true, pricelabels: !_isMobile };
+  newOverlays = { bb: true, lr: true, ma200: true, trend: true, keylv: false, actions: true, pricelabels: false };
   // Sub panes: chỉ RSI bật
   subPanes = { rsi: true, macd: false, sm: false };
   document.getElementById('cspRsi').checked = true;
