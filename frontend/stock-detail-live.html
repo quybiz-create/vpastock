@@ -2118,11 +2118,11 @@ function ensureChart() {
 
   // ===== NEW OVERLAY SERIES (Pane 0) =====
   ma200Series = chart.addSeries(LightweightCharts.LineSeries, {
-    color: '#ff4081', lineWidth: 2, lineStyle: 1, title: 'MA200',
-    priceLineVisible: false, lastValueVisible: true,
+    color: '#ff4081', lineWidth: 2, lineStyle: 1, title: '',
+    priceLineVisible: false, lastValueVisible: false,
   });
   bbUpperSeries = chart.addSeries(LightweightCharts.LineSeries, {
-    color: 'rgba(100,180,255,0.55)', lineWidth: 1, title: 'BB↑',
+    color: 'rgba(100,180,255,0.55)', lineWidth: 1, title: '',
     priceLineVisible: false, lastValueVisible: false,
   });
   bbMidSeries = chart.addSeries(LightweightCharts.LineSeries, {
@@ -2130,12 +2130,12 @@ function ensureChart() {
     priceLineVisible: false, lastValueVisible: false,
   });
   bbLowerSeries = chart.addSeries(LightweightCharts.LineSeries, {
-    color: 'rgba(100,180,255,0.55)', lineWidth: 1, title: 'BB↓',
+    color: 'rgba(100,180,255,0.55)', lineWidth: 1, title: '',
     priceLineVisible: false, lastValueVisible: false,
   });
   lrSeries = chart.addSeries(LightweightCharts.LineSeries, {
-    color: '#ffd54f', lineWidth: 1, lineStyle: 1, title: 'LinReg(20)',
-    priceLineVisible: false, lastValueVisible: true,
+    color: '#ffd54f', lineWidth: 1, lineStyle: 1, title: '',
+    priceLineVisible: false, lastValueVisible: false,
   });
 
   // MACD và Smart Money series sẽ được tạo động khi bật trong popup
@@ -2368,9 +2368,9 @@ function renderNewOverlays(series) {
           const s = chart.addSeries(LightweightCharts.LineSeries, {
             color: seg.dir > 0 ? '#42a5f5' : '#ef5350',
             lineWidth: 3,
-            title: idx === 0 ? 'Trend HMA' : '',
+            title: '',
             priceLineVisible: false,
-            lastValueVisible: idx === segments.length - 1,
+            lastValueVisible: !!newOverlays.pricelabels && (idx === segments.length - 1),
             crosshairMarkerVisible: false,
           });
           s.setData(seg.data);
@@ -2611,23 +2611,45 @@ function removeSmPane() {
 
 function applyPriceLabelsVisibility() {
   const show = !!newOverlays.pricelabels;
-  const seriesList = [
-    ma20Series, ma50Series, ma200Series,
-    bbUpperSeries, bbLowerSeries, bbMidSeries,
-    lrSeries, rsiSeries,
-    cmfSeries, macdSeries, macdSignalSeries,
+  // Mỗi series + title tương ứng (khi bật)
+  const mapping = [
+    [ma20Series, 'MA20'],
+    [ma50Series, 'MA50'],
+    [ma200Series, 'MA200'],
+    [bbUpperSeries, 'BB↑'],
+    [bbLowerSeries, 'BB↓'],
+    [bbMidSeries, ''],
+    [lrSeries, 'LinReg(20)'],
+    [rsiSeries, 'RSI(14)'],
+    [cmfSeries, 'CMF(20)'],
+    [macdSeries, 'MACD'],
+    [macdSignalSeries, 'Signal'],
   ];
-  seriesList.forEach(s => {
+  mapping.forEach(([s, title]) => {
     if (s && typeof s.applyOptions === 'function') {
-      try { s.applyOptions({ lastValueVisible: show }); } catch(e) {}
+      try {
+        s.applyOptions({
+          lastValueVisible: show,
+          title: show ? title : '',
+        });
+      } catch(e) {}
     }
   });
-  // Trend HMA segments: chỉ segment cuối show label
+  // Trend HMA segments
   if (window.__trendSegments && Array.isArray(window.__trendSegments)) {
     window.__trendSegments.forEach((s, i, arr) => {
-      try { s.applyOptions({ lastValueVisible: show && (i === arr.length - 1) }); } catch(e) {}
+      const isLast = (i === arr.length - 1);
+      try {
+        s.applyOptions({
+          lastValueVisible: show && isLast,
+          title: show && i === 0 ? 'Trend HMA' : '',
+        });
+      } catch(e) {}
     });
   }
+  // Key Levels (S/R) price lines — phải re-render vì priceLine không có applyOptions
+  // (đã được wire trong renderKeyLevels qua newOverlays.pricelabels)
+  console.log('[pricelabels] applied =', show);
 }
 
 function toggleNewOverlay(key) {
