@@ -1198,6 +1198,7 @@ input{font-family:inherit;color:inherit}
                   <label class="csp-item"><input type="checkbox" id="cspTrend" checked onchange="toggleNewOverlay('trend')"> <span class="csp-swatch" style="background:linear-gradient(90deg,#ffeb3b,#9c27b0)"></span> <span><b>Trend HMA</b><br><small>Slope Direction Line</small></span></label>
                   <label class="csp-item"><input type="checkbox" id="cspKeylv" onchange="toggleNewOverlay('keylv')"> <span class="csp-swatch" style="background:linear-gradient(90deg,#ef5350,#26a69a)"></span> <span><b>Key S/R</b><br><small>Hỗ trợ / kháng cự</small></span></label>
                   <label class="csp-item"><input type="checkbox" id="cspActions" checked onchange="toggleNewOverlay('actions')"> <span class="csp-swatch" style="background:linear-gradient(90deg,#fbc02d,#ff1744)"></span> <span><b>★ Key Actions</b><br><small>RSI/MACD/Smart$ signals</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspPriceLabels" onchange="toggleNewOverlay('pricelabels')"> <span class="csp-swatch" style="background:linear-gradient(90deg,#2962ff,#ff9800)"></span> <span><b>Giá đường</b><br><small>Nhãn giá MA/BB/LinReg</small></span></label>
                 </div>
               </div>
               <div class="csp-section">
@@ -1763,7 +1764,9 @@ let lrSeries = null, macdSeries = null, macdSignalSeries = null, macdHistSeries 
 let cmfSeries = null, adSeries = null;
 let _trendBgMarkers = [];
 // Overlay state
-let newOverlays = { bb: true, lr: true, ma200: true, trend: true, keylv: false, actions: true };
+// Phase 8F: Mobile auto-hide price labels
+const _isMobile = window.matchMedia('(max-width: 768px)').matches;
+let newOverlays = { bb: true, lr: true, ma200: true, trend: true, keylv: false, actions: true, pricelabels: !_isMobile };
 let subPanes = { rsi: true, macd: false, sm: false };  // multi-toggle
 let cachedBarsForOverlay = [];
 
@@ -1907,11 +1910,11 @@ const Calc = {
       if (r == null || ma50[i] == null) continue;
       // RSI bật khỏi vùng oversold trong uptrend
       if (rsiArr[i-1] < 30 && r >= 30 && closes[i] > ma50[i]) {
-        events.push({i, time: bars[i].time, type: 'rsi_buy', text: '★ RSI Buy', color: '#00e676', pos: 'belowBar', shape: 'arrowUp'});
+        events.push({i, time: bars[i].time, type: 'rsi_buy', text: '', color: '#00e676', pos: 'belowBar', shape: 'arrowUp', tooltip: 'RSI Buy: RSI bật khỏi vùng quá bán, giá trên MA50'});
       }
       // RSI cắt khỏi overbought trong downtrend
       if (rsiArr[i-1] > 70 && r <= 70 && closes[i] < ma50[i]) {
-        events.push({i, time: bars[i].time, type: 'rsi_sell', text: '★ RSI Sell', color: '#ff5252', pos: 'aboveBar', shape: 'arrowDown'});
+        events.push({i, time: bars[i].time, type: 'rsi_sell', text: '', color: '#ff5252', pos: 'aboveBar', shape: 'arrowDown', tooltip: 'RSI Sell: RSI rớt khỏi vùng quá mua, giá dưới MA50'});
       }
     }
     // 2. MACD histogram zero-cross với độ lớn lớn (lọc noise)
@@ -1951,13 +1954,13 @@ const Calc = {
       // Bearish divergence: giá đỉnh cao hơn nhưng CMF đỉnh thấp hơn → Distribution
       if (currHigh > prevHigh * 1.01 && currCmfHigh < prevCmfHigh - 0.05) {
         if (!events.some(e => e.type === 'sm_dist' && Math.abs(e.i - i) < win)) {
-          events.push({i, time: bars[i].time, type: 'sm_dist', text: '★ Xả ngầm', color: '#ff1744', pos: 'aboveBar', shape: 'square'});
+          events.push({i, time: bars[i].time, type: 'sm_dist', text: '★', color: '#ff1744', pos: 'aboveBar', shape: 'square', tooltip: 'Xả ngầm (Distribution): Giá tạo đỉnh mới nhưng dòng tiền giảm'});
         }
       }
       // Bullish divergence: giá đáy thấp hơn nhưng CMF đáy cao hơn → Accumulation
       if (currLow < prevLow * 0.99 && currCmfLow > prevCmfLow + 0.05) {
         if (!events.some(e => e.type === 'sm_acc' && Math.abs(e.i - i) < win)) {
-          events.push({i, time: bars[i].time, type: 'sm_acc', text: '★ Gom ngầm', color: '#00e676', pos: 'belowBar', shape: 'square'});
+          events.push({i, time: bars[i].time, type: 'sm_acc', text: '★', color: '#00e676', pos: 'belowBar', shape: 'square', tooltip: 'Gom ngầm (Accumulation): Giá tạo đáy mới nhưng dòng tiền tăng'});
         }
       }
     }
@@ -2453,8 +2456,8 @@ function renderNewOverlays(series) {
     try { if (window.__actionMarkers) window.__actionMarkers.setMarkers([]); } catch(e){}
   }
 
-  // Apply sub-chart visibility (defer để chắc chắn pane đã render)
-  setTimeout(() => applySub(), 50);
+  // Apply sub-chart visibility + price labels visibility
+  setTimeout(() => { applySub(); applyPriceLabelsVisibility(); }, 50);
 
   // Update indicator bar new cells
   updateNewIndicatorBar();
@@ -2479,7 +2482,7 @@ function renderKeyLevels(bars, lastPrice) {
       price: lv.price,
       color: lv.type === 'R' ? 'rgba(239,83,80,0.6)' : 'rgba(38,166,154,0.6)',
       lineWidth: 1, lineStyle: 2,
-      axisLabelVisible: true,
+      axisLabelVisible: !!newOverlays.pricelabels,
       title: lv.type + (lv.strength > 1 ? `(${lv.strength})` : ''),
     }));
   } catch(e) { console.warn('key levels:', e); }
@@ -2605,8 +2608,30 @@ function removeSmPane() {
   } catch(e) { console.warn('removeSmPane:', e); }
 }
 
+
+function applyPriceLabelsVisibility() {
+  const show = !!newOverlays.pricelabels;
+  const seriesList = [
+    ma20Series, ma50Series, ma200Series,
+    bbUpperSeries, bbLowerSeries, bbMidSeries,
+    lrSeries, rsiSeries,
+    cmfSeries, macdSeries, macdSignalSeries,
+  ];
+  seriesList.forEach(s => {
+    if (s && typeof s.applyOptions === 'function') {
+      try { s.applyOptions({ lastValueVisible: show }); } catch(e) {}
+    }
+  });
+  // Trend HMA segments: chỉ segment cuối show label
+  if (window.__trendSegments && Array.isArray(window.__trendSegments)) {
+    window.__trendSegments.forEach((s, i, arr) => {
+      try { s.applyOptions({ lastValueVisible: show && (i === arr.length - 1) }); } catch(e) {}
+    });
+  }
+}
+
 function toggleNewOverlay(key) {
-  const cbIds = {bb:'cspBB', lr:'cspLR', ma200:'cspMA200', trend:'cspTrend', keylv:'cspKeylv', actions:'cspActions'};
+  const cbIds = {bb:'cspBB', lr:'cspLR', ma200:'cspMA200', trend:'cspTrend', keylv:'cspKeylv', actions:'cspActions', pricelabels:'cspPriceLabels'};
   const cb = document.getElementById(cbIds[key]);
   if (cb) {
     newOverlays[key] = cb.checked;
@@ -2631,6 +2656,11 @@ function toggleNewOverlay(key) {
   // Toggle MA200 chú thích trong overlay
   if (key === 'ma200' && ma200Series) {
     ma200Series.applyOptions({ visible: newOverlays.ma200 });
+  }
+  // Pricelabels: toggle ngay không cần re-render
+  if (key === 'pricelabels') {
+    applyPriceLabelsVisibility();
+    return;
   }
   // Re-render cho mọi overlay (đảm bảo nhất quán)
   if (cachedBarsForOverlay && cachedBarsForOverlay.length) {
@@ -2712,9 +2742,13 @@ function _cspBridgeInit() {
 }
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(_cspBridgeInit, 800);
-  // Retry để chắc chắn DOM ready
   setTimeout(_cspBridgeInit, 2000);
   setTimeout(_cspBridgeInit, 4000);
+  // Sync price labels checkbox with initial state (mobile = off)
+  setTimeout(() => {
+    const cb = document.getElementById('cspPriceLabels');
+    if (cb) cb.checked = !!newOverlays.pricelabels;
+  }, 600);
 });
 
 function toggleChartSettingsPopup() {
@@ -2737,8 +2771,9 @@ function resetChartSettings() {
   document.getElementById('cspTrend').checked = true;
   const cspKL = document.getElementById('cspKeylv'); if (cspKL) cspKL.checked = false;
   const cspAc = document.getElementById('cspActions'); if (cspAc) cspAc.checked = true;
-  // Re-apply overlays để chắc chắn
-  newOverlays = { bb: true, lr: true, ma200: true, trend: true, keylv: false, actions: true };
+  const cspPL = document.getElementById('cspPriceLabels'); if (cspPL) cspPL.checked = !_isMobile;
+  // Re-apply overlays để chắc chắn (mobile: ẩn price labels, desktop: hiện)
+  newOverlays = { bb: true, lr: true, ma200: true, trend: true, keylv: false, actions: true, pricelabels: !_isMobile };
   // Sub panes: chỉ RSI bật
   subPanes = { rsi: true, macd: false, sm: false };
   document.getElementById('cspRsi').checked = true;
