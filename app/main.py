@@ -7,6 +7,9 @@ from app.config import settings
 from app.db.database import init_db
 from app.services.alert_scanner import scanner_loop
 from app.api import stock, market, screener, calendar, risk, watchlist
+from app.api import stock, market, screener, calendar, risk, watchlist, news
+from dotenv import load_dotenv
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -47,6 +50,7 @@ async def health():
     return {"status": "healthy", "env": settings.APP_ENV}
 app.include_router(stock.router, prefix="/api/stock", tags=["stock"])
 app.include_router(market.router, prefix="/api/market", tags=["market"])
+app.include_router(news.router, prefix="/api/news", tags=["news"])
 app.include_router(screener.router, prefix="/api/screener", tags=["screener"])
 app.include_router(calendar.router, prefix="/api/calendar", tags=["calendar"])
 app.include_router(risk.router, prefix="/api/risk", tags=["risk"])
