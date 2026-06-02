@@ -1221,6 +1221,53 @@ input{font-family:inherit;color:inherit}
 }
 
 
+
+/* === Phase 9B: Modal Wyckoff tabs === */
+.wyckoff-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--border, #363a45);
+  background: var(--bg, #131722);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.wy-tab {
+  background: transparent;
+  border: none;
+  color: var(--text2, #94a3b8);
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: .15s;
+}
+.wy-tab:hover { color: var(--text); }
+.wy-tab.active {
+  color: var(--blue-hi, #5b8def);
+  border-bottom-color: var(--blue, #2962ff);
+}
+.wy-alignment {
+  margin-left: auto;
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  color: var(--text3, #787b86);
+  padding: 4px 10px;
+  background: var(--bg3);
+  border-radius: 10px;
+}
+.wy-alignment.bull { color: var(--green-hi, #5fffc0); background: rgba(38,166,154,0.15); }
+.wy-alignment.bear { color: var(--red-hi, #ff8a8a); background: rgba(239,83,80,0.15); }
+.wy-alignment.mixed { color: var(--yellow, #ffeb3b); background: rgba(255,213,79,0.1); }
+
+@media (max-width: 600px) {
+  .wyckoff-tabs { padding: 0 10px; }
+  .wy-tab { padding: 8px 8px; font-size: 10px; }
+  .wy-alignment { font-size: 9px; padding: 3px 6px; }
+}
+
 /* === Phase 9A: Wyckoff Modal === */
 .wyckoff-modal-backdrop {
   display: none;
@@ -1511,6 +1558,17 @@ input{font-family:inherit;color:inherit}
                   <label class="csp-item"><input type="checkbox" class="csp-est" data-key="st_lines"> <span class="csp-swatch" style="background:#1c86ee"></span> <span><b>SuperTrend</b><br><small>━ ST lines</small></span></label>
                   <label class="csp-item"><input type="checkbox" class="csp-est" data-key="pivot_buy" checked> <span class="csp-swatch" style="background:#00e676"></span> <span><b>Pivot Buy</b><br><small>▲ Pivot @</small></span></label>
                   <label class="csp-item"><input type="checkbox" class="csp-est" data-key="pivot_sell" checked> <span class="csp-swatch" style="background:#ff1744"></span> <span><b>Pivot Sell</b><br><small>▼ Pivot @</small></span></label>
+                </div>
+              </div>
+              <div class="csp-section">
+                <div class="csp-section-title">📊 Wyckoff Markers (Phase 9B)</div>
+                <div class="csp-grid">
+                  <label class="csp-item"><input type="checkbox" id="cspWyTr" checked onchange="toggleWyckoffOverlay()"> <span class="csp-swatch" style="background:#fbc02d"></span> <span><b>TR boundaries</b><br><small>━ Đường TR↑/TR↓</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspWyClimax" checked onchange="toggleWyckoffOverlay()"> <span class="csp-swatch" style="background:#ff5252"></span> <span><b>SC/BC + AR</b><br><small>● Climax + Auto Rally</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspWyST" checked onchange="toggleWyckoffOverlay()"> <span class="csp-swatch" style="background:#ffd54f"></span> <span><b>ST (Test)</b><br><small>● Secondary Test</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspWySpring" checked onchange="toggleWyckoffOverlay()"> <span class="csp-swatch" style="background:#00e676"></span> <span><b>Spring/UTAD</b><br><small>▲▼ Phase C tests</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspWyLPS" checked onchange="toggleWyckoffOverlay()"> <span class="csp-swatch" style="background:#4caf50"></span> <span><b>LPS/LPSY</b><br><small>● Last Point S/Y</small></span></label>
+                  <label class="csp-item"><input type="checkbox" id="cspWySOS" checked onchange="toggleWyckoffOverlay()"> <span class="csp-swatch" style="background:#ff9800"></span> <span><b>SOS/SOW</b><br><small>★ Sign Strength/Weakness</small></span></label>
                 </div>
               </div>
             </div>
@@ -5150,7 +5208,15 @@ if (copyrightOverlay) copyrightOverlay.addEventListener('click', closeCopyright)
     }
   };
 
-  // ESC để đóng modal
+  
+// Phase 9B: Toggle Wyckoff markers/TR visibility
+window.toggleWyckoffOverlay = function() {
+  if (_lastWyckoffData) {
+    renderWyckoffMarkers(_lastWyckoffData);
+  }
+};
+
+// ESC để đóng modal
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       const modal = document.getElementById('fghModal');
@@ -5481,6 +5547,12 @@ function escapeHtml(s) {
       <span class="wyckoff-phase-badge none" id="wyckoffBadge">--</span>
       <button class="wyckoff-close" onclick="closeWyckoffModal()" title="Đóng">✕</button>
     </div>
+    <div class="wyckoff-tabs">
+      <button class="wy-tab active" data-tf="daily" onclick="switchWyckoffTab('daily')">📅 Ngày</button>
+      <button class="wy-tab" data-tf="weekly" onclick="switchWyckoffTab('weekly')">📆 Tuần</button>
+      <button class="wy-tab" data-tf="monthly" onclick="switchWyckoffTab('monthly')">🗓️ Tháng</button>
+      <span class="wy-alignment" id="wyAlignment"></span>
+    </div>
     <div class="wyckoff-body" id="wyckoffBody">
       <div class="wyckoff-desc" id="wyckoffDesc">Đang tải...</div>
     </div>
@@ -5493,6 +5565,41 @@ function escapeHtml(s) {
 // Phase 9A: Wyckoff Phase Detection
 // ============================================================
 let _lastWyckoffData = null;
+
+// Phase 9B: Multi-timeframe Wyckoff
+let _lastWyckoffMulti = null;
+let _currentWyTab = 'daily';
+
+window.switchWyckoffTab = function(tab) {
+  _currentWyTab = tab;
+  document.querySelectorAll('.wy-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tf === tab);
+  });
+  renderWyckoffModal();
+};
+
+async function fetchWyckoffMulti(symbol) {
+  if (!symbol) return;
+  try {
+    const res = await fetch(`${API}/api/wyckoff/${encodeURIComponent(symbol)}/multi?period=200`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    _lastWyckoffMulti = await res.json();
+    console.log('[wyckoff multi]', _lastWyckoffMulti.alignment);
+    
+    // Update alignment badge
+    const el = document.getElementById('wyAlignment');
+    if (el && _lastWyckoffMulti.alignment) {
+      const a = _lastWyckoffMulti.alignment;
+      const summary = a.summary;
+      el.className = 'wy-alignment ' + (summary === 'accumulation' ? 'bull' : summary === 'distribution' ? 'bear' : 'mixed');
+      el.textContent = a.note || '';
+    }
+  } catch (e) {
+    console.warn('[wyckoff multi] fail:', e);
+    _lastWyckoffMulti = null;
+  }
+}
+
 
 async function fetchWyckoff(symbol) {
   if (!symbol) return;
@@ -5528,6 +5635,9 @@ async function fetchWyckoff(symbol) {
     renderWyckoffMarkers(data);
     
     console.log('[wyckoff]', data.setup, data.phase, 'conf=' + data.confidence);
+    
+    // Phase 9B: fetch multi-TF in background
+    fetchWyckoffMulti(symbol);
   } catch (e) {
     console.error('[wyckoff] fail:', e);
     if (cellEl) cellEl.textContent = '--';
@@ -5547,40 +5657,57 @@ function renderWyckoffMarkers(data) {
     }
   } catch(e) {}
   
-  // Color map
+  // Color/shape/position maps (Phase 9B extended)
   const colorMap = {
     'SC': '#ff5252', 'BC': '#ff5252',
     'AR': '#ffd54f',
-    'ST': '#ffd54f',
+    'ST': '#ffd54f', 'ST-Spring': '#26a69a',
     'Spring': '#00e676', 'UTAD': '#ff5252',
-    'LPS': '#00e676', 'LPSY': '#ff5252',
-    'SOS': '#00e676'
+    'LPS': '#4caf50', 'LPSY': '#e53935',
+    'SOS': '#ff9800', 'SOW': '#ff9800',
   };
   const shapeMap = {
-    'SC': 'arrowUp', 'BC': 'arrowDown',
-    'AR': 'circle', 'ST': 'circle',
+    'SC': 'arrowDown', 'BC': 'arrowUp',
+    'AR': 'circle', 'ST': 'circle', 'ST-Spring': 'circle',
     'Spring': 'arrowUp', 'UTAD': 'arrowDown',
     'LPS': 'circle', 'LPSY': 'circle',
-    'SOS': 'arrowUp'
+    'SOS': 'arrowUp', 'SOW': 'arrowDown',
   };
   const posMap = {
     'SC': 'belowBar', 'BC': 'aboveBar',
-    'AR': 'aboveBar', 'ST': 'belowBar',
+    'AR': 'aboveBar', 'ST': 'belowBar', 'ST-Spring': 'belowBar',
     'Spring': 'belowBar', 'UTAD': 'aboveBar',
     'LPS': 'belowBar', 'LPSY': 'aboveBar',
-    'SOS': 'belowBar'
+    'SOS': 'belowBar', 'SOW': 'aboveBar',
   };
   
-  const markers = data.events.map(e => {
-    return {
-      time: e.time,
-      position: posMap[e.type] || 'aboveBar',
-      color: colorMap[e.type] || '#fbc02d',
-      shape: shapeMap[e.type] || 'square',
-      text: e.type,
-      size: 1,
-    };
-  });
+  // Phase 9B: Filter events theo toggle setting
+  const showClimax = document.getElementById('cspWyClimax')?.checked !== false;
+  const showST = document.getElementById('cspWyST')?.checked !== false;
+  const showSpring = document.getElementById('cspWySpring')?.checked !== false;
+  const showLPS = document.getElementById('cspWyLPS')?.checked !== false;
+  const showSOS = document.getElementById('cspWySOS')?.checked !== false;
+  
+  const groupMap = {
+    'SC': showClimax, 'BC': showClimax, 'AR': showClimax,
+    'ST': showST, 'ST-Spring': showST,
+    'Spring': showSpring, 'UTAD': showSpring,
+    'LPS': showLPS, 'LPSY': showLPS,
+    'SOS': showSOS, 'SOW': showSOS,
+  };
+  
+  const markers = data.events
+    .filter(e => groupMap[e.type] !== false)
+    .map(e => {
+      return {
+        time: e.time,
+        position: posMap[e.type] || 'aboveBar',
+        color: colorMap[e.type] || '#fbc02d',
+        shape: shapeMap[e.type] || 'square',
+        text: e.type,
+        size: 1,
+      };
+    });
   
   if (markers.length > 0) {
     try {
@@ -5596,7 +5723,8 @@ function renderWyckoffMarkers(data) {
       window.__wyckoffTRLines.forEach(l => { try { candleSeries.removePriceLine(l); } catch(e){} });
     }
     window.__wyckoffTRLines = [];
-    if (data.trading_range) {
+    const showTR = document.getElementById('cspWyTr')?.checked !== false;
+    if (data.trading_range && showTR) {
       window.__wyckoffTRLines.push(candleSeries.createPriceLine({
         price: data.trading_range.high,
         color: 'rgba(255,213,79,0.55)', lineWidth: 1, lineStyle: 2,
@@ -5631,13 +5759,22 @@ function renderWyckoffModal() {
   
   if (symEl) symEl.textContent = currentSymbol || '--';
   
-  if (!_lastWyckoffData) {
+  // Phase 9B: Pick data theo tab hiện tại
+  let d = _lastWyckoffData;
+  if (_currentWyTab !== 'daily' && _lastWyckoffMulti) {
+    d = _lastWyckoffMulti[_currentWyTab] || null;
+    if (d && d.error) {
+      bodyEl.innerHTML = `<div class="wyckoff-desc" style="color:var(--yellow)">⚠️ ${d.error}</div>`;
+      if (badgeEl) { badgeEl.className = 'wyckoff-phase-badge none'; badgeEl.textContent = '--'; }
+      return;
+    }
+  }
+  
+  if (!d) {
     bodyEl.innerHTML = '<div class="wyckoff-desc">Chưa có dữ liệu Wyckoff. Vui lòng chọn một mã CK.</div>';
     if (badgeEl) { badgeEl.className = 'wyckoff-phase-badge none'; badgeEl.textContent = '--'; }
     return;
   }
-  
-  const d = _lastWyckoffData;
   
   if (badgeEl) {
     const setupClass = d.setup === 'accumulation' ? 'accumulation' : (d.setup === 'distribution' ? 'distribution' : 'none');
@@ -5696,6 +5833,14 @@ function renderWyckoffModal() {
   
   bodyEl.innerHTML = html;
 }
+
+
+// Phase 9B: Toggle Wyckoff markers/TR visibility
+window.toggleWyckoffOverlay = function() {
+  if (_lastWyckoffData) {
+    renderWyckoffMarkers(_lastWyckoffData);
+  }
+};
 
 // ESC để đóng modal
 document.addEventListener('keydown', (e) => {

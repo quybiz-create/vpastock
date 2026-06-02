@@ -316,6 +316,213 @@ def _find_utad(
     return candidates[0][0]
 
 
+
+def _find_secondary_test(
+    bars: List[Dict[str, float]],
+    sc_idx: Optional[int],
+    ar_idx: Optional[int],
+    setup: str,
+    vol_ma: List[Optional[float]],
+    max_look: int = 30,
+) -> Optional[int]:
+    """ST (Secondary Test) — Test lại vùng SC/BC với volume THẤP hơn lần đầu.
+    
+    Đây là xác nhận sức bán/mua đã cạn — bước quan trọng kết thúc Phase A.
+    
+    Accumulation: ST test lại vùng low của SC, volume < volume(SC)
+    Distribution: ST test lại vùng high của BC, volume < volume(BC)
+    """
+    if sc_idx is None or ar_idx is None or ar_idx >= len(bars) - 1:
+        return None
+    
+    n = len(bars)
+    end = min(n - 1, ar_idx + max_look)
+    sc_bar = bars[sc_idx]
+    sc_vol = sc_bar.get("volume", 0) or 0
+    if sc_vol <= 0:
+        return None
+    
+    if setup == "accumulation":
+        sc_low = sc_bar["low"]
+        # Tìm bar lùi về gần SC low (trong ±3%) với volume thấp hơn
+        for i in range(ar_idx + 1, end + 1):
+            b = bars[i]
+            if abs(b["low"] - sc_low) / sc_low > 0.04:  # quá xa SC low
+                continue
+            vol = b.get("volume", 0) or 0
+            if vol >= sc_vol * 0.75:  # volume vẫn cao -> chưa cạn
+                continue
+            # ST: low gần SC, vol thấp
+            return i
+    else:  # distribution
+        sc_high = sc_bar["high"]
+        for i in range(ar_idx + 1, end + 1):
+            b = bars[i]
+            if abs(b["high"] - sc_high) / sc_high > 0.04:
+                continue
+            vol = b.get("volume", 0) or 0
+            if vol >= sc_vol * 0.75:
+                continue
+            return i
+    return None
+
+
+def _find_spring_test(
+    bars: List[Dict[str, float]],
+    spring_idx: int,
+    tr: Dict[str, Any],
+    vol_ma: List[Optional[float]],
+    max_look: int = 10,
+) -> Optional[int]:
+    """Spring Test — Test lại vùng Spring low với volume THẤP.
+    
+    Sau Spring, nếu có 1 bar test xuống gần Spring low nhưng volume thấp hơn,
+    đó là tín hiệu Spring đúng (no supply tại vùng đáy).
+    """
+    n = len(bars)
+    if spring_idx >= n - 2:
+        return None
+    
+    spring_bar = bars[spring_idx]
+    spring_low = spring_bar["low"]
+    spring_vol = spring_bar.get("volume", 0) or 0
+    if spring_vol <= 0:
+        return None
+    
+    end = min(n - 1, spring_idx + max_look)
+    for i in range(spring_idx + 1, end + 1):
+        b = bars[i]
+        # Test trong vùng spring low (±2%)
+        if b["low"] > spring_low * 1.025:
+            continue
+        if b["low"] < spring_low * 0.98:  # phá sâu hơn -> không phải test
+            continue
+        vol = b.get("volume", 0) or 0
+        if vol >= spring_vol * 0.6:  # volume vẫn cao -> chưa xác nhận
+            continue
+        return i
+    return None
+
+
+def _find_lps_lpsy(
+    bars: List[Dict[str, float]],
+    tr: Dict[str, Any],
+    setup: str,
+    spring_idx: Optional[int],
+    utad_idx: Optional[int],
+    atr: List[float],
+) -> List[int]:
+    """LPS (Last Point of Support) / LPSY (Last Point of Supply).
+    
+    Sau Spring/UTAD, các pullback nhẹ tạo hỗ trợ/kháng cự mới —
+    đây là điểm vào lệnh chuẩn nhất theo Wyckoff.
+    
+    Tìm các pullback trong Phase D (sau Spring/UTAD nhưng chưa break TR rõ).
+    """
+    n = len(bars)
+    results = []
+    
+    if setup == "accumulation" and spring_idx is not None:
+        # LPS: pullback sau Spring, nhưng cao hơn Spring low
+        # Tìm các swing low local trong [spring_idx+3 .. n-1]
+        spring_low = bars[spring_idx]["low"]
+        tr_mid = tr["mid"]
+        for i in range(spring_idx + 3, min(n - 2, spring_idx + 40)):
+            b = bars[i]
+            # Local low: thấp hơn 2 bar trước và 2 bar sau
+            if i < 2 or i >= n - 2:
+                continue
+            is_local_low = (
+                b["low"] < bars[i - 1]["low"] and
+                b["low"] < bars[i - 2]["low"] and
+                b["low"] < bars[i + 1]["low"] and
+                b["low"] < bars[i + 2]["low"]
+            )
+            if not is_local_low:
+                continue
+            # LPS phải cao hơn spring low (higher low) và trong vùng TR
+            if b["low"] <= spring_low * 1.005:
+                continue
+            if b["low"] > tr_mid * 1.05:  # quá cao -> đã ra khỏi tích lũy
+                continue
+            results.append(i)
+    
+    elif setup == "distribution" and utad_idx is not None:
+        utad_high = bars[utad_idx]["high"]
+        tr_mid = tr["mid"]
+        for i in range(utad_idx + 3, min(n - 2, utad_idx + 40)):
+            b = bars[i]
+            if i < 2 or i >= n - 2:
+                continue
+            is_local_high = (
+                b["high"] > bars[i - 1]["high"] and
+                b["high"] > bars[i - 2]["high"] and
+                b["high"] > bars[i + 1]["high"] and
+                b["high"] > bars[i + 2]["high"]
+            )
+            if not is_local_high:
+                continue
+            # LPSY phải thấp hơn UTAD high (lower high)
+            if b["high"] >= utad_high * 0.995:
+                continue
+            if b["high"] < tr_mid * 0.95:
+                continue
+            results.append(i)
+    
+    return results[:3]  # tối đa 3 LPS/LPSY
+
+
+def _find_sos_sow(
+    bars: List[Dict[str, float]],
+    tr: Dict[str, Any],
+    setup: str,
+    spring_idx: Optional[int],
+    utad_idx: Optional[int],
+    vol_ma: List[Optional[float]],
+    atr: List[float],
+) -> List[int]:
+    """SOS (Sign of Strength) / SOW (Sign of Weakness).
+    
+    Đợt tăng/giảm mạnh sau Spring/UTAD với:
+    - Range rộng (> 1.3 ATR)
+    - Volume cao (> 1.4 MA20)
+    - Đóng cửa gần đỉnh (SOS) hoặc gần đáy (SOW)
+    """
+    n = len(bars)
+    results = []
+    start_search = (spring_idx or utad_idx or tr["end_idx"]) + 1
+    
+    for i in range(start_search, min(n, start_search + 50)):
+        b = bars[i]
+        if i >= len(atr) or atr[i] <= 0:
+            continue
+        bar_range = b["high"] - b["low"]
+        if bar_range < atr[i] * 1.3:
+            continue
+        vol = b.get("volume", 0) or 0
+        vm = vol_ma[i] if i < len(vol_ma) and vol_ma[i] else 1
+        if vol < vm * 1.4:
+            continue
+        close_pos = (b["close"] - b["low"]) / bar_range if bar_range > 0 else 0.5
+        
+        if setup == "accumulation":
+            # SOS: nến xanh mạnh, đóng cửa gần high
+            if b["close"] <= b["open"]:
+                continue
+            if close_pos < 0.65:
+                continue
+            results.append(i)
+        else:
+            # SOW: nến đỏ mạnh, đóng cửa gần low
+            if b["close"] >= b["open"]:
+                continue
+            if close_pos > 0.35:
+                continue
+            results.append(i)
+    
+    return results[:2]  # tối đa 2 SOS/SOW
+
+
 def _classify_phase(
     setup: str,
     tr: Dict[str, Any],
@@ -323,6 +530,7 @@ def _classify_phase(
     utad_idx: Optional[int],
     last_idx: int,
     bars: List[Dict[str, float]],
+    events: Optional[List[Any]] = None,
 ) -> Tuple[str, float, str]:
     """Phân loại Phase A/B/C/D/E hiện tại + confidence + suggestion."""
     tr_high = tr["high"]
@@ -453,7 +661,28 @@ def analyze_wyckoff(bars: List[Dict[str, Any]], period: int = 200) -> Dict[str, 
                 confidence=0.65,
             ))
     
-    # 5. Spring / UTAD
+    # 5. Phase A complement: ST (Secondary Test) sau AR
+    ar_idx_val = None
+    for e in events:
+        if e.type == "AR":
+            ar_idx_val = e.index
+            break
+    if climax_idx is not None and ar_idx_val is not None:
+        st_idx = _find_secondary_test(bars, climax_idx, ar_idx_val, setup, vol_ma20)
+        if st_idx is not None:
+            b = bars[st_idx]
+            events.append(WyckoffEvent(
+                index=st_idx,
+                bar_time=b.get("time"),
+                price=b["low"] if setup == "accumulation" else b["high"],
+                type="ST",
+                desc=("Secondary Test — test lại SC low với volume thấp (sức bán cạn)"
+                      if setup == "accumulation"
+                      else "Secondary Test — test lại BC high với volume thấp (sức mua cạn)"),
+                confidence=0.7,
+            ))
+    
+    # 6. Spring / UTAD
     spring_idx = None
     utad_idx = None
     if setup == "accumulation":
@@ -468,6 +697,18 @@ def analyze_wyckoff(bars: List[Dict[str, Any]], period: int = 200) -> Dict[str, 
                 desc="Spring — Phá đáy TR rồi đảo chiều (shake-out yếu tay)",
                 confidence=0.85,
             ))
+            # Spring Test (xác nhận Spring đúng)
+            st_test_idx = _find_spring_test(bars, spring_idx, tr, vol_ma20)
+            if st_test_idx is not None:
+                b2 = bars[st_test_idx]
+                events.append(WyckoffEvent(
+                    index=st_test_idx,
+                    bar_time=b2.get("time"),
+                    price=b2["low"],
+                    type="ST-Spring",
+                    desc="Spring Test — Xác nhận Spring đúng (no supply tại đáy)",
+                    confidence=0.9,
+                ))
     else:
         utad_idx = _find_utad(bars, tr)
         if utad_idx is not None:
@@ -481,10 +722,53 @@ def analyze_wyckoff(bars: List[Dict[str, Any]], period: int = 200) -> Dict[str, 
                 confidence=0.85,
             ))
     
-    # 6. Phase classification
+    # 7. LPS / LPSY (Phase D entries)
+    lps_indices = _find_lps_lpsy(bars, tr, setup, spring_idx, utad_idx, atr14)
+    for lps_i in lps_indices:
+        b = bars[lps_i]
+        ev_type = "LPS" if setup == "accumulation" else "LPSY"
+        ev_desc = (
+            "Last Point of Support — hỗ trợ cuối cùng trước khi tăng mạnh"
+            if setup == "accumulation"
+            else "Last Point of Supply — kháng cự cuối cùng trước khi giảm mạnh"
+        )
+        events.append(WyckoffEvent(
+            index=lps_i,
+            bar_time=b.get("time"),
+            price=b["low"] if setup == "accumulation" else b["high"],
+            type=ev_type,
+            desc=ev_desc,
+            confidence=0.75,
+        ))
+    
+    # 8. SOS / SOW (Phase D-E signal)
+    sos_indices = _find_sos_sow(bars, tr, setup, spring_idx, utad_idx, vol_ma20, atr14)
+    for sos_i in sos_indices:
+        b = bars[sos_i]
+        ev_type = "SOS" if setup == "accumulation" else "SOW"
+        ev_desc = (
+            "Sign of Strength — Nến xanh mạnh, volume cao, xu hướng tăng xác nhận"
+            if setup == "accumulation"
+            else "Sign of Weakness — Nến đỏ mạnh, volume cao, xu hướng giảm xác nhận"
+        )
+        events.append(WyckoffEvent(
+            index=sos_i,
+            bar_time=b.get("time"),
+            price=b["high"] if setup == "accumulation" else b["low"],
+            type=ev_type,
+            desc=ev_desc,
+            confidence=0.8,
+        ))
+    
+    # 9. Phase classification (Phase 9B: include events for confidence boost)
     phase, confidence, suggestion = _classify_phase(
-        setup, tr, spring_idx, utad_idx, n - 1, bars
+        setup, tr, spring_idx, utad_idx, n - 1, bars, events=events
     )
+    
+    # 9B: Confidence boost dựa trên số events đã confirm
+    n_confirms = sum(1 for e in events if e.type in ("ST", "ST-Spring", "LPS", "LPSY", "SOS", "SOW"))
+    confirm_bonus = min(0.15, n_confirms * 0.04)
+    confidence = min(0.95, confidence + confirm_bonus)
     
     description = (
         f"Tích lũy" if setup == "accumulation" else "Phân phối"
