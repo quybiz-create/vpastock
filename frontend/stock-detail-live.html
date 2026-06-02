@@ -1070,6 +1070,156 @@ input{font-family:inherit;color:inherit}
   .sxp-title { font-size: 12px; width: 100%; }
 }
 
+
+/* === Phase 8C: News tab === */
+.news-section {
+  display: none;
+  padding: 14px;
+}
+.news-summary {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg2, #1e222d);
+  border: 1px solid var(--border, #363a45);
+  border-radius: 6px;
+}
+.news-summary-overall {
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+.news-summary-overall.positive { background: rgba(38,166,154,0.2); color: var(--green-hi, #5fffc0); border: 1px solid #26a69a; }
+.news-summary-overall.negative { background: rgba(239,83,80,0.2); color: var(--red-hi, #ff8a8a); border: 1px solid #ef5350; }
+.news-summary-overall.neutral  { background: rgba(255,213,79,0.15); color: var(--yellow, #ffeb3b); border: 1px solid #fbc02d; }
+
+.news-summary-stats {
+  display: flex; gap: 10px;
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  color: var(--text2, #94a3b8);
+  flex: 1;
+}
+.news-summary-stats span b { font-weight: 700; }
+.news-summary-stats .pos b { color: var(--green-hi, #5fffc0); }
+.news-summary-stats .neg b { color: var(--red-hi, #ff8a8a); }
+
+.news-ai-btn {
+  padding: 6px 12px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--blue-bg, #1a2b4a), var(--blue, #2962ff));
+  color: #fff;
+  border: 1px solid var(--blue, #2962ff);
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .15s;
+  white-space: nowrap;
+}
+.news-ai-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(41,98,255,0.4); }
+.news-ai-btn:disabled { opacity: 0.5; cursor: wait; }
+
+.news-ai-result {
+  display: none;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(41,98,255,0.06), rgba(171,71,188,0.06));
+  border: 1px solid var(--blue, #2962ff);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--text, #d1d4dc);
+}
+.news-ai-result.show { display: block; animation: cspFadeIn .2s ease-out; }
+.news-ai-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.news-ai-head strong { font-size: 11px; color: var(--blue-hi, #5b8def); letter-spacing: 0.06em; font-family: var(--mono, monospace); text-transform: uppercase; }
+.news-ai-verdict {
+  padding: 2px 8px; border-radius: 10px;
+  font-family: var(--mono, monospace); font-size: 9px; font-weight: 700;
+  margin-left: auto;
+}
+.news-ai-verdict.positive { background: rgba(38,166,154,0.2); color: var(--green-hi); }
+.news-ai-verdict.negative { background: rgba(239,83,80,0.2); color: var(--red-hi); }
+.news-ai-verdict.neutral  { background: rgba(255,213,79,0.15); color: var(--yellow); }
+.news-ai-text { white-space: pre-wrap; }
+
+.news-list { display: flex; flex-direction: column; gap: 8px; }
+.news-item {
+  display: flex; gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg3, #1e222d);
+  border: 1px solid var(--border, #363a45);
+  border-left-width: 3px;
+  border-radius: 5px;
+  text-decoration: none;
+  color: var(--text, #d1d4dc);
+  transition: .12s;
+}
+.news-item:hover { border-color: var(--blue, #2962ff); transform: translateX(2px); }
+.news-item.positive { border-left-color: #26a69a; }
+.news-item.negative { border-left-color: #ef5350; }
+.news-item.neutral  { border-left-color: var(--text3, #787b86); }
+
+.news-emoji { font-size: 18px; flex-shrink: 0; line-height: 1.4; }
+.news-body { flex: 1; min-width: 0; }
+.news-title {
+  font-size: 12px; font-weight: 600;
+  color: var(--text, #d1d4dc);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+.news-summary-text {
+  font-size: 11px;
+  color: var(--text2, #94a3b8);
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+.news-meta {
+  display: flex; gap: 8px; align-items: center;
+  font-family: var(--mono, monospace);
+  font-size: 9px;
+  color: var(--text3, #787b86);
+}
+.news-meta .news-source { color: var(--blue-hi, #5b8def); }
+.news-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.news-tag {
+  padding: 1px 6px; border-radius: 3px;
+  font-size: 9px;
+  font-family: var(--mono, monospace);
+}
+.news-tag.pos { background: rgba(38,166,154,0.15); color: #26a69a; }
+.news-tag.neg { background: rgba(239,83,80,0.15); color: #ef5350; }
+
+.news-empty {
+  text-align: center;
+  padding: 30px 20px;
+  color: var(--text3, #787b86);
+  font-size: 12px;
+}
+.news-loading {
+  text-align: center;
+  padding: 24px;
+  color: var(--blue-hi, #5b8def);
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .news-section { padding: 10px; }
+  .news-title { font-size: 11.5px; }
+  .news-summary-text { font-size: 10.5px; }
+  .news-emoji { font-size: 16px; }
+  .news-summary { padding: 8px 10px; }
+  .news-summary-stats { font-size: 9px; gap: 6px; }
+  .news-ai-btn { padding: 5px 10px; font-size: 9px; }
+}
+
 </style>
 </head>
 <body>
@@ -1304,6 +1454,7 @@ input{font-family:inherit;color:inherit}
       <button data-tab="ai">🤖 AI</button>
       <button data-tab="fin">Tài chính</button>
       <button data-tab="info">Info</button>
+      <button data-tab="news">📰 Tin tức</button>
       <button data-tab="calc">💰 Tính lệnh</button>
     </div>
 
@@ -1447,6 +1598,26 @@ input{font-family:inherit;color:inherit}
       </div>
 
       <!-- TAB TINH LENH (hidden mac dinh, show khi tab calc active) -->
+            <div class="news-section" id="newsSection">
+        <div class="news-summary" id="newsSummary" style="display:none">
+          <span class="news-summary-overall" id="newsOverall">--</span>
+          <div class="news-summary-stats" id="newsStats"></div>
+          <button class="news-ai-btn" id="newsAiBtn" onclick="analyzeNewsAi()" title="AI Claude phân tích tổng hợp tin tức">🤖 Phân tích sâu</button>
+        </div>
+        <div class="news-ai-result" id="newsAiResult">
+          <div class="news-ai-head">
+            <span>🤖</span>
+            <strong>AI Phân tích</strong>
+            <span class="news-ai-verdict neutral" id="newsAiVerdict">--</span>
+          </div>
+          <div class="news-ai-text" id="newsAiText">--</div>
+          <div style="margin-top:6px;font-size:9px;color:var(--text3);font-style:italic" id="newsAiMeta"></div>
+        </div>
+        <div class="news-list" id="newsList">
+          <div class="news-empty">📰 Chọn 1 mã để xem tin tức</div>
+        </div>
+      </div>
+
       <div id="calcSection" style="display:none">
         <h4 style="margin-top:0">💰 Tính lệnh MUA</h4>
         <p style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.5">
@@ -3597,6 +3768,8 @@ document.querySelectorAll('.tabs button').forEach(b => {
     aiSection.style.display = 'none';
     if (finSection) finSection.style.display = 'none';
     if (infoSection) infoSection.style.display = 'none';
+    const newsSection = document.getElementById('newsSection');
+    if (newsSection) newsSection.style.display = 'none';
     vpaContent.forEach(el => el.style.display = '');
     
     if (tab === 'calc') {
@@ -3621,6 +3794,11 @@ document.querySelectorAll('.tabs button').forEach(b => {
       infoSection.style.display = 'block';
       vpaContent.forEach(el => el.style.display = 'none');
       maybeFetchCompany('info');
+    } else if (tab === 'news') {
+      const newsSection = document.getElementById('newsSection');
+      if (newsSection) newsSection.style.display = 'block';
+      vpaContent.forEach(el => el.style.display = 'none');
+      maybeFetchNews();
     }
   });
 });
@@ -4979,6 +5157,186 @@ if (copyrightOverlay) copyrightOverlay.addEventListener('click', closeCopyright)
     }
   }
 })();
+
+</script>
+<script>
+
+// ============================================================
+// Phase 8C: News + Sentiment Tab
+// ============================================================
+const NEWS_CACHE_TTL = 600000; // 10 phut frontend cache
+const newsCache = {};   // {symbol: {data, at}}
+const newsAiCache = {}; // {symbol: {data, at}}
+
+function maybeFetchNews() {
+  const sym = currentSymbol;
+  if (!sym) return;
+  const cached = newsCache[sym];
+  const now = Date.now();
+  if (cached && (now - cached.at) < NEWS_CACHE_TTL) {
+    renderNews(cached.data);
+    return;
+  }
+  fetchNews(sym);
+}
+
+async function fetchNews(symbol) {
+  const listEl = document.getElementById('newsList');
+  const summaryEl = document.getElementById('newsSummary');
+  if (listEl) listEl.innerHTML = '<div class="news-loading">⏳ Đang tải tin tức...</div>';
+  if (summaryEl) summaryEl.style.display = 'none';
+
+  try {
+    const res = await fetch(`${API}/api/news/${encodeURIComponent(symbol)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    newsCache[symbol] = { data, at: Date.now() };
+    renderNews(data);
+  } catch (e) {
+    console.error('[news] fetch fail:', e);
+    if (listEl) listEl.innerHTML = `<div class="news-empty" style="color:var(--red-hi)">⚠️ Lỗi tải tin: ${e.message}</div>`;
+  }
+}
+
+function renderNews(data) {
+  const items = data.items || [];
+  const summary = data.summary || {};
+  const listEl = document.getElementById('newsList');
+  const summaryEl = document.getElementById('newsSummary');
+  const overallEl = document.getElementById('newsOverall');
+  const statsEl = document.getElementById('newsStats');
+  const aiResultEl = document.getElementById('newsAiResult');
+
+  // Ẩn AI result cũ khi đổi symbol
+  if (aiResultEl) aiResultEl.classList.remove('show');
+
+  if (items.length === 0) {
+    if (listEl) listEl.innerHTML = '<div class="news-empty">📭 Không có tin tức gần đây cho mã này.<br><small style="opacity:.7;display:block;margin-top:6px">FireAnt chỉ có tin cho các mã lớn.</small></div>';
+    if (summaryEl) summaryEl.style.display = 'none';
+    return;
+  }
+
+  // Summary panel
+  if (summaryEl) summaryEl.style.display = 'flex';
+  const lbl = { positive: '🟢 TÍCH CỰC', negative: '🔴 TIÊU CỰC', neutral: '🟡 TRUNG TÍNH' };
+  if (overallEl) {
+    overallEl.className = 'news-summary-overall ' + (summary.overall || 'neutral');
+    overallEl.textContent = lbl[summary.overall] || '--';
+  }
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <span class="pos">+ <b>${summary.positive || 0}</b></span>
+      <span class="neg">− <b>${summary.negative || 0}</b></span>
+      <span>= <b>${summary.neutral || 0}</b></span>
+      <span>TB <b>${(summary.avg_score || 0).toFixed(2)}</b></span>
+    `;
+  }
+
+  // List items
+  if (listEl) {
+    const fmtDate = (s) => {
+      if (!s) return '';
+      try {
+        const d = new Date(s);
+        if (isNaN(d.getTime())) return s.slice(0, 16);
+        return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      } catch (e) { return s.slice(0, 16); }
+    };
+    const classFor = (score) => score > 0.1 ? 'positive' : (score < -0.1 ? 'negative' : 'neutral');
+
+    listEl.innerHTML = items.map(it => {
+      const s = it.sentiment || {};
+      const cls = classFor(s.score);
+      const link = it.link || '#';
+      const target = it.link ? 'target="_blank" rel="noopener"' : '';
+      const posTags = (s.keywords?.positive || []).slice(0, 3).map(k => `<span class="news-tag pos">+${k}</span>`).join('');
+      const negTags = (s.keywords?.negative || []).slice(0, 3).map(k => `<span class="news-tag neg">−${k}</span>`).join('');
+      return `
+        <a class="news-item ${cls}" href="${link}" ${target}>
+          <div class="news-emoji">${s.emoji || '📰'}</div>
+          <div class="news-body">
+            <div class="news-title">${escapeHtml(it.title)}</div>
+            ${it.summary ? `<div class="news-summary-text">${escapeHtml(it.summary)}</div>` : ''}
+            <div class="news-meta">
+              <span class="news-source">${escapeHtml(it.source || 'FireAnt')}</span>
+              ${it.date ? `<span>· ${fmtDate(it.date)}</span>` : ''}
+              <span class="news-tags">${posTags}${negTags}</span>
+            </div>
+          </div>
+        </a>
+      `;
+    }).join('');
+  }
+  console.log(`[news] rendered ${items.length} items, overall=${summary.overall}`);
+}
+
+async function analyzeNewsAi() {
+  const sym = currentSymbol;
+  if (!sym) return;
+
+  const btn = document.getElementById('newsAiBtn');
+  const resEl = document.getElementById('newsAiResult');
+  const textEl = document.getElementById('newsAiText');
+  const verdictEl = document.getElementById('newsAiVerdict');
+  const metaEl = document.getElementById('newsAiMeta');
+
+  // Check cache 1 giờ
+  const cached = newsAiCache[sym];
+  if (cached && (Date.now() - cached.at) < 60 * 60 * 1000) {
+    renderAiResult(cached.data);
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ AI đang phân tích...'; }
+  if (textEl) textEl.textContent = 'Đang gọi AI Claude...';
+  if (resEl) resEl.classList.add('show');
+
+  try {
+    const res = await fetch(`${API}/api/news/${encodeURIComponent(sym)}/analyze`, { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    newsAiCache[sym] = { data, at: Date.now() };
+    renderAiResult(data);
+  } catch (e) {
+    console.error('[news AI] fail:', e);
+    if (textEl) textEl.textContent = `⚠️ Lỗi: ${e.message}`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🤖 Phân tích sâu'; }
+  }
+}
+
+function renderAiResult(data) {
+  const resEl = document.getElementById('newsAiResult');
+  const textEl = document.getElementById('newsAiText');
+  const verdictEl = document.getElementById('newsAiVerdict');
+  const metaEl = document.getElementById('newsAiMeta');
+  if (!resEl || !textEl) return;
+  textEl.textContent = data.analysis || 'Không có phân tích.';
+  const v = data.verdict || 'neutral';
+  if (verdictEl) {
+    verdictEl.className = 'news-ai-verdict ' + v;
+    const labels = { positive: '🟢 Tích cực', negative: '🔴 Tiêu cực', neutral: '🟡 Trung tính' };
+    verdictEl.textContent = labels[v] || '--';
+  }
+  if (metaEl) metaEl.textContent = `Phân tích ${data.items_analyzed || 0} tin · ${data.cached ? 'cache' : 'mới gọi AI'}`;
+  resEl.classList.add('show');
+}
+
+function decodeHtmlEntities(s) {
+  if (s == null) return '';
+  // Dùng textarea để decode HTML entities (&#253;, &amp;, &lt;...)
+  const ta = document.createElement('textarea');
+  ta.innerHTML = String(s);
+  return ta.value;
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  // Decode HTML entities trước (vì FireAnt trả &#253; cho tiếng Việt)
+  // Rồi escape lại để render an toàn
+  const decoded = decodeHtmlEntities(s);
+  return decoded.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
 
 </script>
 </body>
