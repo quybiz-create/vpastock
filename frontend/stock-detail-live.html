@@ -1220,6 +1220,135 @@ input{font-family:inherit;color:inherit}
   .news-ai-btn { padding: 5px 10px; font-size: 9px; }
 }
 
+
+/* === Phase 9A: Wyckoff Modal === */
+.wyckoff-modal-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 99998;
+  backdrop-filter: blur(3px);
+}
+.wyckoff-modal-backdrop.show { display: flex; align-items: center; justify-content: center; }
+.wyckoff-modal {
+  background: var(--bg2, #1e222d);
+  border: 1px solid var(--border-hi, #4a4e5a);
+  border-radius: 10px;
+  width: min(720px, 96vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+}
+.wyckoff-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border, #363a45);
+}
+.wyckoff-title { font-weight: 700; font-size: 14px; flex: 1; }
+.wyckoff-close { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; padding: 4px 10px; border-radius: 4px; }
+.wyckoff-close:hover { color: var(--text); background: var(--bg3); }
+.wyckoff-body { padding: 16px 18px; }
+
+.wyckoff-phase-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.wyckoff-phase-badge.accumulation { background: rgba(38,166,154,0.2); color: var(--green-hi, #5fffc0); border: 1px solid #26a69a; }
+.wyckoff-phase-badge.distribution { background: rgba(239,83,80,0.2); color: var(--red-hi, #ff8a8a); border: 1px solid #ef5350; }
+.wyckoff-phase-badge.none { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); }
+
+.wyckoff-desc {
+  margin: 12px 0;
+  padding: 10px 12px;
+  background: var(--bg3);
+  border-radius: 5px;
+  font-size: 11px;
+  color: var(--text2);
+  font-family: var(--mono, monospace);
+}
+
+.wyckoff-suggestion {
+  margin: 12px 0;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(41,98,255,0.06), rgba(38,166,154,0.06));
+  border: 1px solid var(--blue, #2962ff);
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text);
+}
+.wyckoff-suggestion strong { color: var(--blue-hi); }
+
+.wyckoff-tr {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+}
+.wyckoff-tr-cell {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  border-radius: 5px;
+  text-align: center;
+}
+.wyckoff-tr-cell .lbl { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; font-family: var(--mono); }
+.wyckoff-tr-cell .val { font-size: 13px; font-weight: 700; font-family: var(--mono); margin-top: 2px; color: var(--text); }
+
+.wyckoff-events {
+  margin-top: 14px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.wyckoff-event {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg3);
+  border-left: 3px solid var(--blue);
+  border-radius: 4px;
+  font-size: 11.5px;
+}
+.wyckoff-event .ev-type {
+  background: var(--blue);
+  color: #fff;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  min-width: 48px;
+  text-align: center;
+}
+.wyckoff-event.bullish { border-left-color: #26a69a; }
+.wyckoff-event.bullish .ev-type { background: #26a69a; }
+.wyckoff-event.bearish { border-left-color: #ef5350; }
+.wyckoff-event.bearish .ev-type { background: #ef5350; }
+.wyckoff-event .ev-desc { flex: 1; color: var(--text2); }
+.wyckoff-event .ev-price { color: var(--text); font-family: var(--mono); font-weight: 700; }
+
+.wyckoff-info {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: rgba(255,213,79,0.06);
+  border: 1px solid rgba(255,213,79,0.3);
+  border-radius: 5px;
+  font-size: 10.5px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .wyckoff-modal { width: 98vw; max-height: 95vh; }
+  .wyckoff-head, .wyckoff-body { padding: 10px 12px; }
+  .wyckoff-tr { grid-template-columns: repeat(2, 1fr); }
+  .wyckoff-event { font-size: 10.5px; }
+}
+
 </style>
 </head>
 <body>
@@ -1437,6 +1566,7 @@ input{font-family:inherit;color:inherit}
         <div class="ind-cell"><div class="ind-label">ADX(14)</div><div class="ind-value" id="indAdx">--</div><div class="ind-state neutral" id="indAdxState">--</div></div>
         <div class="ind-cell"><div class="ind-label">VOL/MA20</div><div class="ind-value" id="indVol">--</div><div class="ind-state neutral" id="indVolState">--</div></div>
         <div class="ind-cell"><div class="ind-label">VPA</div><div class="ind-value" id="indVpa">--</div><div class="ind-state neutral" id="indVpaState">--</div></div>
+        <div class="ind-cell" id="indWyckoffCell" style="cursor:pointer" onclick="openWyckoffModal()" title="Click để xem chi tiết Wyckoff"><div class="ind-label">WYCKOFF</div><div class="ind-value" id="indWyckoff">--</div><div class="ind-state neutral" id="indWyckoffState">--</div></div>
       </div>
     </div>
   </main>
@@ -1876,6 +2006,8 @@ async function loadStock(symbol) {
     renderHeader(data);
     renderChart(data.series);
     renderIndicators(data.last);
+    // Phase 9A: fetch Wyckoff phân tích
+    try { fetchWyckoff(currentSymbol); } catch(e) { console.warn('wyckoff fetch:', e); }
     renderAnalysis(data.last);
     
     // Auto-update Tinh lenh form when symbol changes
@@ -5337,6 +5469,241 @@ function escapeHtml(s) {
   const decoded = decodeHtmlEntities(s);
   return decoded.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
+
+</script>
+
+<!-- Phase 9A: Wyckoff Modal -->
+<div id="wyckoffModal" class="wyckoff-modal-backdrop" onclick="if(event.target===this)closeWyckoffModal()">
+  <div class="wyckoff-modal">
+    <div class="wyckoff-head">
+      <span style="font-size:18px">📊</span>
+      <div class="wyckoff-title">Phân tích Wyckoff - <span id="wyckoffSymbol">--</span></div>
+      <span class="wyckoff-phase-badge none" id="wyckoffBadge">--</span>
+      <button class="wyckoff-close" onclick="closeWyckoffModal()" title="Đóng">✕</button>
+    </div>
+    <div class="wyckoff-body" id="wyckoffBody">
+      <div class="wyckoff-desc" id="wyckoffDesc">Đang tải...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// ============================================================
+// Phase 9A: Wyckoff Phase Detection
+// ============================================================
+let _lastWyckoffData = null;
+
+async function fetchWyckoff(symbol) {
+  if (!symbol) return;
+  const cellEl = document.getElementById('indWyckoff');
+  const stateEl = document.getElementById('indWyckoffState');
+  if (cellEl) cellEl.textContent = '...';
+  if (stateEl) { stateEl.className = 'ind-state neutral'; stateEl.textContent = '● Đang tính'; }
+  
+  try {
+    const res = await fetch(`${API}/api/wyckoff/${encodeURIComponent(symbol)}?period=200`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    _lastWyckoffData = data;
+    
+    // Cell display
+    const setupShort = data.setup === 'accumulation' ? 'Tích lũy' : (data.setup === 'distribution' ? 'Phân phối' : 'N/A');
+    const phaseShort = data.phase !== 'none' ? ` ${data.phase}` : '';
+    if (cellEl) cellEl.textContent = setupShort + phaseShort;
+    
+    if (stateEl) {
+      let cls = 'neutral', dot = '●';
+      if (data.setup === 'accumulation') {
+        cls = (data.phase === 'D' || data.phase === 'E') ? 'bull' : 'neutral';
+      } else if (data.setup === 'distribution') {
+        cls = (data.phase === 'D' || data.phase === 'E') ? 'bear' : 'neutral';
+      }
+      stateEl.className = 'ind-state ' + cls;
+      const confPct = Math.round((data.confidence || 0) * 100);
+      stateEl.textContent = `${dot} ${confPct}%`;
+    }
+    
+    // Render markers trên chart nếu candleSeries có
+    renderWyckoffMarkers(data);
+    
+    console.log('[wyckoff]', data.setup, data.phase, 'conf=' + data.confidence);
+  } catch (e) {
+    console.error('[wyckoff] fail:', e);
+    if (cellEl) cellEl.textContent = '--';
+    if (stateEl) { stateEl.className = 'ind-state neutral'; stateEl.textContent = '● Lỗi'; }
+    _lastWyckoffData = null;
+  }
+}
+
+function renderWyckoffMarkers(data) {
+  if (!data || !data.events || !candleSeries || !LightweightCharts.createSeriesMarkers) return;
+  
+  // Remove markers cũ
+  try {
+    if (window.__wyckoffMarkers) {
+      window.__wyckoffMarkers.setMarkers([]);
+      window.__wyckoffMarkers.detach();
+    }
+  } catch(e) {}
+  
+  // Color map
+  const colorMap = {
+    'SC': '#ff5252', 'BC': '#ff5252',
+    'AR': '#ffd54f',
+    'ST': '#ffd54f',
+    'Spring': '#00e676', 'UTAD': '#ff5252',
+    'LPS': '#00e676', 'LPSY': '#ff5252',
+    'SOS': '#00e676'
+  };
+  const shapeMap = {
+    'SC': 'arrowUp', 'BC': 'arrowDown',
+    'AR': 'circle', 'ST': 'circle',
+    'Spring': 'arrowUp', 'UTAD': 'arrowDown',
+    'LPS': 'circle', 'LPSY': 'circle',
+    'SOS': 'arrowUp'
+  };
+  const posMap = {
+    'SC': 'belowBar', 'BC': 'aboveBar',
+    'AR': 'aboveBar', 'ST': 'belowBar',
+    'Spring': 'belowBar', 'UTAD': 'aboveBar',
+    'LPS': 'belowBar', 'LPSY': 'aboveBar',
+    'SOS': 'belowBar'
+  };
+  
+  const markers = data.events.map(e => {
+    return {
+      time: e.time,
+      position: posMap[e.type] || 'aboveBar',
+      color: colorMap[e.type] || '#fbc02d',
+      shape: shapeMap[e.type] || 'square',
+      text: e.type,
+      size: 1,
+    };
+  });
+  
+  if (markers.length > 0) {
+    try {
+      window.__wyckoffMarkers = LightweightCharts.createSeriesMarkers(candleSeries, markers);
+    } catch(e) {
+      console.warn('[wyckoff] marker fail:', e);
+    }
+  }
+  
+  // Vẽ TR boundaries (priceLines)
+  try {
+    if (window.__wyckoffTRLines) {
+      window.__wyckoffTRLines.forEach(l => { try { candleSeries.removePriceLine(l); } catch(e){} });
+    }
+    window.__wyckoffTRLines = [];
+    if (data.trading_range) {
+      window.__wyckoffTRLines.push(candleSeries.createPriceLine({
+        price: data.trading_range.high,
+        color: 'rgba(255,213,79,0.55)', lineWidth: 1, lineStyle: 2,
+        axisLabelVisible: true, title: 'TR↑',
+      }));
+      window.__wyckoffTRLines.push(candleSeries.createPriceLine({
+        price: data.trading_range.low,
+        color: 'rgba(255,213,79,0.55)', lineWidth: 1, lineStyle: 2,
+        axisLabelVisible: true, title: 'TR↓',
+      }));
+    }
+  } catch(e) { console.warn('[wyckoff] TR lines:', e); }
+}
+
+function openWyckoffModal() {
+  const modal = document.getElementById('wyckoffModal');
+  if (!modal) return;
+  modal.classList.add('show');
+  renderWyckoffModal();
+}
+
+function closeWyckoffModal() {
+  const modal = document.getElementById('wyckoffModal');
+  if (modal) modal.classList.remove('show');
+}
+
+function renderWyckoffModal() {
+  const symEl = document.getElementById('wyckoffSymbol');
+  const badgeEl = document.getElementById('wyckoffBadge');
+  const bodyEl = document.getElementById('wyckoffBody');
+  if (!bodyEl) return;
+  
+  if (symEl) symEl.textContent = currentSymbol || '--';
+  
+  if (!_lastWyckoffData) {
+    bodyEl.innerHTML = '<div class="wyckoff-desc">Chưa có dữ liệu Wyckoff. Vui lòng chọn một mã CK.</div>';
+    if (badgeEl) { badgeEl.className = 'wyckoff-phase-badge none'; badgeEl.textContent = '--'; }
+    return;
+  }
+  
+  const d = _lastWyckoffData;
+  
+  if (badgeEl) {
+    const setupClass = d.setup === 'accumulation' ? 'accumulation' : (d.setup === 'distribution' ? 'distribution' : 'none');
+    badgeEl.className = 'wyckoff-phase-badge ' + setupClass;
+    const setupVi = d.setup === 'accumulation' ? '🟢 TÍCH LŨY' : (d.setup === 'distribution' ? '🔴 PHÂN PHỐI' : '⚪ KHÔNG XÁC ĐỊNH');
+    const phaseStr = d.phase !== 'none' ? ` - Phase ${d.phase}` : '';
+    badgeEl.textContent = setupVi + phaseStr;
+  }
+  
+  let html = `<div class="wyckoff-desc">${escapeHtml(d.description || '')}</div>`;
+  
+  html += `<div class="wyckoff-suggestion"><strong>💡 Gợi ý:</strong> ${escapeHtml(d.suggestion || '')}</div>`;
+  
+  if (d.trading_range) {
+    const tr = d.trading_range;
+    html += `
+      <div class="wyckoff-tr">
+        <div class="wyckoff-tr-cell"><div class="lbl">Cao TR</div><div class="val" style="color:#ef5350">${tr.high}</div></div>
+        <div class="wyckoff-tr-cell"><div class="lbl">Giữa TR</div><div class="val">${tr.mid}</div></div>
+        <div class="wyckoff-tr-cell"><div class="lbl">Thấp TR</div><div class="val" style="color:#26a69a">${tr.low}</div></div>
+        <div class="wyckoff-tr-cell"><div class="lbl">Số bars</div><div class="val">${tr.bars_count}</div></div>
+      </div>
+    `;
+  }
+  
+  if (d.events && d.events.length > 0) {
+    html += `<div style="margin-top:14px;font-size:11px;font-weight:700;color:var(--text2);font-family:var(--mono)">🔑 EVENTS PHÁT HIỆN</div>`;
+    html += '<div class="wyckoff-events">';
+    const bullishTypes = ['Spring', 'LPS', 'SOS', 'PS'];
+    const bearishTypes = ['UTAD', 'LPSY', 'BC', 'PSY', 'SC'];
+    d.events.forEach(e => {
+      let cls = '';
+      if (bullishTypes.includes(e.type)) cls = 'bullish';
+      else if (bearishTypes.includes(e.type)) cls = 'bearish';
+      html += `
+        <div class="wyckoff-event ${cls}">
+          <span class="ev-type">${e.type}</span>
+          <span class="ev-desc">${escapeHtml(e.desc || '')}</span>
+          <span class="ev-price">${e.price}</span>
+        </div>
+      `;
+    });
+    html += '</div>';
+  }
+  
+  html += `
+    <div class="wyckoff-info">
+      📖 <strong>Wyckoff Theory:</strong> Phương pháp phân tích kinh điển nhận diện hành vi của "Smart Money".
+      <br/>• <strong>Phase A</strong>: Dừng đà giảm/tăng (SC/BC, AR, ST)
+      <br/>• <strong>Phase B</strong>: Tích lũy/Phân phối âm thầm (sideway dài)
+      <br/>• <strong>Phase C</strong>: Spring (đáy giả) / UTAD (đỉnh giả)
+      <br/>• <strong>Phase D</strong>: Markup/Markdown begins — GIAI ĐOẠN VÀNG để vào lệnh
+      <br/>• <strong>Phase E</strong>: Markup/Markdown rõ ràng — xu hướng được xác nhận
+    </div>
+  `;
+  
+  bodyEl.innerHTML = html;
+}
+
+// ESC để đóng modal
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const m = document.getElementById('wyckoffModal');
+    if (m && m.classList.contains('show')) closeWyckoffModal();
+  }
+});
 
 </script>
 </body>
