@@ -1223,6 +1223,226 @@ input{font-family:inherit;color:inherit}
 
 
 
+
+
+/* === Phase 9D: Wyckoff Header Button === */
+.wy-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  padding: 5px 12px;
+  background: linear-gradient(90deg, rgba(41,98,255,0.15), rgba(171,71,188,0.15));
+  border: 1px solid rgba(41,98,255,0.5);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--blue-hi, #5b8def);
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+  vertical-align: middle;
+}
+.wy-header-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(91,141,239,0.18), transparent);
+  transform: translateX(-100%);
+  transition: transform .6s;
+}
+.wy-header-btn:hover {
+  border-color: var(--blue-hi, #5b8def);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(41,98,255,0.35);
+}
+.wy-header-btn:hover::before { transform: translateX(100%); }
+.wy-header-btn:active { transform: translateY(0); }
+.wy-hb-icon { font-size: 13px; }
+.wy-hb-text { letter-spacing: 0.02em; }
+.wy-hb-badge {
+  padding: 2px 7px;
+  border-radius: 9px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+.wy-hb-badge.bull { background: rgba(38,166,154,0.25); color: var(--green-hi, #5fffc0); border: 1px solid #26a69a; }
+.wy-hb-badge.bear { background: rgba(239,83,80,0.25); color: var(--red-hi, #ff8a8a); border: 1px solid #ef5350; }
+.wy-hb-badge.neutral { background: rgba(255,213,79,0.15); color: var(--yellow, #ffeb3b); border: 1px solid rgba(255,213,79,0.4); }
+
+/* Trên mobile thu gọn nút */
+@media (max-width: 700px) {
+  .wy-header-btn { padding: 4px 8px; font-size: 10px; margin-left: 6px; gap: 4px; }
+  .wy-hb-text { display: none; }
+  .wy-hb-badge { font-size: 8.5px; padding: 1px 5px; }
+}
+
+/* === Phase 9D: Wyckoff Scanner === */
+.scanner-control {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.scanner-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--blue-bg, #1a2b4a), var(--blue, #2962ff));
+  color: #fff;
+  border: 1px solid var(--blue, #2962ff);
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .15s;
+}
+.scanner-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(41,98,255,0.4); }
+.scanner-btn:disabled { opacity: 0.5; cursor: wait; }
+
+.scanner-filters {
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+}
+.scanner-filter-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: var(--bg3, #1e222d);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .12s;
+}
+.scanner-filter-btn:hover { color: var(--text); }
+.scanner-filter-btn.active {
+  background: var(--blue-bg);
+  color: var(--blue-hi, #5b8def);
+  border-color: var(--blue);
+}
+
+.scanner-progress {
+  margin: 12px 0;
+  padding: 10px 12px;
+  background: var(--bg3);
+  border-radius: 6px;
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+}
+.scanner-progress-bar {
+  width: 100%; height: 8px;
+  background: var(--bg2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 6px 0;
+}
+.scanner-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--blue-hi, #5b8def));
+  transition: width 0.3s ease;
+  width: 0%;
+}
+.scanner-progress-meta {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  font-size: 10px; color: var(--text2);
+}
+
+.scanner-summary {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-size: 10.5px;
+  font-family: var(--mono, monospace);
+}
+.scanner-stat {
+  padding: 4px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.scanner-stat b { font-weight: 700; }
+.scanner-stat.acc b { color: var(--green-hi, #5fffc0); }
+.scanner-stat.dist b { color: var(--red-hi, #ff8a8a); }
+.scanner-stat.phasede b { color: var(--yellow, #ffeb3b); }
+
+.scanner-table-wrap {
+  max-height: 480px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.scanner-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono, monospace);
+  font-size: 10.5px;
+}
+.scanner-table thead {
+  position: sticky; top: 0;
+  background: var(--bg2);
+  z-index: 1;
+}
+.scanner-table th {
+  padding: 8px 6px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 9.5px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+.scanner-table td {
+  padding: 7px 6px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+.scanner-table tr.row-clickable { cursor: pointer; transition: .1s; }
+.scanner-table tr.row-clickable:hover { background: var(--bg3); }
+.scanner-table tr td:first-child { font-weight: 700; color: var(--text); }
+.scanner-table .setup-acc { color: var(--green-hi, #5fffc0); }
+.scanner-table .setup-dist { color: var(--red-hi, #ff8a8a); }
+.scanner-table .phase-D, .scanner-table .phase-E {
+  font-weight: 700;
+  padding: 1px 6px; border-radius: 3px;
+  background: rgba(255,213,79,0.15);
+  color: var(--yellow, #ffeb3b);
+}
+.scanner-table .phase-A, .scanner-table .phase-B, .scanner-table .phase-C {
+  color: var(--text2);
+}
+.scanner-table .conf-bar {
+  display: inline-block;
+  width: 36px; height: 4px;
+  background: var(--bg);
+  border-radius: 2px;
+  overflow: hidden;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+.scanner-table .conf-fill {
+  height: 100%;
+  background: var(--blue);
+}
+
+.scanner-empty {
+  text-align: center;
+  padding: 30px;
+  color: var(--text3);
+  font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .scanner-table { font-size: 9.5px; }
+  .scanner-table th, .scanner-table td { padding: 5px 4px; }
+  .scanner-table .col-tr, .scanner-table .col-events { display: none; }
+  .scanner-table-wrap { max-height: 400px; }
+  .scanner-btn { padding: 6px 12px; font-size: 10px; }
+}
+
 /* === Phase 9C: Wyckoff AI Advisor === */
 .wy-ai-section {
   margin-top: 14px;
@@ -1587,6 +1807,26 @@ input{font-family:inherit;color:inherit}
       <div id="shContent" class="sector-heatmap" style="display:none"></div>
       <div id="shError" class="market-error" style="display:none"></div>
     </div>
+    
+    <!-- Phase 9D: Wyckoff Scanner -->
+    <div class="market-card">
+      <div class="market-card-title">🎯 Wyckoff Scanner — Tìm mã đang Tích lũy/Phân phối</div>
+      <div class="scanner-control">
+        <button class="scanner-btn" id="scannerStartBtn" onclick="startWyckoffScan()">🚀 Bắt đầu quét Top 200</button>
+        <div class="scanner-filters">
+          <span style="color:var(--text3)">Lọc:</span>
+          <button class="scanner-filter-btn active" data-filter="all" onclick="filterScannerResults('all')">Tất cả</button>
+          <button class="scanner-filter-btn" data-filter="accumulation" onclick="filterScannerResults('accumulation')">🟢 Tích lũy</button>
+          <button class="scanner-filter-btn" data-filter="distribution" onclick="filterScannerResults('distribution')">🔴 Phân phối</button>
+          <button class="scanner-filter-btn" data-filter="phase_de" onclick="filterScannerResults('phase_de')">⭐ Phase D/E</button>
+        </div>
+      </div>
+      <div id="scannerProgress" style="display:none"></div>
+      <div id="scannerSummary" class="scanner-summary" style="display:none"></div>
+      <div id="scannerResults">
+        <div class="scanner-empty">📭 Chưa quét. Bấm "Bắt đầu quét" để tìm mã có setup Wyckoff rõ ràng.<br/><small style="opacity:.7">⏱️ Quá trình mất ~5-7 phút để quét 200 mã.</small></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1611,6 +1851,11 @@ input{font-family:inherit;color:inherit}
         <div class="sym-big" id="symBig">VNINDEX</div>
         <div class="name" id="stockName">Đang tải...</div>
         <div class="exchange">HOSE</div>
+        <button class="wy-header-btn" id="wyHeaderBtn" onclick="openWyckoffModal()" title="Phân tích Wyckoff chuyên sâu + AI Advisor">
+          <span class="wy-hb-icon">🎯</span>
+          <span class="wy-hb-text" id="wyHeaderText">Phân tích chuyên sâu</span>
+          <span class="wy-hb-badge neutral" id="wyHeaderBadge" style="display:none">--</span>
+        </button>
       </div>
       <div class="price-block">
         <div class="price-row">
@@ -1750,7 +1995,6 @@ input{font-family:inherit;color:inherit}
         <div class="ind-cell"><div class="ind-label">ADX(14)</div><div class="ind-value" id="indAdx">--</div><div class="ind-state neutral" id="indAdxState">--</div></div>
         <div class="ind-cell"><div class="ind-label">VOL/MA20</div><div class="ind-value" id="indVol">--</div><div class="ind-state neutral" id="indVolState">--</div></div>
         <div class="ind-cell"><div class="ind-label">VPA</div><div class="ind-value" id="indVpa">--</div><div class="ind-state neutral" id="indVpaState">--</div></div>
-        <div class="ind-cell" id="indWyckoffCell" style="cursor:pointer" onclick="openWyckoffModal()" title="Click để xem chi tiết Wyckoff"><div class="ind-label">WYCKOFF</div><div class="ind-value" id="indWyckoff">--</div><div class="ind-state neutral" id="indWyckoffState">--</div></div>
       </div>
     </div>
   </main>
@@ -5450,6 +5694,203 @@ function renderAdvisorResult(data) {
   }
 }
 
+
+// ============================================================
+// Phase 9D: Wyckoff Scanner
+// ============================================================
+let _scannerJobId = null;
+let _scannerPollTimer = null;
+let _scannerResults = [];
+let _scannerFilter = 'all';
+
+window.startWyckoffScan = async function() {
+  const btn = document.getElementById('scannerStartBtn');
+  const progEl = document.getElementById('scannerProgress');
+  const resEl = document.getElementById('scannerResults');
+  const sumEl = document.getElementById('scannerSummary');
+  
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang quét...'; }
+  if (sumEl) sumEl.style.display = 'none';
+  if (progEl) {
+    progEl.style.display = 'block';
+    progEl.innerHTML = `
+      <div class="scanner-progress">
+        <div>🔄 Đang khởi tạo scan job...</div>
+        <div class="scanner-progress-bar"><div class="scanner-progress-fill" id="scanProgFill"></div></div>
+        <div class="scanner-progress-meta" id="scanProgMeta">Job: --</div>
+      </div>
+    `;
+  }
+  if (resEl) resEl.innerHTML = '';
+  
+  try {
+    const res = await fetch(`${API}/api/wyckoff/scan/start`, { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    _scannerJobId = data.job_id;
+    console.log('[scanner] started job', _scannerJobId, 'total', data.total);
+    pollScanStatus();
+  } catch (e) {
+    console.error('[scanner] start fail:', e);
+    if (progEl) progEl.innerHTML = `<div class="scanner-empty" style="color:var(--red-hi)">⚠️ Lỗi khởi tạo: ${e.message}</div>`;
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Bắt đầu quét Top 200'; }
+  }
+};
+
+async function pollScanStatus() {
+  if (!_scannerJobId) return;
+  
+  try {
+    const res = await fetch(`${API}/api/wyckoff/scan/status/${_scannerJobId}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    updateScanProgress(data);
+    
+    if (data.status === 'done' || data.status === 'error' || data.status === 'rate_limited') {
+      clearTimeout(_scannerPollTimer);
+      if (data.status === 'done') {
+        await loadScanResults();
+      } else {
+        const progEl = document.getElementById('scannerProgress');
+        if (progEl) {
+          progEl.innerHTML = `<div class="scanner-empty" style="color:var(--red-hi)">⚠️ ${data.error || data.status}. Đã quét ${data.completed}/${data.total} mã, tìm thấy ${data.found_count}.</div>`;
+        }
+        // Nếu rate_limited mà vẫn có results → vẫn load
+        if (data.found_count > 0) await loadScanResults();
+      }
+      const btn = document.getElementById('scannerStartBtn');
+      if (btn) { btn.disabled = false; btn.textContent = '🚀 Quét lại'; }
+    } else {
+      // Poll again sau 2 giây
+      _scannerPollTimer = setTimeout(pollScanStatus, 2000);
+    }
+  } catch (e) {
+    console.error('[scanner] poll fail:', e);
+    _scannerPollTimer = setTimeout(pollScanStatus, 5000);  // retry chậm hơn
+  }
+}
+
+function updateScanProgress(data) {
+  const fill = document.getElementById('scanProgFill');
+  const meta = document.getElementById('scanProgMeta');
+  if (fill) fill.style.width = data.progress + '%';
+  if (meta) {
+    const elapsed = data.elapsed_sec || 0;
+    const min = Math.floor(elapsed / 60);
+    const sec = Math.round(elapsed % 60);
+    const timeStr = min > 0 ? `${min}p${sec}s` : `${sec}s`;
+    meta.innerHTML = `
+      <span>📊 ${data.completed}/${data.total} mã (${data.progress}%)</span>
+      <span>🎯 Tìm thấy: <b style="color:var(--green-hi)">${data.found_count}</b></span>
+      <span>⏱️ ${timeStr}</span>
+      <span>Job: ${_scannerJobId}</span>
+    `;
+  }
+}
+
+async function loadScanResults() {
+  try {
+    const res = await fetch(`${API}/api/wyckoff/scan/results/${_scannerJobId}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    _scannerResults = data.results || [];
+    renderScanResults();
+  } catch (e) {
+    console.error('[scanner] load results fail:', e);
+  }
+}
+
+function renderScanResults() {
+  const sumEl = document.getElementById('scannerSummary');
+  const resEl = document.getElementById('scannerResults');
+  const progEl = document.getElementById('scannerProgress');
+  
+  if (progEl) progEl.style.display = 'none';
+  
+  if (_scannerResults.length === 0) {
+    if (resEl) resEl.innerHTML = '<div class="scanner-empty">📭 Không tìm thấy mã nào có setup Wyckoff rõ ràng.</div>';
+    if (sumEl) sumEl.style.display = 'none';
+    return;
+  }
+  
+  // Summary
+  const accCount = _scannerResults.filter(r => r.setup === 'accumulation').length;
+  const distCount = _scannerResults.filter(r => r.setup === 'distribution').length;
+  const phaseDE = _scannerResults.filter(r => r.phase === 'D' || r.phase === 'E').length;
+  
+  if (sumEl) {
+    sumEl.style.display = 'flex';
+    sumEl.innerHTML = `
+      <div class="scanner-stat acc">🟢 Tích lũy: <b>${accCount}</b></div>
+      <div class="scanner-stat dist">🔴 Phân phối: <b>${distCount}</b></div>
+      <div class="scanner-stat phasede">⭐ Phase D/E: <b>${phaseDE}</b></div>
+      <div class="scanner-stat">Tổng: <b>${_scannerResults.length}</b></div>
+    `;
+  }
+  
+  // Apply filter
+  let filtered = _scannerResults;
+  if (_scannerFilter === 'accumulation') filtered = filtered.filter(r => r.setup === 'accumulation');
+  else if (_scannerFilter === 'distribution') filtered = filtered.filter(r => r.setup === 'distribution');
+  else if (_scannerFilter === 'phase_de') filtered = filtered.filter(r => r.phase === 'D' || r.phase === 'E');
+  
+  if (filtered.length === 0) {
+    if (resEl) resEl.innerHTML = '<div class="scanner-empty">📭 Không có mã nào khớp filter.</div>';
+    return;
+  }
+  
+  const setupVi = (s) => s === 'accumulation' ? '🟢 Tích lũy' : s === 'distribution' ? '🔴 Phân phối' : '⚪ --';
+  const setupClass = (s) => s === 'accumulation' ? 'setup-acc' : 'setup-dist';
+  
+  let html = `
+    <div class="scanner-table-wrap">
+      <table class="scanner-table">
+        <thead>
+          <tr>
+            <th>Mã</th>
+            <th>Giá</th>
+            <th>Setup</th>
+            <th>Phase</th>
+            <th>Conf</th>
+            <th class="col-tr">TR (low - high)</th>
+            <th class="col-events">Events</th>
+            <th>Last</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  for (const r of filtered) {
+    const confPct = Math.round((r.confidence || 0) * 100);
+    const phaseCls = `phase-${r.phase || 'A'}`;
+    const trStr = (r.tr_low != null && r.tr_high != null) ? `${r.tr_low} - ${r.tr_high}` : '--';
+    html += `
+      <tr class="row-clickable" onclick="window.location.href='stock-detail-live.html?sym=${r.symbol}'">
+        <td>${r.symbol}</td>
+        <td>${r.price}</td>
+        <td class="${setupClass(r.setup)}">${setupVi(r.setup)}</td>
+        <td><span class="${phaseCls}">${r.phase}</span></td>
+        <td><span class="conf-bar"><span class="conf-fill" style="width:${confPct}%"></span></span>${confPct}%</td>
+        <td class="col-tr">${trStr}</td>
+        <td class="col-events">${r.events_count || 0}</td>
+        <td>${r.last_event || '--'}</td>
+      </tr>
+    `;
+  }
+  html += '</tbody></table></div>';
+  
+  if (resEl) resEl.innerHTML = html;
+}
+
+window.filterScannerResults = function(filter) {
+  _scannerFilter = filter;
+  // Update active button
+  document.querySelectorAll('.scanner-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filter);
+  });
+  renderScanResults();
+};
+
 // ESC để đóng modal
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -5837,10 +6278,13 @@ async function fetchWyckoffMulti(symbol) {
 
 async function fetchWyckoff(symbol) {
   if (!symbol) return;
-  const cellEl = document.getElementById('indWyckoff');
-  const stateEl = document.getElementById('indWyckoffState');
-  if (cellEl) cellEl.textContent = '...';
-  if (stateEl) { stateEl.className = 'ind-state neutral'; stateEl.textContent = '● Đang tính'; }
+  // Phase 9D: Header button cập nhật thay vì cell
+  const badgeEl = document.getElementById('wyHeaderBadge');
+  if (badgeEl) {
+    badgeEl.style.display = '';
+    badgeEl.className = 'wy-hb-badge neutral';
+    badgeEl.textContent = '...';
+  }
   
   try {
     const res = await fetch(`${API}/api/wyckoff/${encodeURIComponent(symbol)}?period=200`);
@@ -5848,21 +6292,19 @@ async function fetchWyckoff(symbol) {
     const data = await res.json();
     _lastWyckoffData = data;
     
-    // Cell display
-    const setupShort = data.setup === 'accumulation' ? 'Tích lũy' : (data.setup === 'distribution' ? 'Phân phối' : 'N/A');
-    const phaseShort = data.phase !== 'none' ? ` ${data.phase}` : '';
-    if (cellEl) cellEl.textContent = setupShort + phaseShort;
-    
-    if (stateEl) {
-      let cls = 'neutral', dot = '●';
+    // Update header badge
+    if (badgeEl) {
+      let cls = 'neutral';
       if (data.setup === 'accumulation') {
         cls = (data.phase === 'D' || data.phase === 'E') ? 'bull' : 'neutral';
       } else if (data.setup === 'distribution') {
         cls = (data.phase === 'D' || data.phase === 'E') ? 'bear' : 'neutral';
       }
-      stateEl.className = 'ind-state ' + cls;
+      badgeEl.className = 'wy-hb-badge ' + cls;
+      const setupShort = data.setup === 'accumulation' ? '🟢 TL' : (data.setup === 'distribution' ? '🔴 PP' : '⚪');
+      const phaseShort = data.phase !== 'none' ? ` ${data.phase}` : '';
       const confPct = Math.round((data.confidence || 0) * 100);
-      stateEl.textContent = `${dot} ${confPct}%`;
+      badgeEl.textContent = `${setupShort}${phaseShort} ${confPct}%`;
     }
     
     // Render markers trên chart nếu candleSeries có
@@ -5874,8 +6316,8 @@ async function fetchWyckoff(symbol) {
     fetchWyckoffMulti(symbol);
   } catch (e) {
     console.error('[wyckoff] fail:', e);
-    if (cellEl) cellEl.textContent = '--';
-    if (stateEl) { stateEl.className = 'ind-state neutral'; stateEl.textContent = '● Lỗi'; }
+    const badgeEl2 = document.getElementById('wyHeaderBadge');
+    if (badgeEl2) { badgeEl2.className = 'wy-hb-badge neutral'; badgeEl2.textContent = 'Lỗi'; }
     _lastWyckoffData = null;
   }
 }
@@ -6205,6 +6647,203 @@ function renderAdvisorResult(data) {
     verdictEl.style.display = '';
   }
 }
+
+
+// ============================================================
+// Phase 9D: Wyckoff Scanner
+// ============================================================
+let _scannerJobId = null;
+let _scannerPollTimer = null;
+let _scannerResults = [];
+let _scannerFilter = 'all';
+
+window.startWyckoffScan = async function() {
+  const btn = document.getElementById('scannerStartBtn');
+  const progEl = document.getElementById('scannerProgress');
+  const resEl = document.getElementById('scannerResults');
+  const sumEl = document.getElementById('scannerSummary');
+  
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang quét...'; }
+  if (sumEl) sumEl.style.display = 'none';
+  if (progEl) {
+    progEl.style.display = 'block';
+    progEl.innerHTML = `
+      <div class="scanner-progress">
+        <div>🔄 Đang khởi tạo scan job...</div>
+        <div class="scanner-progress-bar"><div class="scanner-progress-fill" id="scanProgFill"></div></div>
+        <div class="scanner-progress-meta" id="scanProgMeta">Job: --</div>
+      </div>
+    `;
+  }
+  if (resEl) resEl.innerHTML = '';
+  
+  try {
+    const res = await fetch(`${API}/api/wyckoff/scan/start`, { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    _scannerJobId = data.job_id;
+    console.log('[scanner] started job', _scannerJobId, 'total', data.total);
+    pollScanStatus();
+  } catch (e) {
+    console.error('[scanner] start fail:', e);
+    if (progEl) progEl.innerHTML = `<div class="scanner-empty" style="color:var(--red-hi)">⚠️ Lỗi khởi tạo: ${e.message}</div>`;
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Bắt đầu quét Top 200'; }
+  }
+};
+
+async function pollScanStatus() {
+  if (!_scannerJobId) return;
+  
+  try {
+    const res = await fetch(`${API}/api/wyckoff/scan/status/${_scannerJobId}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    updateScanProgress(data);
+    
+    if (data.status === 'done' || data.status === 'error' || data.status === 'rate_limited') {
+      clearTimeout(_scannerPollTimer);
+      if (data.status === 'done') {
+        await loadScanResults();
+      } else {
+        const progEl = document.getElementById('scannerProgress');
+        if (progEl) {
+          progEl.innerHTML = `<div class="scanner-empty" style="color:var(--red-hi)">⚠️ ${data.error || data.status}. Đã quét ${data.completed}/${data.total} mã, tìm thấy ${data.found_count}.</div>`;
+        }
+        // Nếu rate_limited mà vẫn có results → vẫn load
+        if (data.found_count > 0) await loadScanResults();
+      }
+      const btn = document.getElementById('scannerStartBtn');
+      if (btn) { btn.disabled = false; btn.textContent = '🚀 Quét lại'; }
+    } else {
+      // Poll again sau 2 giây
+      _scannerPollTimer = setTimeout(pollScanStatus, 2000);
+    }
+  } catch (e) {
+    console.error('[scanner] poll fail:', e);
+    _scannerPollTimer = setTimeout(pollScanStatus, 5000);  // retry chậm hơn
+  }
+}
+
+function updateScanProgress(data) {
+  const fill = document.getElementById('scanProgFill');
+  const meta = document.getElementById('scanProgMeta');
+  if (fill) fill.style.width = data.progress + '%';
+  if (meta) {
+    const elapsed = data.elapsed_sec || 0;
+    const min = Math.floor(elapsed / 60);
+    const sec = Math.round(elapsed % 60);
+    const timeStr = min > 0 ? `${min}p${sec}s` : `${sec}s`;
+    meta.innerHTML = `
+      <span>📊 ${data.completed}/${data.total} mã (${data.progress}%)</span>
+      <span>🎯 Tìm thấy: <b style="color:var(--green-hi)">${data.found_count}</b></span>
+      <span>⏱️ ${timeStr}</span>
+      <span>Job: ${_scannerJobId}</span>
+    `;
+  }
+}
+
+async function loadScanResults() {
+  try {
+    const res = await fetch(`${API}/api/wyckoff/scan/results/${_scannerJobId}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    _scannerResults = data.results || [];
+    renderScanResults();
+  } catch (e) {
+    console.error('[scanner] load results fail:', e);
+  }
+}
+
+function renderScanResults() {
+  const sumEl = document.getElementById('scannerSummary');
+  const resEl = document.getElementById('scannerResults');
+  const progEl = document.getElementById('scannerProgress');
+  
+  if (progEl) progEl.style.display = 'none';
+  
+  if (_scannerResults.length === 0) {
+    if (resEl) resEl.innerHTML = '<div class="scanner-empty">📭 Không tìm thấy mã nào có setup Wyckoff rõ ràng.</div>';
+    if (sumEl) sumEl.style.display = 'none';
+    return;
+  }
+  
+  // Summary
+  const accCount = _scannerResults.filter(r => r.setup === 'accumulation').length;
+  const distCount = _scannerResults.filter(r => r.setup === 'distribution').length;
+  const phaseDE = _scannerResults.filter(r => r.phase === 'D' || r.phase === 'E').length;
+  
+  if (sumEl) {
+    sumEl.style.display = 'flex';
+    sumEl.innerHTML = `
+      <div class="scanner-stat acc">🟢 Tích lũy: <b>${accCount}</b></div>
+      <div class="scanner-stat dist">🔴 Phân phối: <b>${distCount}</b></div>
+      <div class="scanner-stat phasede">⭐ Phase D/E: <b>${phaseDE}</b></div>
+      <div class="scanner-stat">Tổng: <b>${_scannerResults.length}</b></div>
+    `;
+  }
+  
+  // Apply filter
+  let filtered = _scannerResults;
+  if (_scannerFilter === 'accumulation') filtered = filtered.filter(r => r.setup === 'accumulation');
+  else if (_scannerFilter === 'distribution') filtered = filtered.filter(r => r.setup === 'distribution');
+  else if (_scannerFilter === 'phase_de') filtered = filtered.filter(r => r.phase === 'D' || r.phase === 'E');
+  
+  if (filtered.length === 0) {
+    if (resEl) resEl.innerHTML = '<div class="scanner-empty">📭 Không có mã nào khớp filter.</div>';
+    return;
+  }
+  
+  const setupVi = (s) => s === 'accumulation' ? '🟢 Tích lũy' : s === 'distribution' ? '🔴 Phân phối' : '⚪ --';
+  const setupClass = (s) => s === 'accumulation' ? 'setup-acc' : 'setup-dist';
+  
+  let html = `
+    <div class="scanner-table-wrap">
+      <table class="scanner-table">
+        <thead>
+          <tr>
+            <th>Mã</th>
+            <th>Giá</th>
+            <th>Setup</th>
+            <th>Phase</th>
+            <th>Conf</th>
+            <th class="col-tr">TR (low - high)</th>
+            <th class="col-events">Events</th>
+            <th>Last</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  for (const r of filtered) {
+    const confPct = Math.round((r.confidence || 0) * 100);
+    const phaseCls = `phase-${r.phase || 'A'}`;
+    const trStr = (r.tr_low != null && r.tr_high != null) ? `${r.tr_low} - ${r.tr_high}` : '--';
+    html += `
+      <tr class="row-clickable" onclick="window.location.href='stock-detail-live.html?sym=${r.symbol}'">
+        <td>${r.symbol}</td>
+        <td>${r.price}</td>
+        <td class="${setupClass(r.setup)}">${setupVi(r.setup)}</td>
+        <td><span class="${phaseCls}">${r.phase}</span></td>
+        <td><span class="conf-bar"><span class="conf-fill" style="width:${confPct}%"></span></span>${confPct}%</td>
+        <td class="col-tr">${trStr}</td>
+        <td class="col-events">${r.events_count || 0}</td>
+        <td>${r.last_event || '--'}</td>
+      </tr>
+    `;
+  }
+  html += '</tbody></table></div>';
+  
+  if (resEl) resEl.innerHTML = html;
+}
+
+window.filterScannerResults = function(filter) {
+  _scannerFilter = filter;
+  // Update active button
+  document.querySelectorAll('.scanner-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filter);
+  });
+  renderScanResults();
+};
 
 // ESC để đóng modal
 document.addEventListener('keydown', (e) => {
