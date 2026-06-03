@@ -1222,6 +1222,132 @@ input{font-family:inherit;color:inherit}
 
 
 
+
+/* === Phase 9C: Wyckoff AI Advisor === */
+.wy-ai-section {
+  margin-top: 14px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(41,98,255,0.06), rgba(171,71,188,0.06));
+  border: 1px solid var(--blue, #2962ff);
+  border-radius: 8px;
+}
+.wy-ai-head {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.wy-ai-head strong {
+  font-size: 12px;
+  color: var(--blue-hi, #5b8def);
+  font-family: var(--mono, monospace);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: 1;
+}
+.wy-ai-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--blue-bg, #1a2b4a), var(--blue, #2962ff));
+  color: #fff;
+  border: 1px solid var(--blue, #2962ff);
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .15s;
+  white-space: nowrap;
+}
+.wy-ai-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(41,98,255,0.4); }
+.wy-ai-btn:disabled { opacity: 0.6; cursor: wait; }
+.wy-ai-verdict {
+  padding: 3px 10px; border-radius: 12px;
+  font-family: var(--mono, monospace); font-size: 9.5px; font-weight: 700;
+}
+.wy-ai-verdict.bullish { background: rgba(38,166,154,0.2); color: var(--green-hi, #5fffc0); }
+.wy-ai-verdict.bearish { background: rgba(239,83,80,0.2); color: var(--red-hi, #ff8a8a); }
+.wy-ai-verdict.neutral { background: rgba(255,213,79,0.15); color: var(--yellow, #ffeb3b); }
+
+.wy-ai-content {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text, #d1d4dc);
+  white-space: pre-wrap;
+}
+.wy-ai-content h2 {
+  font-size: 13px;
+  margin: 14px 0 6px 0;
+  color: var(--blue-hi, #5b8def);
+  font-weight: 700;
+  border-bottom: 1px solid rgba(41,98,255,0.3);
+  padding-bottom: 3px;
+}
+.wy-ai-content h2:first-child { margin-top: 4px; }
+.wy-ai-content strong { color: var(--text, #d1d4dc); }
+.wy-ai-content ul {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+.wy-ai-content li {
+  margin: 3px 0;
+}
+.wy-ai-content code {
+  background: var(--bg3, #1e222d);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--mono, monospace);
+  font-size: 11.5px;
+  color: var(--yellow, #ffeb3b);
+}
+
+.wy-ai-loading {
+  display: flex; align-items: center; justify-content: center;
+  padding: 30px 20px;
+  flex-direction: column;
+  gap: 10px;
+}
+.wy-ai-loading .spinner {
+  width: 26px; height: 26px;
+  border: 3px solid rgba(41,98,255,0.2);
+  border-top-color: var(--blue, #2962ff);
+  border-radius: 50%;
+  animation: wySpin 0.7s linear infinite;
+}
+.wy-ai-loading .msg {
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  color: var(--text2);
+}
+@keyframes wySpin { to { transform: rotate(360deg); } }
+
+.wy-ai-meta {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255,255,255,0.1);
+  font-size: 9.5px;
+  color: var(--text3);
+  font-style: italic;
+  font-family: var(--mono, monospace);
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.wy-ai-meta .data-source { padding: 1px 7px; background: var(--bg3); border-radius: 8px; }
+.wy-ai-meta .data-source.ok { color: var(--green-hi); }
+.wy-ai-meta .data-source.miss { color: var(--text3); }
+
+.wy-ai-empty {
+  text-align: center;
+  padding: 20px;
+  font-size: 11px;
+  color: var(--text3);
+  font-style: italic;
+}
+
+@media (max-width: 600px) {
+  .wy-ai-section { padding: 10px; }
+  .wy-ai-content { font-size: 11.5px; line-height: 1.6; }
+  .wy-ai-content h2 { font-size: 12px; }
+  .wy-ai-btn { padding: 6px 10px; font-size: 10px; }
+}
+
 /* === Phase 9B: Modal Wyckoff tabs === */
 .wyckoff-tabs {
   display: flex;
@@ -5216,6 +5342,114 @@ window.toggleWyckoffOverlay = function() {
   }
 };
 
+
+// Phase 9C: AI Advisor for Wyckoff
+let _lastAdvisorData = null;
+const ADVISOR_CACHE_TTL_MS = 30 * 60 * 1000;
+const _advisorCache = {};   // {symbol: {at, data}}
+
+window.runWyckoffAdvisor = async function(forceRefresh = false) {
+  const sym = currentSymbol;
+  if (!sym) return;
+  
+  // Check frontend cache
+  if (!forceRefresh) {
+    const cached = _advisorCache[sym];
+    if (cached && (Date.now() - cached.at) < ADVISOR_CACHE_TTL_MS) {
+      _lastAdvisorData = cached.data;
+      renderAdvisorResult(cached.data);
+      return;
+    }
+  }
+  
+  const btn = document.getElementById('wyAiBtn');
+  const bodyEl = document.getElementById('wyAiBody');
+  
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang phân tích...'; }
+  if (bodyEl) {
+    bodyEl.innerHTML = `
+      <div class="wy-ai-loading">
+        <div class="spinner"></div>
+        <div class="msg">AI đang phân tích Wyckoff + tin tức + F&G...<br/>(~10-20 giây)</div>
+      </div>
+    `;
+  }
+  
+  try {
+    const url = `${API}/api/wyckoff/${encodeURIComponent(sym)}/advisor${forceRefresh ? '?refresh=true' : ''}`;
+    const res = await fetch(url, { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    _lastAdvisorData = data;
+    _advisorCache[sym] = { at: Date.now(), data };
+    renderAdvisorResult(data);
+  } catch (e) {
+    console.error('[advisor] fail:', e);
+    if (bodyEl) {
+      bodyEl.innerHTML = `<div class="wy-ai-empty" style="color:var(--red-hi)">⚠️ Lỗi: ${e.message}</div>`;
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🤖 Phân tích lại'; }
+  }
+};
+
+function renderAdvisorResult(data) {
+  const bodyEl = document.getElementById('wyAiBody');
+  const verdictEl = document.getElementById('wyAiVerdict');
+  if (!bodyEl) return;
+  
+  // Convert markdown-like text → HTML
+  const text = data.advisor || 'Không có phân tích.';
+  let html = text
+    // h2 headers (## ...)
+    .replace(/^##\s+(.+)$/gm, '<h2>$1</h2>')
+    // bold (**text**)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // inline code (`text`)
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+  
+  // Convert lines starting with - or • or emoji to <li>
+  // Process line by line for list items
+  const lines = html.split('\n');
+  let inList = false;
+  const out = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const isListItem = /^[\-•]\s+/.test(trimmed) || /^[⚠️🛑✅👀📉📈🔮]\s/.test(trimmed);
+    if (isListItem) {
+      if (!inList) { out.push('<ul>'); inList = true; }
+      out.push('<li>' + trimmed.replace(/^[\-•]\s+/, '') + '</li>');
+    } else {
+      if (inList) { out.push('</ul>'); inList = false; }
+      if (trimmed) out.push(line);
+    }
+  }
+  if (inList) out.push('</ul>');
+  html = out.join('\n');
+  
+  // Data source meta
+  const ds = data.data_used || {};
+  const metaParts = [];
+  metaParts.push(`<span class="data-source ${ds.wyckoff ? 'ok' : 'miss'}">${ds.wyckoff ? '✓' : '✗'} Wyckoff</span>`);
+  metaParts.push(`<span class="data-source ${ds.news ? 'ok' : 'miss'}">${ds.news ? '✓' : '✗'} Tin tức</span>`);
+  metaParts.push(`<span class="data-source ${ds.fg_index ? 'ok' : 'miss'}">${ds.fg_index ? '✓' : '✗'} F&G</span>`);
+  if (data.cached) metaParts.push(`<span class="data-source">📦 cache</span>`);
+  
+  bodyEl.innerHTML = `
+    <div class="wy-ai-content">${html}</div>
+    <div class="wy-ai-meta">${metaParts.join('')}</div>
+  `;
+  
+  // Verdict badge
+  if (verdictEl) {
+    const v = data.verdict || 'neutral';
+    verdictEl.className = 'wy-ai-verdict ' + v;
+    const labels = { bullish: '🟢 BULLISH', bearish: '🔴 BEARISH', neutral: '🟡 NEUTRAL' };
+    verdictEl.textContent = labels[v] || '🟡 NEUTRAL';
+    verdictEl.style.display = '';
+  }
+}
+
 // ESC để đóng modal
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -5831,7 +6065,29 @@ function renderWyckoffModal() {
     </div>
   `;
   
+  // Phase 9C: AI Advisor section (chỉ trên tab daily để tránh nhầm lẫn)
+  if (_currentWyTab === 'daily') {
+    html += `
+      <div class="wy-ai-section">
+        <div class="wy-ai-head">
+          <span style="font-size:18px">🤖</span>
+          <strong>AI Advisor</strong>
+          <span class="wy-ai-verdict" id="wyAiVerdict" style="display:none"></span>
+          <button class="wy-ai-btn" id="wyAiBtn" onclick="runWyckoffAdvisor(false)">🤖 Phân tích sâu</button>
+        </div>
+        <div id="wyAiBody">
+          <div class="wy-ai-empty">Bấm "Phân tích sâu" để AI tổng hợp Wyckoff + tin tức + F&G và đưa ra chiến lược cụ thể cho ${currentSymbol || '--'}.</div>
+        </div>
+      </div>
+    `;
+  }
+  
   bodyEl.innerHTML = html;
+  
+  // Restore AI result nếu đã có cache
+  if (_currentWyTab === 'daily' && _lastAdvisorData && _lastAdvisorData.symbol === currentSymbol) {
+    renderAdvisorResult(_lastAdvisorData);
+  }
 }
 
 
@@ -5841,6 +6097,114 @@ window.toggleWyckoffOverlay = function() {
     renderWyckoffMarkers(_lastWyckoffData);
   }
 };
+
+
+// Phase 9C: AI Advisor for Wyckoff
+let _lastAdvisorData = null;
+const ADVISOR_CACHE_TTL_MS = 30 * 60 * 1000;
+const _advisorCache = {};   // {symbol: {at, data}}
+
+window.runWyckoffAdvisor = async function(forceRefresh = false) {
+  const sym = currentSymbol;
+  if (!sym) return;
+  
+  // Check frontend cache
+  if (!forceRefresh) {
+    const cached = _advisorCache[sym];
+    if (cached && (Date.now() - cached.at) < ADVISOR_CACHE_TTL_MS) {
+      _lastAdvisorData = cached.data;
+      renderAdvisorResult(cached.data);
+      return;
+    }
+  }
+  
+  const btn = document.getElementById('wyAiBtn');
+  const bodyEl = document.getElementById('wyAiBody');
+  
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang phân tích...'; }
+  if (bodyEl) {
+    bodyEl.innerHTML = `
+      <div class="wy-ai-loading">
+        <div class="spinner"></div>
+        <div class="msg">AI đang phân tích Wyckoff + tin tức + F&G...<br/>(~10-20 giây)</div>
+      </div>
+    `;
+  }
+  
+  try {
+    const url = `${API}/api/wyckoff/${encodeURIComponent(sym)}/advisor${forceRefresh ? '?refresh=true' : ''}`;
+    const res = await fetch(url, { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    _lastAdvisorData = data;
+    _advisorCache[sym] = { at: Date.now(), data };
+    renderAdvisorResult(data);
+  } catch (e) {
+    console.error('[advisor] fail:', e);
+    if (bodyEl) {
+      bodyEl.innerHTML = `<div class="wy-ai-empty" style="color:var(--red-hi)">⚠️ Lỗi: ${e.message}</div>`;
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🤖 Phân tích lại'; }
+  }
+};
+
+function renderAdvisorResult(data) {
+  const bodyEl = document.getElementById('wyAiBody');
+  const verdictEl = document.getElementById('wyAiVerdict');
+  if (!bodyEl) return;
+  
+  // Convert markdown-like text → HTML
+  const text = data.advisor || 'Không có phân tích.';
+  let html = text
+    // h2 headers (## ...)
+    .replace(/^##\s+(.+)$/gm, '<h2>$1</h2>')
+    // bold (**text**)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // inline code (`text`)
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+  
+  // Convert lines starting with - or • or emoji to <li>
+  // Process line by line for list items
+  const lines = html.split('\n');
+  let inList = false;
+  const out = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const isListItem = /^[\-•]\s+/.test(trimmed) || /^[⚠️🛑✅👀📉📈🔮]\s/.test(trimmed);
+    if (isListItem) {
+      if (!inList) { out.push('<ul>'); inList = true; }
+      out.push('<li>' + trimmed.replace(/^[\-•]\s+/, '') + '</li>');
+    } else {
+      if (inList) { out.push('</ul>'); inList = false; }
+      if (trimmed) out.push(line);
+    }
+  }
+  if (inList) out.push('</ul>');
+  html = out.join('\n');
+  
+  // Data source meta
+  const ds = data.data_used || {};
+  const metaParts = [];
+  metaParts.push(`<span class="data-source ${ds.wyckoff ? 'ok' : 'miss'}">${ds.wyckoff ? '✓' : '✗'} Wyckoff</span>`);
+  metaParts.push(`<span class="data-source ${ds.news ? 'ok' : 'miss'}">${ds.news ? '✓' : '✗'} Tin tức</span>`);
+  metaParts.push(`<span class="data-source ${ds.fg_index ? 'ok' : 'miss'}">${ds.fg_index ? '✓' : '✗'} F&G</span>`);
+  if (data.cached) metaParts.push(`<span class="data-source">📦 cache</span>`);
+  
+  bodyEl.innerHTML = `
+    <div class="wy-ai-content">${html}</div>
+    <div class="wy-ai-meta">${metaParts.join('')}</div>
+  `;
+  
+  // Verdict badge
+  if (verdictEl) {
+    const v = data.verdict || 'neutral';
+    verdictEl.className = 'wy-ai-verdict ' + v;
+    const labels = { bullish: '🟢 BULLISH', bearish: '🔴 BEARISH', neutral: '🟡 NEUTRAL' };
+    verdictEl.textContent = labels[v] || '🟡 NEUTRAL';
+    verdictEl.style.display = '';
+  }
+}
 
 // ESC để đóng modal
 document.addEventListener('keydown', (e) => {
