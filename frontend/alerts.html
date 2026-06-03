@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔔 Alerts — VPASTOCK</title>
+<style>
+:root {
+  --bg: #131722; --bg2: #1e222d; --bg3: #2a2e39;
+  --border: #363a45; --border-hi: #4a4e5a;
+  --text: #d1d4dc; --text2: #94a3b8; --text3: #787b86;
+  --blue: #2962ff; --blue-bg: #1a2b4a; --blue-hi: #5b8def;
+  --green: #26a69a; --green-hi: #5fffc0;
+  --red: #ef5350; --red-hi: #ff8a8a;
+  --yellow: #ffeb3b;
+  --mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px; line-height: 1.5;
+}
+
+/* Top nav */
+.topnav {
+  display: flex; align-items: center; gap: 18px;
+  padding: 10px 20px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.logo { font-weight: 800; color: var(--blue-hi); font-size: 15px; letter-spacing: 0.05em; }
+.topnav a { color: var(--text2); text-decoration: none; font-weight: 600; font-size: 12px; }
+.topnav a:hover, .topnav a.active { color: var(--blue-hi); }
+
+/* Main */
+.container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+.page-title {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 20px;
+  font-size: 22px; font-weight: 700;
+}
+
+/* Stats */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+.stat-card .label {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.stat-card .value {
+  font-family: var(--mono); font-size: 22px; font-weight: 700;
+}
+.stat-card.acc .value { color: var(--green-hi); }
+.stat-card.dist .value { color: var(--red-hi); }
+
+/* Form */
+.create-form {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.create-form-title {
+  font-weight: 700; font-size: 13px;
+  margin-bottom: 12px;
+  color: var(--blue-hi);
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 2fr auto;
+  gap: 8px;
+  align-items: end;
+}
+.form-row label {
+  display: block; font-size: 10px; color: var(--text3);
+  font-family: var(--mono); text-transform: uppercase;
+  margin-bottom: 4px; letter-spacing: 0.05em;
+}
+.form-row input, .form-row select {
+  width: 100%; padding: 8px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--mono); font-size: 12px;
+}
+.form-row input:focus, .form-row select:focus {
+  outline: none; border-color: var(--blue);
+}
+.create-btn {
+  padding: 9px 18px;
+  background: linear-gradient(90deg, var(--blue-bg), var(--blue));
+  color: #fff;
+  border: 1px solid var(--blue);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 700;
+  cursor: pointer;
+  transition: .15s;
+}
+.create-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(41,98,255,0.4); }
+
+/* Alerts table */
+.alerts-table-wrap {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+.alerts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono); font-size: 11.5px;
+}
+.alerts-table thead {
+  background: var(--bg3);
+  position: sticky; top: 0;
+}
+.alerts-table th {
+  padding: 10px 12px; text-align: left;
+  font-size: 9.5px; font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+}
+.alerts-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+.alerts-table tr:last-child td { border-bottom: none; }
+.alerts-table .sym { font-weight: 700; color: var(--text); }
+.alerts-table .type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 9.5px; font-weight: 700;
+  background: rgba(41,98,255,0.15); color: var(--blue-hi);
+}
+.alerts-table .type-badge.spring { background: rgba(38,166,154,0.15); color: var(--green-hi); }
+.alerts-table .type-badge.utad { background: rgba(239,83,80,0.15); color: var(--red-hi); }
+.alerts-table .type-badge.phase_d { background: rgba(255,213,79,0.15); color: var(--yellow); }
+.alerts-table .toggle {
+  display: inline-block;
+  width: 32px; height: 16px;
+  background: var(--bg3);
+  border-radius: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: .2s;
+}
+.alerts-table .toggle::after {
+  content: ''; position: absolute;
+  width: 12px; height: 12px;
+  background: var(--text3);
+  border-radius: 50%;
+  top: 2px; left: 2px;
+  transition: .2s;
+}
+.alerts-table .toggle.on { background: rgba(38,166,154,0.3); }
+.alerts-table .toggle.on::after {
+  background: var(--green); left: 18px;
+}
+.alerts-table .action-btn {
+  background: none; border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 4px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--mono); font-size: 10px;
+  transition: .12s;
+  margin-right: 4px;
+}
+.alerts-table .action-btn:hover { color: var(--text); border-color: var(--text2); }
+.alerts-table .action-btn.danger:hover { color: var(--red-hi); border-color: var(--red); }
+.empty {
+  text-align: center; padding: 40px 20px;
+  color: var(--text3); font-size: 12px;
+}
+
+/* History */
+.history-section { margin-top: 30px; }
+.section-title {
+  font-size: 14px; font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--blue-hi);
+  display: flex; align-items: center; gap: 8px;
+}
+.history-list {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.history-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.history-item:last-child { border-bottom: none; }
+.history-item .h-emoji { font-size: 18px; flex-shrink: 0; }
+.history-item .h-sym { font-weight: 700; color: var(--text); min-width: 50px; }
+.history-item .h-desc { flex: 1; color: var(--text2); }
+.history-item .h-time {
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+}
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--bg2);
+  border: 1px solid var(--border-hi);
+  border-radius: 6px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  display: none;
+  font-size: 12px;
+  z-index: 999;
+}
+.toast.show { display: block; animation: slideUp .3s ease; }
+.toast.error { border-color: var(--red); color: var(--red-hi); }
+.toast.success { border-color: var(--green); color: var(--green-hi); }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+@media (max-width: 700px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .form-row { grid-template-columns: 1fr; }
+  .alerts-table th, .alerts-table td { padding: 7px 8px; font-size: 10.5px; }
+  .alerts-table .col-hide { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="logo">VPASTOCK</div>
+  <a href="stock-detail-live.html">Chi tiết CP</a>
+  <a href="stock-detail-live.html#market">Thị trường</a>
+  <a href="screener.html">Bộ lọc</a>
+  <a href="watchlist.html">Watchlist</a>
+  <a href="alerts.html" class="active">🔔 Alerts</a>
+</nav>
+
+<div class="container">
+  <div class="page-title">🔔 Smart Alerts <span style="font-size:12px;color:var(--text3);font-weight:400">Tự động theo dõi Wyckoff sự kiện mỗi 15 phút</span></div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="label">Tổng alerts</div><div class="value" id="statTotal">--</div></div>
+    <div class="stat-card acc"><div class="label">🟢 Đang bật</div><div class="value" id="statEnabled">--</div></div>
+    <div class="stat-card dist"><div class="label">⏸️ Tắt</div><div class="value" id="statDisabled">--</div></div>
+    <div class="stat-card"><div class="label">🔔 Triggered hôm nay</div><div class="value" id="statTriggered">--</div></div>
+  </div>
+
+  <div class="create-form">
+    <div class="create-form-title">➕ Thêm Alert mới</div>
+    <div class="form-row">
+      <div>
+        <label>Mã CK</label>
+        <input type="text" id="newSymbol" placeholder="VD: VIC" maxlength="10" />
+      </div>
+      <div>
+        <label>Loại alert</label>
+        <select id="newType">
+          <option value="any">Tất cả sự kiện</option>
+          <option value="phase_change">Wyckoff phase thay đổi</option>
+          <option value="phase_d">🎯 Vào Phase D (entry zone)</option>
+          <option value="spring">🟢 Spring xuất hiện</option>
+          <option value="utad">🔴 UTAD xuất hiện</option>
+          <option value="sos_sow">SOS / SOW</option>
+          <option value="breakout">Phá TR (breakout)</option>
+        </select>
+      </div>
+      <div>
+        <label>Ghi chú (tùy chọn)</label>
+        <input type="text" id="newNote" placeholder="VD: Theo dõi mua khi sang Phase D" maxlength="200" />
+      </div>
+      <button class="create-btn" onclick="createAlert()">Thêm</button>
+    </div>
+  </div>
+
+  <div class="alerts-table-wrap">
+    <table class="alerts-table">
+      <thead>
+        <tr>
+          <th>Mã</th>
+          <th>Loại</th>
+          <th class="col-hide">Ghi chú</th>
+          <th class="col-hide">Lần check cuối</th>
+          <th>Triggered</th>
+          <th>Bật</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="alertsBody">
+        <tr><td colspan="7" class="empty">⏳ Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="history-section">
+    <div class="section-title">📜 Lịch sử trigger gần đây</div>
+    <div class="history-list" id="historyList">
+      <div class="empty">⏳ Đang tải...</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Auto-detect API URL: local → port 8000 (theo .bat), production → cùng origin
+const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000'
+  : location.origin;
+
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.className = 'toast ' + type + ' show';
+  el.textContent = msg;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function fmtDateTime(s) {
+  if (!s) return '--';
+  try {
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return s.slice(0, 16);
+    return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  } catch (e) { return s.slice(0, 16); }
+}
+
+function typeLabel(t) {
+  const map = {
+    'any': 'Tất cả',
+    'phase_change': 'Phase thay đổi',
+    'phase_d': '🎯 Vào Phase D',
+    'spring': '🟢 Spring',
+    'utad': '🔴 UTAD',
+    'sos_sow': 'SOS/SOW',
+    'breakout': 'Phá TR',
+  };
+  return map[t] || t;
+}
+
+async function loadAlerts() {
+  try {
+    const res = await fetch(`${API}/api/alerts`);
+    const data = await res.json();
+    const items = data.items || [];
+    
+    const enabled = items.filter(a => a.enabled).length;
+    document.getElementById('statTotal').textContent = items.length;
+    document.getElementById('statEnabled').textContent = enabled;
+    document.getElementById('statDisabled').textContent = items.length - enabled;
+    
+    const tbody = document.getElementById('alertsBody');
+    if (items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">📭 Chưa có alert nào. Thêm bên trên để bắt đầu.</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = items.map(a => `
+      <tr>
+        <td class="sym"><a href="stock-detail-live.html?sym=${a.symbol}" style="color:inherit;text-decoration:none">${a.symbol}</a></td>
+        <td><span class="type-badge ${a.alert_type}">${typeLabel(a.alert_type)}</span></td>
+        <td class="col-hide">${a.note || '--'}</td>
+        <td class="col-hide">${fmtDateTime(a.last_checked_at)}</td>
+        <td>${a.trigger_count || 0}</td>
+        <td><span class="toggle ${a.enabled ? 'on' : ''}" onclick="toggleAlert(${a.id})"></span></td>
+        <td>
+          <button class="action-btn" onclick="testAlert(${a.id})" title="Check ngay (không đợi 15 phút)">▶ Test</button>
+          <button class="action-btn danger" onclick="deleteAlert(${a.id}, '${a.symbol}')" title="Xóa">✕</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    console.error('[alerts] load fail:', e);
+    document.getElementById('alertsBody').innerHTML = `<tr><td colspan="7" class="empty">⚠️ Lỗi: ${e.message}</td></tr>`;
+  }
+}
+
+async function loadHistory() {
+  try {
+    const res = await fetch(`${API}/api/alerts/history/recent?limit=30`);
+    const data = await res.json();
+    const items = data.items || [];
+    const el = document.getElementById('historyList');
+    
+    if (items.length === 0) {
+      el.innerHTML = '<div class="empty">📭 Chưa có sự kiện nào được trigger.</div>';
+      return;
+    }
+    
+    const today = new Date().toISOString().slice(0, 10);
+    const todayCount = items.filter(i => (i.triggered_at || '').startsWith(today)).length;
+    document.getElementById('statTriggered').textContent = todayCount;
+    
+    el.innerHTML = items.map(i => {
+      const emoji = i.event_type.includes('phase_d') || i.event_type.includes('sos') || i.event_type.includes('spring') ? '🟢'
+                  : i.event_type.includes('sow') || i.event_type.includes('utad') || i.event_type.includes('break') ? '🔴' : '🔔';
+      return `
+        <div class="history-item">
+          <div class="h-emoji">${emoji}</div>
+          <div class="h-sym"><a href="stock-detail-live.html?sym=${i.symbol}" style="color:inherit;text-decoration:none">${i.symbol}</a></div>
+          <div class="h-desc">${i.event_desc}</div>
+          <div class="h-time">${fmtDateTime(i.triggered_at)}</div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    console.error('[history] load fail:', e);
+    document.getElementById('historyList').innerHTML = `<div class="empty">⚠️ Lỗi: ${e.message}</div>`;
+  }
+}
+
+async function createAlert() {
+  const sym = document.getElementById('newSymbol').value.trim().toUpperCase();
+  const type = document.getElementById('newType').value;
+  const note = document.getElementById('newNote').value.trim();
+  
+  if (!sym) { toast('Vui lòng nhập mã CK', 'error'); return; }
+  
+  try {
+    const res = await fetch(`${API}/api/alerts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol: sym, alert_type: type, note }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    toast(`✅ Đã thêm alert cho ${sym}`);
+    document.getElementById('newSymbol').value = '';
+    document.getElementById('newNote').value = '';
+    loadAlerts();
+  } catch (e) {
+    toast(`Lỗi: ${e.message}`, 'error');
+  }
+}
+
+async function toggleAlert(id) {
+  try {
+    await fetch(`${API}/api/alerts/${id}/toggle`, { method: 'PATCH' });
+    loadAlerts();
+  } catch (e) {
+    toast(`Lỗi: ${e.message}`, 'error');
+  }
+}
+
+async function testAlert(id) {
+  toast('⏳ Đang check...');
+  try {
+    const res = await fetch(`${API}/api/alerts/${id}/test`, { method: 'POST' });
+    const data = await res.json();
+    toast(data.message);
+    loadAlerts();
+    loadHistory();
+  } catch (e) {
+    toast(`Lỗi: ${e.message}`, 'error');
+  }
+}
+
+async function deleteAlert(id, sym) {
+  if (!confirm(`Xóa alert cho ${sym}?`)) return;
+  try {
+    await fetch(`${API}/api/alerts/${id}`, { method: 'DELETE' });
+    toast(`Đã xóa alert ${sym}`);
+    loadAlerts();
+  } catch (e) {
+    toast(`Lỗi: ${e.message}`, 'error');
+  }
+}
+
+// Enter trên symbol → create
+document.getElementById('newSymbol').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') createAlert();
+});
+
+loadAlerts();
+loadHistory();
+// Refresh mỗi 30s
+setInterval(() => { loadAlerts(); loadHistory(); }, 30000);
+</script>
+</body>
+</html>

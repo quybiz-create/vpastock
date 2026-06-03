@@ -9,6 +9,7 @@ from app.services.alert_scanner import scanner_loop
 from app.api import stock, market, screener, calendar, risk, watchlist
 from app.api import stock, market, screener, calendar, risk, watchlist, news
 from app.api import stock, market, screener, calendar, risk, watchlist, news, wyckoff
+from app.api import stock, market, screener, calendar, risk, watchlist, news, wyckoff, alerts
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -16,8 +17,13 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     logger.info(f"VPASTOCK starting on {settings.APP_HOST}:{settings.APP_PORT}")
     logger.info(f"Environment: {settings.APP_ENV}")
+
     init_db()
     logger.info("Database initialized")
+    from app.services.alert_manager import start_alert_loop
+    start_alert_loop()
+    logger.info("Smart Alerts loop started")
+
     import asyncio
     scanner_task = asyncio.create_task(scanner_loop())
     logger.info("Alert scanner started")
@@ -53,6 +59,7 @@ app.include_router(stock.router, prefix="/api/stock", tags=["stock"])
 app.include_router(market.router, prefix="/api/market", tags=["market"])
 app.include_router(news.router, prefix="/api/news", tags=["news"])
 app.include_router(wyckoff.router, prefix="/api/wyckoff", tags=["wyckoff"])
+app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"])
 app.include_router(screener.router, prefix="/api/screener", tags=["screener"])
 app.include_router(calendar.router, prefix="/api/calendar", tags=["calendar"])
 app.include_router(risk.router, prefix="/api/risk", tags=["risk"])
