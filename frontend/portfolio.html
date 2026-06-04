@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💼 Portfolio — VPASTOCK</title>
+<style>
+:root {
+  --bg: #131722; --bg2: #1e222d; --bg3: #2a2e39;
+  --border: #363a45; --border-hi: #4a4e5a;
+  --text: #d1d4dc; --text2: #94a3b8; --text3: #787b86;
+  --blue: #2962ff; --blue-bg: #1a2b4a; --blue-hi: #5b8def;
+  --green: #26a69a; --green-hi: #5fffc0;
+  --red: #ef5350; --red-hi: #ff8a8a;
+  --yellow: #ffeb3b; --orange: #ff9800;
+  --mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px; line-height: 1.5;
+}
+
+/* Top nav */
+.topnav {
+  display: flex; align-items: center; gap: 18px;
+  padding: 10px 20px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.logo { font-weight: 800; color: var(--blue-hi); font-size: 15px; letter-spacing: 0.05em; }
+.topnav a { color: var(--text2); text-decoration: none; font-weight: 600; font-size: 12px; }
+.topnav a:hover, .topnav a.active { color: var(--blue-hi); }
+
+/* Main */
+.container { max-width: 1300px; margin: 0 auto; padding: 24px 20px; }
+.page-title {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 20px;
+  font-size: 22px; font-weight: 700;
+  flex-wrap: wrap;
+}
+.page-title small { font-size: 12px; color: var(--text3); font-weight: 400; }
+
+/* Dashboard stats */
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+.stat-card .label {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.stat-card .value {
+  font-family: var(--mono); font-size: 18px; font-weight: 700;
+}
+.stat-card .sub {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+.stat-card.pos .value { color: var(--green-hi); }
+.stat-card.neg .value { color: var(--red-hi); }
+.stat-card.warn .value { color: var(--yellow); }
+
+/* Top winners/losers row */
+.winners-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.winners-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+.winners-card .head {
+  font-size: 11px; font-weight: 700;
+  color: var(--text3); text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+.winners-card.pos .head { color: var(--green-hi); }
+.winners-card.neg .head { color: var(--red-hi); }
+.winners-list { display: flex; flex-direction: column; gap: 6px; }
+.winner-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  background: var(--bg3);
+  border-radius: 4px;
+  font-size: 11.5px;
+}
+.winner-row .sym {
+  font-weight: 700; color: var(--text);
+  font-family: var(--mono);
+  min-width: 50px;
+}
+.winner-row .pl { font-family: var(--mono); font-weight: 700; margin-left: auto; }
+.winner-row .pl.pos { color: var(--green-hi); }
+.winner-row .pl.neg { color: var(--red-hi); }
+.winner-row .badge {
+  padding: 1px 6px; border-radius: 3px;
+  font-size: 9px; font-family: var(--mono);
+}
+.winner-row .badge.open { background: rgba(41,98,255,0.15); color: var(--blue-hi); }
+.winner-row .badge.closed { background: rgba(120,123,134,0.15); color: var(--text3); }
+
+/* Add form */
+.create-form {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.create-form-title {
+  font-weight: 700; font-size: 13px;
+  margin-bottom: 12px;
+  color: var(--blue-hi);
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.5fr 2fr auto;
+  gap: 8px;
+  align-items: end;
+}
+.form-row label {
+  display: block; font-size: 10px; color: var(--text3);
+  font-family: var(--mono); text-transform: uppercase;
+  margin-bottom: 4px; letter-spacing: 0.05em;
+}
+.form-row input {
+  width: 100%; padding: 8px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--mono); font-size: 12px;
+}
+.form-row input:focus {
+  outline: none; border-color: var(--blue);
+}
+.create-btn {
+  padding: 9px 18px;
+  background: linear-gradient(90deg, var(--blue-bg), var(--blue));
+  color: #fff;
+  border: 1px solid var(--blue);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 700;
+  cursor: pointer;
+  transition: .15s;
+}
+.create-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(41,98,255,0.4); }
+
+/* Tabs */
+.tabs {
+  display: flex; gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: .15s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  color: var(--blue-hi);
+  border-bottom-color: var(--blue);
+}
+.tab-btn .count {
+  font-size: 10px;
+  padding: 1px 7px;
+  background: var(--bg3);
+  border-radius: 8px;
+  margin-left: 4px;
+}
+.tab-btn.active .count {
+  background: var(--blue-bg);
+  color: var(--blue-hi);
+}
+
+/* Table */
+.table-wrap {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.portfolio-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono); font-size: 11.5px;
+}
+.portfolio-table thead { background: var(--bg3); }
+.portfolio-table th {
+  padding: 10px 12px; text-align: left;
+  font-size: 9.5px; font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.portfolio-table th.num { text-align: right; }
+.portfolio-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+.portfolio-table td.num { text-align: right; font-weight: 600; color: var(--text); }
+.portfolio-table tr:last-child td { border-bottom: none; }
+.portfolio-table tr:hover { background: rgba(41,98,255,0.04); }
+.portfolio-table .sym { font-weight: 700; color: var(--text); }
+.portfolio-table .sym a { color: inherit; text-decoration: none; }
+.portfolio-table .sym a:hover { color: var(--blue-hi); }
+.portfolio-table .pl-pos { color: var(--green-hi); }
+.portfolio-table .pl-neg { color: var(--red-hi); }
+.portfolio-table .pl-neutral { color: var(--text2); }
+.portfolio-table .badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 9px; font-weight: 700;
+}
+.portfolio-table .badge.open { background: rgba(41,98,255,0.15); color: var(--blue-hi); }
+.portfolio-table .badge.closed { background: rgba(120,123,134,0.15); color: var(--text3); }
+.portfolio-table .action-btn {
+  background: none; border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 4px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--mono); font-size: 10px;
+  transition: .12s;
+  margin-right: 4px;
+}
+.portfolio-table .action-btn:hover { color: var(--text); border-color: var(--text2); }
+.portfolio-table .action-btn.close-btn:hover { color: var(--orange); border-color: var(--orange); }
+.portfolio-table .action-btn.danger:hover { color: var(--red-hi); border-color: var(--red); }
+
+.empty {
+  text-align: center; padding: 40px 20px;
+  color: var(--text3); font-size: 12px;
+}
+
+/* Close modal */
+.modal-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 99998;
+  backdrop-filter: blur(3px);
+}
+.modal-backdrop.show { display: flex; align-items: center; justify-content: center; }
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border-hi);
+  border-radius: 8px;
+  width: min(450px, 96vw);
+  padding: 18px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+}
+.modal h3 {
+  font-size: 14px;
+  margin-bottom: 14px;
+  color: var(--blue-hi);
+  display: flex; align-items: center; gap: 8px;
+}
+.modal .info {
+  background: var(--bg3);
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  margin-bottom: 12px;
+  color: var(--text2);
+}
+.modal .info b { color: var(--text); }
+.modal .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.modal label {
+  display: block; font-size: 10px; color: var(--text3);
+  font-family: var(--mono); text-transform: uppercase;
+  margin-bottom: 4px; letter-spacing: 0.05em;
+}
+.modal input {
+  width: 100%; padding: 8px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--mono); font-size: 12px;
+}
+.modal-actions {
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+.btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text2);
+}
+.btn:hover { color: var(--text); }
+.btn.primary {
+  background: linear-gradient(90deg, var(--blue-bg), var(--blue));
+  border-color: var(--blue);
+  color: #fff;
+}
+.btn.primary:hover { box-shadow: 0 4px 12px rgba(41,98,255,0.4); }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--bg2);
+  border: 1px solid var(--border-hi);
+  border-radius: 6px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  display: none;
+  font-size: 12px;
+  z-index: 999;
+}
+.toast.show { display: block; animation: slideUp .3s ease; }
+.toast.error { border-color: var(--red); color: var(--red-hi); }
+.toast.success { border-color: var(--green); color: var(--green-hi); }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+@media (max-width: 1024px) {
+  .dashboard { grid-template-columns: repeat(3, 1fr); }
+  .winners-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .dashboard { grid-template-columns: repeat(2, 1fr); }
+  .form-row { grid-template-columns: 1fr 1fr; }
+  .portfolio-table th, .portfolio-table td { padding: 6px 6px; font-size: 10.5px; }
+  .portfolio-table .col-hide { display: none; }
+  .modal .form-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="logo">VPASTOCK</div>
+  <a href="stock-detail-live.html">Chi tiết CP</a>
+  <a href="screener.html">Bộ lọc</a>
+  <a href="watchlist.html">⭐ Watchlist</a>
+  <a href="alerts.html">🔔 Alerts</a>
+  <a href="portfolio.html" class="active">💼 Portfolio</a>
+</nav>
+
+<div class="container">
+  <div class="page-title">
+    💼 Portfolio Tracker
+    <small>Theo dõi lệnh đang nắm + P/L thực tế từ giá hiện tại</small>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <div class="stat-card">
+      <div class="label">Tổng vốn (Open)</div>
+      <div class="value" id="statTotalEntry">--</div>
+      <div class="sub" id="statOpenCount">--</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Giá trị hiện tại</div>
+      <div class="value" id="statCurrentValue">--</div>
+      <div class="sub" id="statCurrentDiff">--</div>
+    </div>
+    <div class="stat-card" id="statUnrealizedCard">
+      <div class="label">P/L Unrealized</div>
+      <div class="value" id="statUnrealized">--</div>
+      <div class="sub" id="statUnrealizedPct">--</div>
+    </div>
+    <div class="stat-card" id="statRealizedCard">
+      <div class="label">P/L Realized</div>
+      <div class="value" id="statRealized">--</div>
+      <div class="sub" id="statClosedCount">--</div>
+    </div>
+    <div class="stat-card warn">
+      <div class="label">Win Rate</div>
+      <div class="value" id="statWinRate">--</div>
+      <div class="sub" id="statWinLoss">--</div>
+    </div>
+  </div>
+
+  <!-- Winners/Losers -->
+  <div class="winners-row">
+    <div class="winners-card pos">
+      <div class="head">🏆 Top 3 Winners</div>
+      <div class="winners-list" id="topWinners">
+        <div class="empty" style="padding:14px">--</div>
+      </div>
+    </div>
+    <div class="winners-card neg">
+      <div class="head">💔 Top 3 Losers</div>
+      <div class="winners-list" id="topLosers">
+        <div class="empty" style="padding:14px">--</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Form -->
+  <div class="create-form">
+    <div class="create-form-title">➕ Thêm Lệnh Mới</div>
+    <div class="form-row">
+      <div>
+        <label>Mã CK</label>
+        <input type="text" id="newSymbol" placeholder="VIC" maxlength="10" />
+      </div>
+      <div>
+        <label>Số lượng</label>
+        <input type="number" id="newQty" placeholder="100" min="1" />
+      </div>
+      <div>
+        <label>Giá entry</label>
+        <input type="number" id="newPrice" placeholder="200.5" step="0.01" min="0.01" />
+      </div>
+      <div>
+        <label>Ngày entry</label>
+        <input type="date" id="newDate" />
+      </div>
+      <div>
+        <label>Ghi chú</label>
+        <input type="text" id="newNote" placeholder="VD: Mua tại Spring Phase C" maxlength="300" />
+      </div>
+      <button class="create-btn" onclick="addPosition()">Thêm</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" data-filter="open" onclick="setFilter('open')">📂 Đang mở <span class="count" id="cntOpen">0</span></button>
+    <button class="tab-btn" data-filter="closed" onclick="setFilter('closed')">📁 Đã đóng <span class="count" id="cntClosed">0</span></button>
+    <button class="tab-btn" data-filter="all" onclick="setFilter('all')">🗂️ Tất cả <span class="count" id="cntAll">0</span></button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table class="portfolio-table">
+      <thead>
+        <tr>
+          <th>Mã</th>
+          <th class="num">SL</th>
+          <th class="num">Entry</th>
+          <th class="num col-hide">Vốn</th>
+          <th class="num">Hiện tại</th>
+          <th class="num">P/L</th>
+          <th class="num">%</th>
+          <th>Trạng thái</th>
+          <th class="col-hide">Ngày entry</th>
+          <th class="col-hide">Ghi chú</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="portfolioBody">
+        <tr><td colspan="11" class="empty">⏳ Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Close modal -->
+<div id="closeModal" class="modal-backdrop" onclick="if(event.target===this)closeCloseModal()">
+  <div class="modal">
+    <h3>🔒 Đóng lệnh</h3>
+    <div class="info" id="closeInfo">--</div>
+    <div class="form-grid">
+      <div>
+        <label>Giá đóng (Exit)</label>
+        <input type="number" id="exitPrice" step="0.01" min="0.01" placeholder="Giá đóng" />
+      </div>
+      <div>
+        <label>Ngày đóng</label>
+        <input type="date" id="exitDate" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeCloseModal()">Hủy</button>
+      <button class="btn primary" onclick="confirmClose()">Đóng lệnh</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000'
+  : location.origin;
+
+let _allPositions = [];
+let _currentFilter = 'open';
+let _closingPosition = null;
+
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.className = 'toast ' + type + ' show';
+  el.textContent = msg;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function fmtNum(n, decimals = 0) {
+  if (n === null || n === undefined) return '--';
+  return n.toLocaleString('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+function fmtVnd(n) { return fmtNum(n, 0); }
+function fmtPrice(n) { return n != null ? n.toFixed(2) : '--'; }
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+// Default date = today
+document.getElementById('newDate').value = todayStr();
+
+async function loadAll() {
+  try {
+    const [posRes, sumRes] = await Promise.all([
+      fetch(`${API}/api/portfolio`),
+      fetch(`${API}/api/portfolio/summary`),
+    ]);
+    _allPositions = (await posRes.json()).items || [];
+    const summary = await sumRes.json();
+    renderDashboard(summary);
+    renderTable();
+  } catch (e) {
+    console.error('[portfolio] load fail:', e);
+    document.getElementById('portfolioBody').innerHTML = `<tr><td colspan="11" class="empty">⚠️ Lỗi: ${e.message}</td></tr>`;
+  }
+}
+
+function renderDashboard(s) {
+  document.getElementById('statTotalEntry').textContent = fmtVnd(s.total_entry_value_open);
+  document.getElementById('statOpenCount').textContent = `${s.open_count} lệnh đang mở`;
+  
+  document.getElementById('statCurrentValue').textContent = fmtVnd(s.total_current_value_open);
+  const diff = s.total_current_value_open - s.total_entry_value_open;
+  const diffEl = document.getElementById('statCurrentDiff');
+  diffEl.textContent = `${diff >= 0 ? '+' : ''}${fmtVnd(diff)}`;
+  diffEl.style.color = diff >= 0 ? 'var(--green-hi)' : 'var(--red-hi)';
+  
+  const unrCard = document.getElementById('statUnrealizedCard');
+  unrCard.classList.toggle('pos', s.total_unrealized_pl >= 0);
+  unrCard.classList.toggle('neg', s.total_unrealized_pl < 0);
+  document.getElementById('statUnrealized').textContent = (s.total_unrealized_pl >= 0 ? '+' : '') + fmtVnd(s.total_unrealized_pl);
+  document.getElementById('statUnrealizedPct').textContent = (s.total_unrealized_pl_pct >= 0 ? '+' : '') + s.total_unrealized_pl_pct + '%';
+  
+  const rlzCard = document.getElementById('statRealizedCard');
+  rlzCard.classList.toggle('pos', s.total_realized_pl >= 0);
+  rlzCard.classList.toggle('neg', s.total_realized_pl < 0);
+  document.getElementById('statRealized').textContent = (s.total_realized_pl >= 0 ? '+' : '') + fmtVnd(s.total_realized_pl);
+  document.getElementById('statClosedCount').textContent = `${s.closed_count} lệnh đã đóng`;
+  
+  document.getElementById('statWinRate').textContent = s.win_rate + '%';
+  document.getElementById('statWinLoss').textContent = `${s.winners_count} thắng / ${s.losers_count} thua`;
+  
+  // Top winners/losers
+  renderWinners('topWinners', s.top_winners, 'pos');
+  renderWinners('topLosers', s.top_losers, 'neg');
+  
+  // Tab counts
+  document.getElementById('cntOpen').textContent = s.open_count;
+  document.getElementById('cntClosed').textContent = s.closed_count;
+  document.getElementById('cntAll').textContent = s.total_positions;
+}
+
+function renderWinners(elId, items, polarity) {
+  const el = document.getElementById(elId);
+  if (!items || items.length === 0) {
+    el.innerHTML = '<div class="empty" style="padding:14px">Chưa có dữ liệu</div>';
+    return;
+  }
+  el.innerHTML = items.map(p => `
+    <div class="winner-row">
+      <span class="sym"><a href="stock-detail-live.html?sym=${p.symbol}" style="color:inherit;text-decoration:none">${p.symbol}</a></span>
+      <span class="badge ${p.status}">${p.status === 'open' ? 'OPEN' : 'CLOSED'}</span>
+      <span class="pl ${p.pl >= 0 ? 'pos' : 'neg'}">
+        ${p.pl >= 0 ? '+' : ''}${fmtVnd(p.pl)} (${p.pl_pct >= 0 ? '+' : ''}${p.pl_pct}%)
+      </span>
+    </div>
+  `).join('');
+}
+
+function setFilter(filter) {
+  _currentFilter = filter;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filter);
+  });
+  renderTable();
+}
+
+function renderTable() {
+  let items = _allPositions;
+  if (_currentFilter === 'open') items = items.filter(p => p.status === 'open');
+  else if (_currentFilter === 'closed') items = items.filter(p => p.status === 'closed');
+  
+  const tbody = document.getElementById('portfolioBody');
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="11" class="empty">📭 Chưa có lệnh nào. Thêm bên trên để bắt đầu.</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = items.map(p => {
+    const plClass = p.pl == null ? 'pl-neutral' : (p.pl >= 0 ? 'pl-pos' : 'pl-neg');
+    const plStr = p.pl == null ? '--' : (p.pl >= 0 ? '+' : '') + fmtVnd(p.pl);
+    const pctStr = p.pl_pct == null ? '--' : (p.pl_pct >= 0 ? '+' : '') + p.pl_pct + '%';
+    const closeBtn = p.status === 'open' 
+      ? `<button class="action-btn close-btn" onclick='openCloseModal(${JSON.stringify(p)})' title="Đóng lệnh">🔒</button>`
+      : '';
+    
+    return `
+      <tr>
+        <td class="sym"><a href="stock-detail-live.html?sym=${p.symbol}">${p.symbol}</a></td>
+        <td class="num">${fmtVnd(p.quantity)}</td>
+        <td class="num">${fmtPrice(p.entry_price)}</td>
+        <td class="num col-hide">${fmtVnd(p.entry_value)}</td>
+        <td class="num">${p.current_price != null ? fmtPrice(p.current_price) : '--'}</td>
+        <td class="num ${plClass}">${plStr}</td>
+        <td class="num ${plClass}">${pctStr}</td>
+        <td><span class="badge ${p.status}">${p.status === 'open' ? 'MỞ' : 'ĐÃ ĐÓNG'}</span></td>
+        <td class="col-hide">${p.entry_date}${p.exit_date ? ' → ' + p.exit_date : ''}</td>
+        <td class="col-hide" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(p.note||'').replace(/"/g,'&quot;')}">${p.note || '--'}</td>
+        <td>
+          ${closeBtn}
+          <button class="action-btn danger" onclick="deletePosition(${p.id}, '${p.symbol}')" title="Xóa">✕</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function addPosition() {
+  const symbol = document.getElementById('newSymbol').value.trim().toUpperCase();
+  const quantity = parseInt(document.getElementById('newQty').value);
+  const entry_price = parseFloat(document.getElementById('newPrice').value);
+  const entry_date = document.getElementById('newDate').value;
+  const note = document.getElementById('newNote').value.trim();
+  
+  if (!symbol) { toast('Nhập mã CK', 'error'); return; }
+  if (!quantity || quantity <= 0) { toast('Số lượng phải > 0', 'error'); return; }
+  if (!entry_price || entry_price <= 0) { toast('Giá entry phải > 0', 'error'); return; }
+  if (!entry_date) { toast('Chọn ngày entry', 'error'); return; }
+  
+  try {
+    const res = await fetch(`${API}/api/portfolio`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol, quantity, entry_price, entry_date, note }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    toast(`✅ Đã thêm lệnh ${symbol} x ${quantity}`);
+    document.getElementById('newSymbol').value = '';
+    document.getElementById('newQty').value = '';
+    document.getElementById('newPrice').value = '';
+    document.getElementById('newNote').value = '';
+    document.getElementById('newDate').value = todayStr();
+    loadAll();
+  } catch (e) {
+    toast(`Lỗi: ${e.message}`, 'error');
+  }
+}
+
+function openCloseModal(position) {
+  _closingPosition = position;
+  document.getElementById('closeInfo').innerHTML = `
+    Đóng lệnh <b>${position.symbol}</b> — ${fmtVnd(position.quantity)} cp @ <b>${fmtPrice(position.entry_price)}</b>
+    <br/>Vốn: <b>${fmtVnd(position.entry_value)}</b> · Giá hiện tại: <b>${fmtPrice(position.current_price)}</b>
+  `;
+  document.getElementById('exitPrice').value = position.current_price || '';
+  document.getElementById('exitDate').value = todayStr();
+  document.getElementById('closeModal').classList.add('show');
+}
+
+function closeCloseModal() {
+  document.getElementById('closeModal').classList.remove('show');
+  _closingPosition = null;
+}
+
+async function confirmClose() {
+  if (!_closingPosition) return;
+  const exit_price = parseFloat(document.getElementById('exitPrice').value);
+  const exit_date = document.getElementById('exitDate').value;
+  
+  if (!exit_price || exit_price <= 0) { toast('Giá đóng phải > 0', 'error'); return; }
+  if (!exit_date) { toast('Chọn ngày đóng', 'error'); return; }
+  
+  try {
+    const res = await fetch(`${API}/api/portfolio/${_closingPosition.id}/close`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ exit_price, exit_date }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    const result = await res.json();
+    const pl = (exit_price - _closingPosition.entry_price) * _closingPosition.quantity;
+    toast(`${pl >= 0 ? '✅' : '⚠️'} Đã đóng ${_closingPosition.symbol} — P/L: ${pl >= 0 ? '+' : ''}${fmtVnd(pl)}`);
+    closeCloseModal();
+    loadAll();
+  } catch (e) {
+    toast(`Lỗi: ${e.message}`, 'error');
+  }
+}
+
+async function deletePosition(id, symbol) {
+  if (!confirm(`Xóa hẳn lệnh ${symbol}? (Không khôi phục được)`)) return;
+  try {
+    const res = await fetch(`${API}/api/portfolio/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    toast(`Đã xóa lệnh ${symbol}`);
+    loadAll();
+  } catch (e) {
+    toast(`Lỗi: ${e.message}`, 'error');
+  }
+}
+
+document.getElementById('newSymbol').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') document.getElementById('newQty').focus();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('closeModal').classList.contains('show')) closeCloseModal();
+  }
+});
+
+loadAll();
+// Refresh mỗi 60s
+setInterval(loadAll, 60000);
+</script>
+</body>
+</html>

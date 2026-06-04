@@ -9,7 +9,7 @@ from app.services.alert_scanner import scanner_loop
 from app.api import stock, market, screener, calendar, risk, watchlist
 from app.api import stock, market, screener, calendar, risk, watchlist, news
 from app.api import stock, market, screener, calendar, risk, watchlist, news, wyckoff
-from app.api import stock, market, screener, calendar, risk, watchlist, news, wyckoff, alerts
+from app.api import stock, market, screener, calendar, risk, watchlist, news, wyckoff, alerts, portfolio
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -20,6 +20,12 @@ async def lifespan(app: FastAPI):
 
     init_db()
     logger.info("Database initialized")
+
+    # Phase 12: Portfolio DB
+    from app.services.portfolio import init_portfolio_db
+    init_portfolio_db()
+    logger.info("Portfolio DB initialized")
+
     from app.services.alert_manager import start_alert_loop
     start_alert_loop()
     logger.info("Smart Alerts loop started")
@@ -60,6 +66,7 @@ app.include_router(market.router, prefix="/api/market", tags=["market"])
 app.include_router(news.router, prefix="/api/news", tags=["news"])
 app.include_router(wyckoff.router, prefix="/api/wyckoff", tags=["wyckoff"])
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"])
+app.include_router(portfolio.router, prefix="/api/portfolio", tags=["portfolio"])
 app.include_router(screener.router, prefix="/api/screener", tags=["screener"])
 app.include_router(calendar.router, prefix="/api/calendar", tags=["calendar"])
 app.include_router(risk.router, prefix="/api/risk", tags=["risk"])
