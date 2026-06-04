@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 Backtest — VPASTOCK</title>
+<style>
+:root {
+  --bg: #131722; --bg2: #1e222d; --bg3: #2a2e39;
+  --border: #363a45; --border-hi: #4a4e5a;
+  --text: #d1d4dc; --text2: #94a3b8; --text3: #787b86;
+  --blue: #2962ff; --blue-bg: #1a2b4a; --blue-hi: #5b8def;
+  --green: #26a69a; --green-hi: #5fffc0;
+  --red: #ef5350; --red-hi: #ff8a8a;
+  --yellow: #ffeb3b; --orange: #ff9800; --purple: #ab47bc;
+  --mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px; line-height: 1.5;
+}
+
+.topnav {
+  display: flex; align-items: center; gap: 18px;
+  padding: 10px 20px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.logo { font-weight: 800; color: var(--blue-hi); font-size: 15px; letter-spacing: 0.05em; }
+.topnav a { color: var(--text2); text-decoration: none; font-weight: 600; font-size: 12px; }
+.topnav a:hover, .topnav a.active { color: var(--blue-hi); }
+
+.container { max-width: 1300px; margin: 0 auto; padding: 24px 20px; }
+.page-title {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 20px;
+  font-size: 22px; font-weight: 700;
+  flex-wrap: wrap;
+}
+.page-title small { font-size: 12px; color: var(--text3); font-weight: 400; }
+
+/* Setup form */
+.setup-form {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.setup-form-title {
+  font-weight: 700; font-size: 13px;
+  margin-bottom: 12px;
+  color: var(--blue-hi);
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 2.5fr 1fr auto auto;
+  gap: 10px;
+  align-items: end;
+}
+.form-row label {
+  display: block; font-size: 10px; color: var(--text3);
+  font-family: var(--mono); text-transform: uppercase;
+  margin-bottom: 4px; letter-spacing: 0.05em;
+}
+.form-row input, .form-row select {
+  width: 100%; padding: 8px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--mono); font-size: 12px;
+}
+.form-row input:focus, .form-row select:focus {
+  outline: none; border-color: var(--blue);
+}
+.run-btn {
+  padding: 9px 18px;
+  background: linear-gradient(90deg, var(--blue-bg), var(--blue));
+  color: #fff;
+  border: 1px solid var(--blue);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 700;
+  cursor: pointer;
+  transition: .15s;
+  white-space: nowrap;
+}
+.run-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(41,98,255,0.4); }
+.run-btn:disabled { opacity: 0.5; cursor: wait; }
+.run-btn.secondary {
+  background: linear-gradient(90deg, rgba(171,71,188,0.2), var(--purple));
+  border-color: var(--purple);
+}
+
+.strategy-desc {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: var(--bg3);
+  border-radius: 5px;
+  font-size: 11px;
+  color: var(--text2);
+  font-style: italic;
+}
+
+/* Results section */
+.results-section {
+  display: none;
+}
+.results-section.show { display: block; }
+
+.loading-box {
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 60px 20px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(41,98,255,0.2);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Dashboard stats */
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+.stat-card .label {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.stat-card .value {
+  font-family: var(--mono); font-size: 19px; font-weight: 700;
+}
+.stat-card .sub {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+.stat-card.pos .value { color: var(--green-hi); }
+.stat-card.neg .value { color: var(--red-hi); }
+.stat-card.warn .value { color: var(--yellow); }
+.stat-card.highlight {
+  background: linear-gradient(135deg, rgba(41,98,255,0.08), rgba(38,166,154,0.05));
+  border-color: rgba(91,141,239,0.3);
+}
+
+/* Equity chart */
+.chart-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 20px;
+}
+.chart-card .head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.chart-card .head h3 {
+  font-size: 13px; font-weight: 700;
+  color: var(--blue-hi);
+}
+.chart-legend {
+  display: flex; gap: 12px;
+  font-size: 10px;
+  font-family: var(--mono);
+}
+.chart-legend .item {
+  display: flex; align-items: center; gap: 5px;
+}
+.chart-legend .dot {
+  width: 10px; height: 3px;
+  border-radius: 2px;
+}
+#equityChart {
+  height: 320px !important;
+  width: 100%;
+  min-height: 320px;
+  display: block;
+}
+#equityChart > div { height: 100% !important; }
+
+/* Trades table */
+.trades-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.trades-card .head {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+  font-weight: 700; font-size: 13px;
+  color: var(--blue-hi);
+}
+.trades-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono); font-size: 11px;
+}
+.trades-table thead { background: var(--bg2); }
+.trades-table th {
+  padding: 9px 10px; text-align: left;
+  font-size: 9.5px; font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.trades-table th.num { text-align: right; }
+.trades-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+.trades-table td.num { text-align: right; font-weight: 600; color: var(--text); }
+.trades-table tr:hover { background: rgba(41,98,255,0.04); }
+.trades-table .pl-pos { color: var(--green-hi); font-weight: 700; }
+.trades-table .pl-neg { color: var(--red-hi); font-weight: 700; }
+
+/* Compare section */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono); font-size: 12px;
+}
+.compare-table th, .compare-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.compare-table th { color: var(--text3); font-size: 10px; text-transform: uppercase; }
+.compare-table .strategy-name {
+  font-weight: 700; color: var(--text);
+}
+.compare-table .pos { color: var(--green-hi); font-weight: 700; }
+.compare-table .neg { color: var(--red-hi); font-weight: 700; }
+.compare-table .winner-row { background: rgba(38,166,154,0.05); }
+
+.empty {
+  text-align: center; padding: 40px 20px;
+  color: var(--text3); font-size: 12px;
+}
+
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--bg2);
+  border: 1px solid var(--border-hi);
+  border-radius: 6px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  display: none;
+  font-size: 12px;
+  z-index: 999;
+}
+.toast.show { display: block; animation: slideUp .3s ease; }
+.toast.error { border-color: var(--red); color: var(--red-hi); }
+.toast.success { border-color: var(--green); color: var(--green-hi); }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+@media (max-width: 700px) {
+  .dashboard { grid-template-columns: repeat(2, 1fr); }
+  .form-row { grid-template-columns: 1fr 1fr; }
+  .trades-table th, .trades-table td { padding: 5px 6px; font-size: 10px; }
+  .trades-table .col-hide { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="logo">VPASTOCK</div>
+  <a href="stock-detail-live.html">Chi tiết CP</a>
+  <a href="screener.html">Bộ lọc</a>
+  <a href="watchlist.html">⭐ Watchlist</a>
+  <a href="alerts.html">🔔 Alerts</a>
+  <a href="portfolio.html">💼 Portfolio</a>
+  <a href="backtest.html" class="active">📊 Backtest</a>
+</nav>
+
+<div class="container">
+  <div class="page-title">
+    📊 Wyckoff Backtest
+    <small>Mô phỏng chiến lược Wyckoff trên data lịch sử để đánh giá tính hiệu quả</small>
+  </div>
+
+  <!-- Setup form -->
+  <div class="setup-form">
+    <div class="setup-form-title">⚙️ Cấu hình Backtest</div>
+    <div class="form-row">
+      <div>
+        <label>Mã CK</label>
+        <input type="text" id="btSymbol" placeholder="VIC" maxlength="10" value="VIC" />
+      </div>
+      <div>
+        <label>Chiến lược</label>
+        <select id="btStrategy">
+          <option value="phase_d">B) Phase D Trading (cân bằng)</option>
+          <option value="classic">A) Classic Wyckoff (Spring/UTAD)</option>
+          <option value="setup_conf">C) Setup + Confidence (nhiều signal)</option>
+        </select>
+      </div>
+      <div>
+        <label>Thời gian</label>
+        <select id="btYears">
+          <option value="1">1 năm</option>
+          <option value="2" selected>2 năm</option>
+          <option value="5">5 năm</option>
+        </select>
+      </div>
+      <button class="run-btn" id="btRunBtn" onclick="runBacktest()">▶ Chạy</button>
+      <button class="run-btn secondary" id="btCompareBtn" onclick="runCompare()">⚖️ So sánh cả 3</button>
+    </div>
+    <div class="strategy-desc" id="strategyDesc">
+      <strong>Phase D Trading</strong>: Mua khi Phase chuyển sang D Accumulation → Bán khi Phase D Distribution. Cân bằng giữa timing và frequency.
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-box" id="loadingBox" style="display:none">
+    <div class="spinner"></div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--text2)" id="loadingMsg">
+      Đang chạy backtest... (~30-90s tùy thời gian)
+    </div>
+  </div>
+
+  <!-- Results - Single strategy -->
+  <div class="results-section" id="resultsSingle">
+    <!-- Dashboard -->
+    <div class="dashboard">
+      <div class="stat-card highlight">
+        <div class="label">Tổng lãi</div>
+        <div class="value" id="rsTotalReturn">--</div>
+        <div class="sub" id="rsAlpha">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Win Rate</div>
+        <div class="value" id="rsWinRate">--</div>
+        <div class="sub" id="rsWinLoss">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Tổng số lệnh</div>
+        <div class="value" id="rsTotalTrades">--</div>
+        <div class="sub" id="rsAvgHold">--</div>
+      </div>
+      <div class="stat-card neg">
+        <div class="label">Max Drawdown</div>
+        <div class="value" id="rsMaxDD">--</div>
+        <div class="sub" id="rsSharpe">--</div>
+      </div>
+      <div class="stat-card pos">
+        <div class="label">Avg Win</div>
+        <div class="value" id="rsAvgWin">--</div>
+        <div class="sub" id="rsBestTrade">--</div>
+      </div>
+      <div class="stat-card neg">
+        <div class="label">Avg Loss</div>
+        <div class="value" id="rsAvgLoss">--</div>
+        <div class="sub" id="rsWorstTrade">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Buy & Hold</div>
+        <div class="value" id="rsBhReturn">--</div>
+        <div class="sub">tham chiếu</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Vốn ban đầu</div>
+        <div class="value" id="rsInitCap">100tr</div>
+        <div class="sub" id="rsFinalEquity">--</div>
+      </div>
+    </div>
+    
+    <!-- Equity curve -->
+    <div class="chart-card">
+      <div class="head">
+        <h3>📈 Equity Curve — Strategy vs Buy & Hold</h3>
+        <div class="chart-legend">
+          <div class="item"><div class="dot" style="background:#2962ff"></div>Strategy</div>
+          <div class="item"><div class="dot" style="background:#ff9800"></div>Buy & Hold</div>
+        </div>
+      </div>
+      <div id="equityChart"></div>
+    </div>
+    
+    <!-- Debug info -->
+    <div class="chart-card" id="debugCard" style="display:none">
+      <div class="head">
+        <h3>🔍 Phân tích phân bố Wyckoff (Debug)</h3>
+      </div>
+      <div style="font-size:11.5px;line-height:1.7;color:var(--text2);font-family:var(--mono)">
+        <div id="debugContent">--</div>
+      </div>
+    </div>
+    
+    <!-- Trades list -->
+    <div class="trades-card">
+      <div class="head">📋 Danh sách lệnh đã thực hiện</div>
+      <table class="trades-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Entry date</th>
+            <th>Exit date</th>
+            <th class="num">Entry</th>
+            <th class="num">Exit</th>
+            <th class="num">SL</th>
+            <th class="num">P/L</th>
+            <th class="num">%</th>
+            <th class="num col-hide">Hold</th>
+            <th class="col-hide">Entry phase</th>
+            <th class="col-hide">Exit phase</th>
+          </tr>
+        </thead>
+        <tbody id="tradesBody">
+          <tr><td colspan="11" class="empty">--</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Results - Compare 3 strategies -->
+  <div class="results-section" id="resultsCompare">
+    <div class="chart-card">
+      <div class="head">
+        <h3>⚖️ So sánh 3 chiến lược</h3>
+      </div>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Chiến lược</th>
+            <th>Tổng lãi</th>
+            <th>Win Rate</th>
+            <th>Số lệnh</th>
+            <th>Avg Win</th>
+            <th>Avg Loss</th>
+            <th>Max DD</th>
+            <th>Sharpe</th>
+            <th>vs B&H</th>
+          </tr>
+        </thead>
+        <tbody id="compareBody">
+          <tr><td colspan="9" class="empty">--</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/lightweight-charts@5.0.7/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000'
+  : location.origin;
+
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.className = 'toast ' + type + ' show';
+  el.textContent = msg;
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function fmtNum(n, dec = 0) {
+  if (n === null || n === undefined) return '--';
+  return n.toLocaleString('vi-VN', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function fmtVnd(n) {
+  // Backtest đã pass VND thực (initial_capital = 100,000,000 = 100tr)
+  // qty trong trade × price (qty cũng đã tính theo VND thực rồi)
+  if (n === null || n === undefined) return '--';
+  // Format ngắn gọn
+  const abs = Math.abs(n);
+  let formatted;
+  if (abs >= 1e9) {
+    formatted = (n / 1e9).toFixed(2).replace(/\.?0+$/, '') + ' tỷ';
+  } else if (abs >= 1e6) {
+    formatted = (n / 1e6).toFixed(2).replace(/\.?0+$/, '') + ' tr';
+  } else if (abs >= 1e3) {
+    formatted = (n / 1e3).toFixed(0) + 'k';
+  } else {
+    formatted = n.toFixed(0);
+  }
+  return formatted;
+}
+function fmtPct(n) { return n != null ? (n >= 0 ? '+' : '') + n.toFixed(1) + '%' : '--'; }
+
+// Strategy descriptions
+const STRATEGY_INFO = {
+  'classic': '<strong>Classic Wyckoff</strong>: Mua Spring/LPS → Bán UTAD/LPSY. Entry timing tốt nhất nhưng ít signal.',
+  'phase_d': '<strong>Phase D Trading</strong>: Mua khi Phase D Accumulation → Bán khi Phase D Distribution. Cân bằng nhất.',
+  'setup_conf': '<strong>Setup + Confidence</strong>: Mua khi setup=Accumulation và confidence≥70% → Bán khi chuyển Distribution. Nhiều signal hơn.',
+};
+
+document.getElementById('btStrategy').addEventListener('change', (e) => {
+  document.getElementById('strategyDesc').innerHTML = STRATEGY_INFO[e.target.value];
+});
+
+async function runBacktest() {
+  const symbol = document.getElementById('btSymbol').value.trim().toUpperCase();
+  const strategy = document.getElementById('btStrategy').value;
+  const period_years = parseInt(document.getElementById('btYears').value);
+  
+  if (!symbol) { toast('Nhập mã CK', 'error'); return; }
+  
+  // Hide all, show loading
+  document.getElementById('resultsSingle').classList.remove('show');
+  document.getElementById('resultsCompare').classList.remove('show');
+  document.getElementById('loadingBox').style.display = 'flex';
+  document.getElementById('loadingMsg').textContent = 
+    `Đang chạy backtest ${symbol} với chiến lược "${strategy}" trong ${period_years} năm...`;
+  
+  document.getElementById('btRunBtn').disabled = true;
+  document.getElementById('btCompareBtn').disabled = true;
+  
+  try {
+    const res = await fetch(`${API}/api/backtest/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol, strategy, period_years }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    
+    if (data.error) {
+      toast(`⚠️ ${data.error}`, 'error');
+      return;
+    }
+    
+    renderSingleResult(data);
+    document.getElementById('resultsSingle').classList.add('show');
+  } catch (e) {
+    toast(`Lỗi: ${e.message}`, 'error');
+  } finally {
+    document.getElementById('loadingBox').style.display = 'none';
+    document.getElementById('btRunBtn').disabled = false;
+    document.getElementById('btCompareBtn').disabled = false;
+  }
+}
+
+async function runCompare() {
+  const symbol = document.getElementById('btSymbol').value.trim().toUpperCase();
+  const period_years = parseInt(document.getElementById('btYears').value);
+  
+  if (!symbol) { toast('Nhập mã CK', 'error'); return; }
+  
+  document.getElementById('resultsSingle').classList.remove('show');
+  document.getElementById('resultsCompare').classList.remove('show');
+  document.getElementById('loadingBox').style.display = 'flex';
+  document.getElementById('loadingMsg').textContent = 
+    `So sánh 3 chiến lược cho ${symbol} trong ${period_years} năm... (~1-3 phút)`;
+  
+  document.getElementById('btRunBtn').disabled = true;
+  document.getElementById('btCompareBtn').disabled = true;
+  
+  try {
+    const res = await fetch(`${API}/api/backtest/compare?symbol=${encodeURIComponent(symbol)}&period_years=${period_years}`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    renderCompareResult(data);
+    document.getElementById('resultsCompare').classList.add('show');
+  } catch (e) {
+    toast(`Lỗi: ${e.message}`, 'error');
+  } finally {
+    document.getElementById('loadingBox').style.display = 'none';
+    document.getElementById('btRunBtn').disabled = false;
+    document.getElementById('btCompareBtn').disabled = false;
+  }
+}
+
+function renderSingleResult(data) {
+  const s = data.summary || {};
+  
+  // Stats
+  document.getElementById('rsTotalReturn').textContent = fmtPct(s.total_return_pct);
+  document.getElementById('rsTotalReturn').style.color = s.total_return_pct >= 0 ? 'var(--green-hi)' : 'var(--red-hi)';
+  document.getElementById('rsAlpha').textContent = `vs B&H: ${fmtPct(s.alpha_pct)}`;
+  
+  document.getElementById('rsWinRate').textContent = s.win_rate + '%';
+  document.getElementById('rsWinLoss').textContent = `${s.wins} thắng / ${s.losses} thua`;
+  
+  document.getElementById('rsTotalTrades').textContent = s.total_trades;
+  document.getElementById('rsAvgHold').textContent = `~${s.avg_hold_days} ngày/lệnh`;
+  
+  document.getElementById('rsMaxDD').textContent = '-' + s.max_drawdown_pct + '%';
+  document.getElementById('rsSharpe').textContent = `Sharpe: ${s.sharpe_ratio}`;
+  
+  document.getElementById('rsAvgWin').textContent = fmtPct(s.avg_win_pct);
+  document.getElementById('rsBestTrade').textContent = `Best: ${fmtPct(s.best_trade_pct)}`;
+  
+  document.getElementById('rsAvgLoss').textContent = fmtPct(s.avg_loss_pct);
+  document.getElementById('rsWorstTrade').textContent = `Worst: ${fmtPct(s.worst_trade_pct)}`;
+  
+  document.getElementById('rsBhReturn').textContent = fmtPct(s.bh_return_pct);
+  document.getElementById('rsBhReturn').style.color = s.bh_return_pct >= 0 ? 'var(--green-hi)' : 'var(--red-hi)';
+  
+  document.getElementById('rsInitCap').textContent = fmtVnd(s.initial_capital);
+  document.getElementById('rsFinalEquity').textContent = `→ ${fmtVnd(s.final_equity)}`;
+  
+  // Equity curve
+  renderEquityChart(data.equity_curve || []);
+  
+  // Debug info (Phase 13)
+  const debug = data.debug || {};
+  if (debug.checks_total) {
+    const debugEl = document.getElementById('debugContent');
+    const debugCard = document.getElementById('debugCard');
+    if (debugEl && debugCard) {
+      const sc = debug.setup_counts || {};
+      const pc = debug.phase_counts || {};
+      const total = debug.checks_total || 1;
+      const fmtPct = (n) => ((n / total) * 100).toFixed(1) + '%';
+      debugEl.innerHTML = `
+        <strong>Tổng số lần check Wyckoff:</strong> ${total}<br/>
+        <br/>
+        <strong>Phân bố Setup:</strong><br/>
+        &nbsp;• 🟢 Accumulation: ${sc.accumulation || 0} (${fmtPct(sc.accumulation || 0)})<br/>
+        &nbsp;• 🔴 Distribution: ${sc.distribution || 0} (${fmtPct(sc.distribution || 0)})<br/>
+        &nbsp;• ⚪ None: ${sc.none || 0} (${fmtPct(sc.none || 0)})<br/>
+        <br/>
+        <strong>Phân bố Phase:</strong><br/>
+        &nbsp;• Phase A: ${pc.A || 0} (${fmtPct(pc.A || 0)})<br/>
+        &nbsp;• Phase B: ${pc.B || 0} (${fmtPct(pc.B || 0)}) <em>← Tích lũy/Phân phối âm thầm</em><br/>
+        &nbsp;• Phase C: ${pc.C || 0} (${fmtPct(pc.C || 0)}) <em>← Spring/UTAD</em><br/>
+        &nbsp;• <b>Phase D: ${pc.D || 0} (${fmtPct(pc.D || 0)})</b> <em>← Entry zone</em><br/>
+        &nbsp;• Phase E: ${pc.E || 0} (${fmtPct(pc.E || 0)}) <em>← Markup/Markdown rõ</em><br/>
+        &nbsp;• None: ${pc.none || 0} (${fmtPct(pc.none || 0)})<br/>
+        <br/>
+        <em style="color:var(--text3)">
+          ${(sc.accumulation || 0) === 0 ? '⚠️ Mã này không có thời điểm setup=Accumulation → strategy phase_d/classic không thể vào lệnh. Thử strategy "Setup + Confidence" hoặc mã khác.' : ''}
+          ${(pc.D || 0) === 0 ? '⚠️ Mã này không có Phase D trong giai đoạn này.' : ''}
+        </em>
+      `;
+      debugCard.style.display = 'block';
+    }
+  }
+  
+  // Trades table
+  const trades = data.trades || [];
+  const tbody = document.getElementById('tradesBody');
+  if (trades.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="11" class="empty">Không có lệnh nào được sinh ra trong period này.</td></tr>';
+  } else {
+    tbody.innerHTML = trades.map((t, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${t.entry_date}</td>
+        <td>${t.exit_date}${t.still_open ? ' <em>(open)</em>' : ''}</td>
+        <td class="num">${t.entry_price}</td>
+        <td class="num">${t.exit_price}</td>
+        <td class="num">${fmtVnd(t.qty)}</td>
+        <td class="num ${t.net_pl >= 0 ? 'pl-pos' : 'pl-neg'}">${t.net_pl >= 0 ? '+' : ''}${fmtVnd(t.net_pl)}</td>
+        <td class="num ${t.pl_pct >= 0 ? 'pl-pos' : 'pl-neg'}">${fmtPct(t.pl_pct)}</td>
+        <td class="num col-hide">${t.hold_days}d</td>
+        <td class="col-hide">${t.entry_phase || '--'}</td>
+        <td class="col-hide">${t.exit_phase || '--'}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+let _equityChart = null;
+let _equityStrategy = null;
+let _equityBH = null;
+
+function renderEquityChart(curve) {
+  const container = document.getElementById('equityChart');
+  container.innerHTML = '';
+  
+  if (!curve || curve.length === 0) {
+    container.innerHTML = '<div class="empty">Không có data equity curve</div>';
+    return;
+  }
+  
+  // Destroy chart cũ nếu có (tránh leak)
+  if (_equityChart) {
+    try { _equityChart.remove(); } catch (e) {}
+    _equityChart = null;
+  }
+  
+  console.log('[backtest] equity curve points:', curve.length, 'first:', curve[0], 'last:', curve[curve.length-1]);
+  
+  const containerWidth = container.clientWidth || 1100;
+  
+  _equityChart = LightweightCharts.createChart(container, {
+    width: containerWidth,
+    height: 320,
+    layout: {
+      background: { type: 'solid', color: '#1e222d' },
+      textColor: '#94a3b8',
+    },
+    grid: {
+      vertLines: { color: 'rgba(54, 58, 69, 0.4)' },
+      horzLines: { color: 'rgba(54, 58, 69, 0.4)' },
+    },
+    rightPriceScale: { 
+      borderColor: '#363a45',
+      autoScale: true,
+      scaleMargins: { top: 0.1, bottom: 0.1 },
+    },
+    timeScale: { 
+      borderColor: '#363a45', 
+      timeVisible: false,
+      fixLeftEdge: true,
+      fixRightEdge: true,
+    },
+  });
+  
+  _equityStrategy = _equityChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#2962ff',
+    lineWidth: 2,
+    title: 'Strategy',
+    priceFormat: { type: 'volume', precision: 0 },
+  });
+  _equityBH = _equityChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#ff9800',
+    lineWidth: 2,
+    title: 'Buy & Hold',
+    priceFormat: { type: 'volume', precision: 0 },
+  });
+  
+  const strategyData = curve.map(p => ({ time: p.date, value: p.equity || 0 }));
+  const bhData = curve.map(p => ({ time: p.date, value: p.bh_equity || 0 }));
+  
+  _equityStrategy.setData(strategyData);
+  _equityBH.setData(bhData);
+  
+  _equityChart.timeScale().fitContent();
+  
+  // Resize khi window resize
+  window.addEventListener('resize', () => {
+    if (_equityChart && container) {
+      _equityChart.applyOptions({ width: container.clientWidth });
+    }
+  });
+}
+
+function renderCompareResult(data) {
+  const tbody = document.getElementById('compareBody');
+  const results = data.results || [];
+  
+  // Tìm best strategy theo total return
+  let bestIdx = -1;
+  let bestReturn = -Infinity;
+  results.forEach((r, i) => {
+    if (r.summary && r.summary.total_return_pct > bestReturn) {
+      bestReturn = r.summary.total_return_pct;
+      bestIdx = i;
+    }
+  });
+  
+  const NAMES = {
+    'classic': 'A) Classic (Spring/UTAD)',
+    'phase_d': 'B) Phase D Trading',
+    'setup_conf': 'C) Setup + Confidence',
+  };
+  
+  tbody.innerHTML = results.map((r, i) => {
+    if (r.error) {
+      return `<tr><td class="strategy-name">${NAMES[r.strategy]}</td><td colspan="8" class="empty">⚠️ ${r.error}</td></tr>`;
+    }
+    const s = r.summary || {};
+    const isBest = i === bestIdx;
+    const winner = isBest ? ' 🏆' : '';
+    return `
+      <tr class="${isBest ? 'winner-row' : ''}">
+        <td class="strategy-name">${NAMES[r.strategy]}${winner}</td>
+        <td class="${s.total_return_pct >= 0 ? 'pos' : 'neg'}">${fmtPct(s.total_return_pct)}</td>
+        <td>${s.win_rate}% (${s.wins}/${s.total_trades})</td>
+        <td>${s.total_trades}</td>
+        <td class="pos">${fmtPct(s.avg_win_pct)}</td>
+        <td class="neg">${fmtPct(s.avg_loss_pct)}</td>
+        <td class="neg">-${s.max_drawdown_pct}%</td>
+        <td>${s.sharpe_ratio}</td>
+        <td class="${s.alpha_pct >= 0 ? 'pos' : 'neg'}">${fmtPct(s.alpha_pct)}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  if (bestIdx >= 0) {
+    toast(`🏆 Best: ${NAMES[results[bestIdx].strategy]} với ${fmtPct(bestReturn)}`);
+  }
+}
+
+document.getElementById('btSymbol').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') runBacktest();
+});
+</script>
+</body>
+</html>

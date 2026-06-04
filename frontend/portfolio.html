@@ -377,6 +377,7 @@ body {
   <a href="watchlist.html">⭐ Watchlist</a>
   <a href="alerts.html">🔔 Alerts</a>
   <a href="portfolio.html" class="active">💼 Portfolio</a>
+  <a href="backtest.html">📊 Backtest</a>
 </nav>
 
 <div class="container">
@@ -388,22 +389,22 @@ body {
   <!-- Dashboard -->
   <div class="dashboard">
     <div class="stat-card">
-      <div class="label">Tổng vốn (Open)</div>
+      <div class="label">Tổng vốn (Open) VND</div>
       <div class="value" id="statTotalEntry">--</div>
       <div class="sub" id="statOpenCount">--</div>
     </div>
     <div class="stat-card">
-      <div class="label">Giá trị hiện tại</div>
+      <div class="label">Giá trị hiện tại VND</div>
       <div class="value" id="statCurrentValue">--</div>
       <div class="sub" id="statCurrentDiff">--</div>
     </div>
     <div class="stat-card" id="statUnrealizedCard">
-      <div class="label">P/L Unrealized</div>
+      <div class="label">P/L Unrealized VND</div>
       <div class="value" id="statUnrealized">--</div>
       <div class="sub" id="statUnrealizedPct">--</div>
     </div>
     <div class="stat-card" id="statRealizedCard">
-      <div class="label">P/L Realized</div>
+      <div class="label">P/L Realized VND</div>
       <div class="value" id="statRealized">--</div>
       <div class="sub" id="statClosedCount">--</div>
     </div>
@@ -473,7 +474,7 @@ body {
           <th>Mã</th>
           <th class="num">SL</th>
           <th class="num">Entry</th>
-          <th class="num col-hide">Vốn</th>
+          <th class="num col-hide" title="Vốn thực = SL × Giá × 1000 VND">Vốn</th>
           <th class="num">Hiện tại</th>
           <th class="num">P/L</th>
           <th class="num">%</th>
@@ -534,7 +535,25 @@ function fmtNum(n, decimals = 0) {
   if (n === null || n === undefined) return '--';
   return n.toLocaleString('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
-function fmtVnd(n) { return fmtNum(n, 0); }
+function fmtVnd(n) {
+  // Giá VN niêm yết hiển thị đơn vị nghìn VND. 
+  // qty × price = số nghìn → nhân 1000 để ra VND thực
+  if (n === null || n === undefined) return '--';
+  const vnd = n * 1000;
+  // Format ngắn gọn: 21,000,000 → "21.0tr", 1.5 tỷ → "1.5 tỷ"
+  const abs = Math.abs(vnd);
+  let formatted;
+  if (abs >= 1e9) {
+    formatted = (vnd / 1e9).toFixed(2).replace(/\.?0+$/, '') + ' tỷ';
+  } else if (abs >= 1e6) {
+    formatted = (vnd / 1e6).toFixed(2).replace(/\.?0+$/, '') + ' tr';
+  } else if (abs >= 1e3) {
+    formatted = (vnd / 1e3).toFixed(0) + 'k';
+  } else {
+    formatted = vnd.toFixed(0);
+  }
+  return formatted;
+}
 function fmtPrice(n) { return n != null ? n.toFixed(2) : '--'; }
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
