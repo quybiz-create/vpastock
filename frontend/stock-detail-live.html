@@ -1225,6 +1225,48 @@ input{font-family:inherit;color:inherit}
 
 
 
+
+/* === Auto-refresh status indicator === */
+.auto-refresh-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 10px;
+  padding: 3px 10px;
+  background: rgba(38,166,154,0.12);
+  border: 1px solid rgba(38,166,154,0.35);
+  border-radius: 12px;
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--green-hi, #5fffc0);
+  cursor: pointer;
+  user-select: none;
+  transition: .15s;
+  vertical-align: middle;
+}
+.auto-refresh-pill:hover { background: rgba(38,166,154,0.2); }
+.auto-refresh-pill.off {
+  background: rgba(120,123,134,0.12);
+  border-color: rgba(120,123,134,0.35);
+  color: var(--text3, #787b86);
+}
+.auto-refresh-pill .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green-hi, #5fffc0);
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+.auto-refresh-pill.off .dot {
+  background: var(--text3, #787b86);
+  animation: none;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.auto-refresh-pill .refresh-time { opacity: 0.75; }
+
 /* === Phase 9D: Wyckoff Header Button === */
 .wy-header-btn {
   display: inline-flex;
@@ -1854,6 +1896,11 @@ input{font-family:inherit;color:inherit}
         <div class="sym-big" id="symBig">VNINDEX</div>
         <div class="name" id="stockName">Đang tải...</div>
         <div class="exchange">HOSE</div>
+        <span class="auto-refresh-pill" id="autoRefreshPill" onclick="toggleAutoRefresh()" title="Click để bật/tắt auto-refresh">
+          <span class="dot"></span>
+          <span>AUTO</span>
+          <span class="refresh-time" id="autoRefreshTime">--:--:--</span>
+        </span>
         <button class="wy-header-btn" id="wyHeaderBtn" onclick="openWyckoffModal()" title="Phân tích Wyckoff chuyên sâu + AI Advisor">
           <span class="wy-hb-icon">🎯</span>
           <span class="wy-hb-text" id="wyHeaderText">Phân tích chuyên sâu</span>
@@ -2282,6 +2329,8 @@ input{font-family:inherit;color:inherit}
 </div>
 
 <script>
+let _currentSymbol = null;   // track symbol for auto-refresh
+
 const API = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
   ? 'http://localhost:8000'
   : window.location.origin;
@@ -2416,6 +2465,7 @@ function showError(msg) {
 }
 
 async function loadStock(symbol) {
+  _currentSymbol = symbol;   // track for auto-refresh
   currentSymbol = symbol.toUpperCase();
   showLoading(true);
   const t0 = performance.now();
@@ -5697,6 +5747,100 @@ function renderAdvisorResult(data) {
   }
 }
 
+
+
+// ============================================================
+// AUTO-REFRESH: tự reload data mỗi 60s trong giờ thị trường
+// ============================================================
+let _autoRefreshEnabled = true;
+let _autoRefreshTimer = null;
+const AUTO_REFRESH_INTERVAL_MS = 60 * 1000;  // 60s
+
+function isMarketHours() {
+  const now = new Date();
+  const day = now.getDay();   // 0=CN, 6=T7
+  const hour = now.getHours();
+  if (day === 0 || day === 6) return false;  // weekend
+  // Phiên: 9:00 - 15:00 VN
+  return hour >= 9 && hour < 16;
+}
+
+function updateAutoRefreshUI() {
+  const pill = document.getElementById('autoRefreshPill');
+  const timeEl = document.getElementById('autoRefreshTime');
+  if (!pill) return;
+  
+  if (_autoRefreshEnabled) {
+    pill.classList.remove('off');
+    if (timeEl) {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      timeEl.textContent = `${hh}:${mm}:${ss}`;
+    }
+  } else {
+    pill.classList.add('off');
+    if (timeEl) timeEl.textContent = 'OFF';
+  }
+}
+
+window.toggleAutoRefresh = function() {
+  _autoRefreshEnabled = !_autoRefreshEnabled;
+  updateAutoRefreshUI();
+  if (_autoRefreshEnabled) {
+    startAutoRefresh();
+    console.log('[auto-refresh] BẬT');
+  } else {
+    stopAutoRefresh();
+    console.log('[auto-refresh] TẮT');
+  }
+  // Persist
+  try { localStorage.setItem('vpastock_auto_refresh', _autoRefreshEnabled ? '1' : '0'); } catch(e) {}
+};
+
+function startAutoRefresh() {
+  stopAutoRefresh();   // ensure không double
+  _autoRefreshTimer = setInterval(async () => {
+    if (!_autoRefreshEnabled) return;
+    if (!isMarketHours()) {
+      console.log('[auto-refresh] Ngoài giờ thị trường - skip');
+      updateAutoRefreshUI();
+      return;
+    }
+    if (!_currentSymbol) return;
+    console.log('[auto-refresh] Refreshing', _currentSymbol);
+    try {
+      await loadStock(_currentSymbol);
+    } catch (e) {
+      console.warn('[auto-refresh] fail:', e);
+    }
+    updateAutoRefreshUI();
+  }, AUTO_REFRESH_INTERVAL_MS);
+}
+
+function stopAutoRefresh() {
+  if (_autoRefreshTimer) {
+    clearInterval(_autoRefreshTimer);
+    _autoRefreshTimer = null;
+  }
+}
+
+// Init auto-refresh
+(function initAutoRefresh() {
+  try {
+    const saved = localStorage.getItem('vpastock_auto_refresh');
+    if (saved === '0') _autoRefreshEnabled = false;
+  } catch(e) {}
+  updateAutoRefreshUI();
+  if (_autoRefreshEnabled) startAutoRefresh();
+  // Update clock display every 1s (chỉ cập nhật giờ, không refresh data)
+  setInterval(() => {
+    if (_autoRefreshEnabled && document.getElementById('autoRefreshTime')) {
+      updateAutoRefreshUI();
+    }
+  }, 1000);
+})();
 
 // ============================================================
 // Phase 9D: Wyckoff Scanner
