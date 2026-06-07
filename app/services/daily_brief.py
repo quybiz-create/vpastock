@@ -1,17 +1,15 @@
 """
-Daily Brief module - Phase 8B
+Daily Brief module - Phase 14B
 Generate morning brief and send to Telegram.
 
-Workflow:
-1. Get tickers from watchlist "Demo" (DB)
-2. For each ticker, fetch indicators + signals
-3. Compose context for Claude AI
-4. AI generates brief (Markdown, concise)
-5. Send to Telegram via Bot API
+PRIORITY for getting tickers:
+1. ENV DAILY_BRIEF_SYMBOLS (override - emergency)
+2. Watchlist DB có is_daily_brief=1 (user chọn qua UI)
+3. Watchlist DB có is_default=1 (fallback)
+4. Hard-coded fallback
 
 Run via:
     python -m app.cli.send_brief
-    # Or systemd timer at 8 AM
 """
 from __future__ import annotations
 import os
@@ -25,7 +23,6 @@ import httpx
 try:
     from dotenv import load_dotenv
     from pathlib import Path
-    # Tìm .env ở root project
     _env_path = Path(__file__).parent.parent.parent / ".env"
     if _env_path.exists():
         load_dotenv(_env_path)
@@ -40,29 +37,104 @@ TELEGRAM_API = "https://api.telegram.org"
 
 # Anthropic Claude config
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
-CLAUDE_MODEL = "claude-sonnet-4-5"  # latest
+CLAUDE_MODEL = "claude-sonnet-4-5"
 CLAUDE_MAX_TOKENS = 2000
 
 
 async def get_watchlist_demo_tickers() -> List[str]:
-    """Get tickers from 'Demo' watchlist in DB."""
+    """Get tickers theo thứ tự ưu tiên:
+    1. ENV DAILY_BRIEF_SYMBOLS (emergency override)
+    2. Watchlist DB có is_daily_brief=1 (user chọn qua UI)
+    3. Watchlist DB có is_default=1
+    4. Watchlist DB đầu tiên
+    5. Hard-coded fallback
+    """
+    # ƯU TIÊN 1: ENV variable (emergency)
+    env_symbols = os.getenv("DAILY_BRIEF_SYMBOLS", "").strip()
+    if env_symbols:
+        symbols = [s.strip().upper() for s in env_symbols.split(",") if s.strip()]
+        if symbols:
+            logger.info(f"[BRIEF] Using ENV DAILY_BRIEF_SYMBOLS: {symbols}")
+            return symbols
+
+    # ƯU TIÊN 2-4: Query SQLite DB trực tiếp
     try:
-        from app.services.watchlist_store import list_watchlists, list_tickers
-        # Demo watchlist là watchlist mặc định cho user mặc định
-        wls = await list_watchlists(user_fp="default")
-        demo = next((w for w in wls if w.get("name", "").lower() == "demo"), None)
-        if not demo:
-            # Fallback: lấy watchlist đầu tiên
-            if wls:
-                demo = wls[0]
+        from app.db.database import get_db, dict_from_row
+        
+        with get_db() as conn:
+            # Đảm bảo column is_daily_brief tồn tại (migration safe)
+            try:
+                cursor = conn.execute("PRAGMA table_info(watchlists)")
+                cols = [row[1] for row in cursor.fetchall()]
+                if "is_daily_brief" not in cols:
+                    conn.execute("ALTER TABLE watchlists ADD COLUMN is_daily_brief INTEGER DEFAULT 0")
+                    conn.commit()
+                    logger.info("[BRIEF] Added is_daily_brief column to watchlists")
+            except Exception as e:
+                logger.warning(f"[BRIEF] Migration check fail: {e}")
+            
+            # Ưu tiên 2: watchlist có is_daily_brief=1
+            cursor = conn.execute("""
+                SELECT id, name FROM watchlists
+                WHERE is_daily_brief = 1
+                ORDER BY created_at ASC
+                LIMIT 1
+            """)
+            row = cursor.fetchone()
+            
+            if not row:
+                # Ưu tiên 3: watchlist có is_default=1
+                cursor = conn.execute("""
+                    SELECT id, name FROM watchlists
+                    WHERE is_default = 1
+                    ORDER BY created_at ASC
+                    LIMIT 1
+                """)
+                row = cursor.fetchone()
+                if row:
+                    logger.info(f"[BRIEF] No daily-brief flag set, using DEFAULT watchlist: {row['name']}")
             else:
-                logger.warning("[BRIEF] No watchlist found")
-                return []
-        tickers = await list_tickers(demo["id"])
-        return [t["symbol"] for t in tickers] if tickers else []
+                logger.info(f"[BRIEF] Using DAILY-BRIEF flagged watchlist: {row['name']}")
+            
+            if not row:
+                # Ưu tiên 4: watchlist đầu tiên bất kỳ
+                cursor = conn.execute("""
+                    SELECT id, name FROM watchlists
+                    ORDER BY created_at ASC
+                    LIMIT 1
+                """)
+                row = cursor.fetchone()
+                if row:
+                    logger.info(f"[BRIEF] No default, using FIRST watchlist: {row['name']}")
+            
+            if not row:
+                logger.warning("[BRIEF] No watchlist found in DB, using hard-coded fallback")
+                return ["VNINDEX", "HSG", "FPT", "VIC", "MWG", "HPG"]
+            
+            wl_id = row["id"]
+            wl_name = row["name"]
+            
+            # Lấy items của watchlist
+            cursor = conn.execute("""
+                SELECT symbol FROM watchlist_items
+                WHERE watchlist_id = ?
+                ORDER BY added_at ASC
+            """, (wl_id,))
+            items = [r["symbol"] for r in cursor.fetchall()]
+            
+            if not items:
+                logger.warning(f"[BRIEF] Watchlist '{wl_name}' rỗng, using fallback")
+                return ["VNINDEX", "HSG", "FPT", "VIC", "MWG", "HPG"]
+            
+            # Thêm VNINDEX nếu chưa có
+            if "VNINDEX" not in items:
+                items = ["VNINDEX"] + items
+            
+            logger.info(f"[BRIEF] Got {len(items)} tickers from watchlist '{wl_name}': {items}")
+            return items
+    
     except Exception as e:
-        logger.warning(f"[BRIEF] DB watchlist fail: {e}, fallback to hardcoded list")
-        # Fallback hardcoded - các mã phổ biến
+        logger.exception(f"[BRIEF] DB query fail: {e}, fallback to hard-coded")
         return ["VNINDEX", "HSG", "FPT", "VIC", "MWG", "HPG"]
 
 
@@ -73,15 +145,13 @@ async def fetch_market_context() -> Dict[str, Any]:
         from app.data.vnstock_client import vnstock_client
         from app.core.indicators import compute_all
         from datetime import timedelta
-        
-        # Fear & Greed
+
         fg = await compute_fear_greed()
-        
-        # VNINDEX detail
+
         end = datetime.now().strftime("%Y-%m-%d")
         start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
         df = await vnstock_client.get_history("VNINDEX", start=start, end=end)
-        
+
         vnindex_data = {}
         if df is not None and not df.empty:
             df = df[~df.index.duplicated(keep='last')].sort_index()
@@ -98,7 +168,7 @@ async def fetch_market_context() -> Dict[str, Any]:
                 "ma20": round(float(last.get("ma20", 0)), 2) if last.get("ma20") else None,
                 "ma50": round(float(last.get("ma50", 0)), 2) if last.get("ma50") else None,
             }
-        
+
         return {
             "fear_greed": fg,
             "vnindex": vnindex_data,
@@ -114,23 +184,23 @@ async def fetch_ticker_brief(symbol: str) -> Dict[str, Any]:
         from app.data.vnstock_client import vnstock_client
         from app.core.indicators import compute_all
         from datetime import timedelta
-        
+
         end = datetime.now().strftime("%Y-%m-%d")
         start = (datetime.now() - timedelta(days=60)).strftime("%Y-%m-%d")
         df = await vnstock_client.get_history(symbol, start=start, end=end)
-        
+
         if df is None or df.empty:
             return {"symbol": symbol, "error": "No data"}
-        
+
         df = df[~df.index.duplicated(keep='last')].sort_index()
         df_full = compute_all(df)
         last = df_full.iloc[-1]
         prev = df_full.iloc[-2] if len(df_full) >= 2 else None
-        
+
         close_now = float(last["close"])
         close_prev = float(prev["close"]) if prev is not None else close_now
         pct = ((close_now - close_prev) / close_prev) * 100 if close_prev > 0 else 0
-        
+
         return {
             "symbol": symbol,
             "price": round(close_now, 2),
@@ -160,8 +230,7 @@ def pd_isna(v) -> bool:
 def build_context_for_ai(market: Dict, tickers_data: List[Dict]) -> str:
     """Compose human-readable context for Claude."""
     parts = []
-    
-    # Market overview
+
     fg = market.get("fear_greed", {})
     vni = market.get("vnindex", {})
     parts.append("=== TỔNG QUAN THỊ TRƯỜNG ===")
@@ -170,8 +239,7 @@ def build_context_for_ai(market: Dict, tickers_data: List[Dict]) -> str:
         parts.append(f"VNINDEX: {vni.get('close', '--')} ({sign}{vni.get('change_pct', 0)}%) | RSI: {vni.get('rsi', '--')} | MA20: {vni.get('ma20', '--')} | MA50: {vni.get('ma50', '--')}")
     if fg.get("score") is not None:
         parts.append(f"Fear & Greed: {fg.get('score')} - {fg.get('label')} {fg.get('emoji', '')}")
-    
-    # Tickers
+
     parts.append("\n=== MÃ TRONG WATCHLIST ===")
     for t in tickers_data:
         if t.get("error"):
@@ -184,7 +252,7 @@ def build_context_for_ai(market: Dict, tickers_data: List[Dict]) -> str:
             f"Vol/MA20: {t.get('vol_ratio', '--')}x | "
             f"VPA: {t.get('vpa', '--')}"
         )
-    
+
     return "\n".join(parts)
 
 
@@ -193,7 +261,7 @@ async def generate_brief_with_ai(context: str) -> str:
     if not ANTHROPIC_API_KEY:
         logger.warning("[BRIEF] No Anthropic API key")
         return "⚠️ Chưa cấu hình Anthropic API key"
-    
+
     prompt = f"""Bạn là chuyên gia phân tích chứng khoán Việt Nam.
 
 DỮ LIỆU SÁNG NAY ({datetime.now().strftime('%d/%m/%Y')}):
@@ -214,7 +282,7 @@ LƯU Ý:
 - Cuối brief: 1 câu kết khuyến nghị chiến lược chung.
 - KHÔNG dùng disclaimer dài.
 """
-    
+
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             r = await client.post(
@@ -246,7 +314,7 @@ async def send_telegram(message: str) -> bool:
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         logger.warning("[BRIEF] Telegram not configured")
         return False
-    
+
     url = f"{TELEGRAM_API}/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -261,7 +329,6 @@ async def send_telegram(message: str) -> bool:
             return True
     except Exception as e:
         logger.exception(f"[BRIEF] Telegram send fail: {e}")
-        # Retry without Markdown (in case formatting break)
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 r = await client.post(url, json={
@@ -280,44 +347,37 @@ async def send_telegram(message: str) -> bool:
 async def run_daily_brief() -> Dict[str, Any]:
     """Main entry: generate brief + send to Telegram."""
     logger.info("[BRIEF] === Starting Daily Brief ===")
-    
-    # 1. Get tickers
+
     tickers = await get_watchlist_demo_tickers()
     if not tickers:
         msg = "⚠️ Watchlist trống, không có mã để phân tích."
         await send_telegram(msg)
         return {"ok": False, "reason": "empty_watchlist"}
-    
-    logger.info(f"[BRIEF] Tickers: {tickers}")
-    
-    # 2. Fetch market context
+
+    logger.info(f"[BRIEF] Final tickers: {tickers}")
+
     market = await fetch_market_context()
-    
-    # 3. Fetch each ticker
+
     tickers_data = []
     for sym in tickers[:8]:  # Limit 8 tickers
         data = await fetch_ticker_brief(sym)
         tickers_data.append(data)
-        await asyncio.sleep(0.4)  # avoid rate limit
-    
-    # 4. Build context + ask AI
+        await asyncio.sleep(0.4)
+
     context = build_context_for_ai(market, tickers_data)
     logger.info(f"[BRIEF] Context length: {len(context)} chars")
-    
+
     brief = await generate_brief_with_ai(context)
-    
-    # 5. Add header
+
     today = datetime.now().strftime("%d/%m/%Y")
     full_message = f"🌅 *VPASTOCK Daily Brief - {today}*\n\n{brief}\n\n_Tự động · không phải lời khuyên đầu tư_"
-    
-    # 6. Send Telegram
+
     ok = await send_telegram(full_message)
-    
+
     logger.info(f"[BRIEF] === Done. Sent: {ok} ===")
     return {"ok": ok, "tickers_count": len(tickers_data), "brief_length": len(brief)}
 
 
-# Standalone CLI
 if __name__ == "__main__":
     result = asyncio.run(run_daily_brief())
     print(f"\nResult: {result}")

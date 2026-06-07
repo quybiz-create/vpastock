@@ -1,5 +1,6 @@
 """
 REST API endpoints cho Watchlist & Alert.
++ Phase 14B: is_daily_brief flag để config Telegram brief
 """
 from typing import Optional, List
 from datetime import datetime
@@ -10,6 +11,24 @@ from app.db.database import get_db, dict_from_row
 
 
 router = APIRouter()
+
+
+def _ensure_daily_brief_column():
+    """Migration: thêm cột is_daily_brief nếu chưa có."""
+    with get_db() as conn:
+        try:
+            cursor = conn.execute("PRAGMA table_info(watchlists)")
+            cols = [row[1] for row in cursor.fetchall()]
+            if "is_daily_brief" not in cols:
+                conn.execute("ALTER TABLE watchlists ADD COLUMN is_daily_brief INTEGER DEFAULT 0")
+                conn.commit()
+        except Exception as e:
+            # Bảng có thể chưa tồn tại
+            pass
+
+
+# Run migration at startup
+_ensure_daily_brief_column()
 
 
 # ============================================================
@@ -36,12 +55,16 @@ class AlertCreate(BaseModel):
     note: Optional[str] = None
 
 
+class DailyBriefSet(BaseModel):
+    user_fp: str = Field(..., min_length=8)
+
+
 # ============================================================
 # WATCHLIST CRUD
 # ============================================================
 @router.get("/list")
 async def list_watchlists(user_fp: str = Query(..., min_length=8)):
-    """Liet ke tat ca watchlists cua user, kem so luong items."""
+    """Liet ke tat ca watchlists cua user, kem so luong items + is_daily_brief flag."""
     with get_db() as conn:
         cursor = conn.execute("""
             SELECT w.*, COUNT(wi.id) as item_count
@@ -86,19 +109,65 @@ async def delete_watchlist(wl_id: int, user_fp: str = Query(..., min_length=8)):
 
 
 # ============================================================
+# DAILY BRIEF FLAG (Phase 14B)
+# ============================================================
+@router.post("/{wl_id}/set-daily-brief")
+async def set_daily_brief(wl_id: int, payload: DailyBriefSet):
+    """
+    Đánh dấu watchlist này là watchlist được dùng cho Telegram Daily Brief.
+    Tự động unset các watchlist khác cùng user.
+    """
+    with get_db() as conn:
+        # Verify ownership
+        owner = conn.execute(
+            "SELECT user_fp, name FROM watchlists WHERE id = ?", (wl_id,)
+        ).fetchone()
+        if not owner or owner["user_fp"] != payload.user_fp:
+            raise HTTPException(404, "Watchlist not found")
+        
+        # Unset all watchlists của user này
+        conn.execute(
+            "UPDATE watchlists SET is_daily_brief = 0 WHERE user_fp = ?",
+            (payload.user_fp,),
+        )
+        # Set watchlist được chọn
+        conn.execute(
+            "UPDATE watchlists SET is_daily_brief = 1 WHERE id = ?",
+            (wl_id,),
+        )
+        return {"message": f"'{owner['name']}' đã được set làm Daily Brief watchlist", "wl_id": wl_id}
+
+
+@router.post("/{wl_id}/unset-daily-brief")
+async def unset_daily_brief(wl_id: int, payload: DailyBriefSet):
+    """Tắt flag Daily Brief cho watchlist này."""
+    with get_db() as conn:
+        owner = conn.execute(
+            "SELECT user_fp FROM watchlists WHERE id = ?", (wl_id,)
+        ).fetchone()
+        if not owner or owner["user_fp"] != payload.user_fp:
+            raise HTTPException(404, "Watchlist not found")
+        
+        conn.execute(
+            "UPDATE watchlists SET is_daily_brief = 0 WHERE id = ?",
+            (wl_id,),
+        )
+        return {"message": "Daily Brief flag removed", "wl_id": wl_id}
+
+
+# ============================================================
 # WATCHLIST ITEMS
 # ============================================================
 @router.get("/{wl_id}/items")
 async def get_items(wl_id: int, user_fp: str = Query(..., min_length=8)):
     """Lay danh sach ma trong watchlist."""
     with get_db() as conn:
-        # Verify ownership
         owner = conn.execute(
             "SELECT user_fp FROM watchlists WHERE id = ?", (wl_id,)
         ).fetchone()
         if not owner or owner["user_fp"] != user_fp:
             raise HTTPException(404, "Watchlist not found")
-        
+
         cursor = conn.execute("""
             SELECT * FROM watchlist_items
             WHERE watchlist_id = ?
@@ -112,13 +181,12 @@ async def add_item(wl_id: int, payload: ItemAdd, user_fp: str = Query(..., min_l
     """Them ma vao watchlist."""
     symbol = payload.symbol.upper()
     with get_db() as conn:
-        # Verify ownership
         owner = conn.execute(
             "SELECT user_fp FROM watchlists WHERE id = ?", (wl_id,)
         ).fetchone()
         if not owner or owner["user_fp"] != user_fp:
             raise HTTPException(404, "Watchlist not found")
-        
+
         try:
             cursor = conn.execute("""
                 INSERT INTO watchlist_items (watchlist_id, symbol, note, added_price)
@@ -136,13 +204,12 @@ async def remove_item(wl_id: int, symbol: str, user_fp: str = Query(..., min_len
     """Xoa ma khoi watchlist."""
     symbol = symbol.upper()
     with get_db() as conn:
-        # Verify ownership
         owner = conn.execute(
             "SELECT user_fp FROM watchlists WHERE id = ?", (wl_id,)
         ).fetchone()
         if not owner or owner["user_fp"] != user_fp:
             raise HTTPException(404, "Watchlist not found")
-        
+
         cursor = conn.execute(
             "DELETE FROM watchlist_items WHERE watchlist_id = ? AND symbol = ?",
             (wl_id, symbol),
@@ -195,40 +262,31 @@ async def delete_alert(alert_id: int, user_fp: str = Query(..., min_length=8)):
             raise HTTPException(404, "Alert not found")
         return {"message": "Alert deleted"}
 
+
 # ============================================================
-# ALERT NOTIFICATION (Phase 3 Day 3)
+# ALERT NOTIFICATION
 # ============================================================
 @router.get("/alert/triggered")
 async def get_triggered_alerts(
     user_fp: str = Query(..., min_length=8),
-    since: Optional[str] = Query(None, description="ISO datetime - chi tra ve alerts trigger sau thoi diem nay"),
+    since: Optional[str] = Query(None),
 ):
-    """
-    Lay alerts da trigger (triggered_at IS NOT NULL).
-    Frontend goi moi 30s, neu co alert moi -> show notification.
-    """
     with get_db() as conn:
         sql = """
-            SELECT * FROM alerts 
+            SELECT * FROM alerts
             WHERE user_fp = ? AND triggered_at IS NOT NULL AND is_active = 1
         """
         params = [user_fp]
-        
         if since:
             sql += " AND triggered_at > ?"
             params.append(since)
-        
         sql += " ORDER BY triggered_at DESC LIMIT 20"
-        
         cursor = conn.execute(sql, params)
         return {"alerts": [dict_from_row(row) for row in cursor.fetchall()]}
 
 
 @router.post("/alert/{alert_id}/ack")
 async def ack_alert(alert_id: int, user_fp: str = Query(..., min_length=8)):
-    """
-    User da thay notification -> set is_active=0 de khong notify nua.
-    """
     with get_db() as conn:
         cursor = conn.execute(
             "UPDATE alerts SET is_active = 0 WHERE id = ? AND user_fp = ?",

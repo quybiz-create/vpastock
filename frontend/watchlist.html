@@ -36,6 +36,7 @@ a{color:var(--blue-hi);text-decoration:none}
 .wl-item-name{font-weight:600;color:var(--text);font-size:13px;display:flex;align-items:center;gap:6px}
 .wl-item-meta{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px}
 .wl-item .default-badge{background:var(--blue);color:#fff;font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:0.04em}
+.wl-item .brief-badge{background:var(--green-bg);color:var(--green-hi);border:1px solid var(--green);font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:0.04em;cursor:help}
 
 .btn-create{width:100%;background:var(--blue);color:#fff;padding:9px;border-radius:5px;border:none;font-weight:600;cursor:pointer;font-size:12px;margin-top:8px}
 .btn-create:hover{background:var(--blue-hi)}
@@ -49,6 +50,9 @@ a{color:var(--blue-hi);text-decoration:none}
 .btn{padding:7px 12px;border-radius:5px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:11px;cursor:pointer;font-family:var(--mono);font-weight:600}
 .btn:hover{background:var(--bg4);border-color:var(--blue)}
 .btn.danger{color:var(--red-hi);border-color:var(--red-bg)}
+.btn#btnDailyBrief.active{background:var(--green-bg);color:var(--green-hi);border-color:var(--green)}
+.btn#btnDailyBrief.active:hover{background:var(--green);color:#fff}
+
 .btn.danger:hover{background:var(--red-bg)}
 
 .tabs{display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--border)}
@@ -139,6 +143,7 @@ a{color:var(--blue-hi);text-decoration:none}
       <div class="main-actions" id="mainActions" style="display:none">
         <button class="btn" id="btnAddSymbol">+ Thêm mã</button>
         <button class="btn" id="btnAddAlert">⚡ Tạo alert</button>
+        <button class="btn" id="btnDailyBrief" onclick="toggleDailyBrief()" title="Bật/tắt watchlist này cho Telegram Daily Brief mỗi sáng">📱 Daily Brief: OFF</button>
         <button class="btn danger" id="btnDeleteWL">🗑 Xóa watchlist</button>
       </div>
     </div>
@@ -259,7 +264,12 @@ async function loadWatchlists() {
   try {
     const res = await fetch(`${API}/api/watchlist/list?user_fp=${USER_FP}`);
     const data = await res.json();
-    renderWatchlistList(data.watchlists || []);
+    const wls = data.watchlists || [];
+    renderWatchlistList(wls);
+    // Update Daily Brief button state (Phase 14B)
+    if (typeof updateDailyBriefButton === 'function') {
+      updateDailyBriefButton(wls);
+    }
   } catch (err) {
     console.error('Load watchlists failed:', err);
     document.getElementById('watchlistList').innerHTML =
@@ -277,6 +287,7 @@ function renderWatchlistList(wls) {
     <div class="wl-item ${w.id === currentWatchlistId ? 'active' : ''}" data-id="${w.id}">
       <div class="wl-item-name">
         ${w.is_default ? '<span class="default-badge">DEFAULT</span>' : ''}
+        ${w.is_daily_brief ? '<span class="brief-badge" title="Watchlist này được dùng cho Telegram Daily Brief mỗi sáng 8h">📱 BRIEF</span>' : ''}
         ${escapeHtml(w.name)}
       </div>
       <div class="wl-item-meta">${w.item_count} mã • ${w.description || 'Không có mô tả'}</div>
@@ -295,6 +306,20 @@ function renderWatchlistList(wls) {
 
 function selectWatchlist(wl) {
   currentWatchlistId = wl.id;
+  // Update Daily Brief button khi chọn watchlist khác
+  if (typeof updateDailyBriefButton === 'function') {
+    // wl object đã có is_daily_brief flag
+    const btn = document.getElementById('btnDailyBrief');
+    if (btn) {
+      if (wl.is_daily_brief) {
+        btn.classList.add('active');
+        btn.textContent = '📱 Daily Brief: ON';
+      } else {
+        btn.classList.remove('active');
+        btn.textContent = '📱 Daily Brief: OFF';
+      }
+    }
+  }
   document.getElementById('mainTitle').textContent = wl.name;
   document.getElementById('mainSubtitle').textContent = (wl.description || 'Không có mô tả') + ` • ${wl.item_count} mã`;
   document.getElementById('mainActions').style.display = 'flex';
@@ -573,5 +598,56 @@ function formatDate(s) {
 loadWatchlists();
 </script>
 <script src="alert-poller.js"></script>
+
+<script>
+// ============================================================
+// PHASE 14B: Daily Brief watchlist toggle
+// ============================================================
+function updateDailyBriefButton(watchlists) {
+  const btn = document.getElementById('btnDailyBrief');
+  if (!btn || !currentWatchlistId) return;
+  const current = watchlists.find(w => w.id === currentWatchlistId);
+  if (current && current.is_daily_brief) {
+    btn.classList.add('active');
+    btn.textContent = '📱 Daily Brief: ON';
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '📱 Daily Brief: OFF';
+  }
+}
+
+async function toggleDailyBrief() {
+  if (!currentWatchlistId) {
+    alert('Chưa chọn watchlist');
+    return;
+  }
+  const btn = document.getElementById('btnDailyBrief');
+  const isOn = btn.classList.contains('active');
+  const endpoint = isOn ? 'unset-daily-brief' : 'set-daily-brief';
+  
+  try {
+    const res = await fetch(`${API}/api/watchlist/${currentWatchlistId}/${endpoint}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_fp: USER_FP}),
+    });
+    if (!res.ok) throw new Error('Failed');
+    const data = await res.json();
+    
+    // Reload watchlists để cập nhật UI
+    await loadWatchlists();
+    
+    // Thông báo
+    if (isOn) {
+      alert('✅ Đã tắt Daily Brief cho watchlist này.');
+    } else {
+      alert(`✅ ${data.message || 'Watchlist này sẽ được dùng cho Telegram Daily Brief mỗi sáng!'}`);
+    }
+  } catch (e) {
+    alert('Lỗi: ' + e.message);
+  }
+}
+
+</script>
 </body>
 </html>
