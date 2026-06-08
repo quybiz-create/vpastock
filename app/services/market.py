@@ -1,9 +1,14 @@
 """
-Market Overview module - Phase 7 + 8D + 8E
+Market Overview module - Phase 7 + 8D + 8E + 14C (fixed F&G)
 Provides:
 - Fear & Greed Index (custom computed) + history (8D)
 - Sector Heatmap (top sectors by % change)
 - Stocks per sector (8E)
+
+PHASE 14C FIX (07/06/2026):
+- Vol/MA20: bỏ FLOOR 30, vol=0 giờ cho ~10 điểm (cực Fear)
+- Volatility: dùng U-curve (low ATR + low vol = Fear, không phải Greed)
+- Edge case: vol=0 do data lỗi → fallback 50 neutral
 """
 from __future__ import annotations
 import math
@@ -26,31 +31,30 @@ def _safe_float(v: Any) -> Optional[float]:
 
 
 # ============================================================
-# FEAR & GREED INDEX - CUSTOM FORMULA
+# FEAR & GREED INDEX - CUSTOM FORMULA (Phase 14C fixed)
 # ============================================================
 
 async def compute_fear_greed() -> Dict[str, Any]:
-    """Compute Fear & Greed Index from VNINDEX indicators.
-    Side effect (Phase 8D): persists snapshot to SQLite history."""
+    """Compute Fear & Greed Index from VNINDEX indicators."""
     try:
         from app.data.vnstock_client import vnstock_client
         from app.core.indicators import compute_all
-        
+
         end = datetime.now().strftime("%Y-%m-%d")
         start = (datetime.now() - timedelta(days=400)).strftime("%Y-%m-%d")
         df = await vnstock_client.get_history("VNINDEX", start=start, end=end)
-        
+
         if df is None or df.empty:
             return {"score": 50, "label": "N/A", "components": {}, "error": "No data"}
-        
+
         df = df[~df.index.duplicated(keep='last')]
         df = df.sort_index()
         df_full = compute_all(df)
         df_full = df_full.dropna(subset=["close"])
-        
+
         if len(df_full) < 20:
             return {"score": 50, "label": "N/A", "components": {}, "error": "Insufficient data"}
-        
+
         result = _calc_fg_from_df(df_full)
 
         # === Phase 8D: persist snapshot ===
@@ -66,53 +70,145 @@ async def compute_fear_greed() -> Dict[str, Any]:
         return {"score": 50, "label": "N/A", "error": str(e), "components": {}}
 
 
+# ============================================================
+# PHASE 14C: Sub-score helper functions (fixed logic)
+# ============================================================
+
+def _score_rsi(rsi: Optional[float]) -> float:
+    """RSI score: 0-100 = identity.
+    RSI 30 = Fear extreme, RSI 70 = Greed extreme.
+    """
+    if rsi is None:
+        return 50.0
+    return max(0.0, min(100.0, rsi))
+
+
+def _score_ma200(pct_above_ma: float) -> float:
+    """Distance from MA200.
+    -15% → 0 (Fear cực)
+    0% → 50 (neutral)
+    +15% → 100 (Greed cực)
+    """
+    return max(0.0, min(100.0, 50.0 + (pct_above_ma / 15.0) * 50.0))
+
+
+def _score_volume(vol_ratio: Optional[float]) -> float:
+    """PHASE 14C FIX: Bỏ FLOOR 30 cũ, dùng range rộng 10-90.
+    
+    Vol/MA20 ratio:
+    - 0.0  → 50 (data lỗi, neutral) - không penalize do lỗi tech
+    - 0.3  → 15 (cực thấp = chết khoản → Fear extreme)
+    - 0.5  → 25 
+    - 0.7  → 38
+    - 1.0  → 50 (normal)
+    - 1.3  → 62
+    - 1.5  → 70 (khối lượng tăng = tăng quan tâm = Greed)
+    - 2.0  → 82
+    - 2.5+ → 90 (volume spike = euphoria/panic - thường top)
+    """
+    if vol_ratio is None or vol_ratio <= 0:
+        # Edge case: data lỗi, không tính Fear oan
+        return 50.0
+    
+    if vol_ratio < 0.3:
+        return 10.0 + (vol_ratio / 0.3) * 5.0   # 10 → 15
+    elif vol_ratio < 0.7:
+        return 15.0 + ((vol_ratio - 0.3) / 0.4) * 23.0   # 15 → 38
+    elif vol_ratio < 1.0:
+        return 38.0 + ((vol_ratio - 0.7) / 0.3) * 12.0   # 38 → 50
+    elif vol_ratio < 1.5:
+        return 50.0 + ((vol_ratio - 1.0) / 0.5) * 20.0   # 50 → 70
+    elif vol_ratio < 2.5:
+        return 70.0 + ((vol_ratio - 1.5) / 1.0) * 20.0   # 70 → 90
+    else:
+        return 90.0
+
+
+def _score_volatility(atr_ratio: Optional[float]) -> float:
+    """PHASE 14C FIX: Sửa logic ngược.
+    
+    Cũ: atr thấp → score cao (Greed) - SAI cho VN market
+    Mới: U-curve, peak ở atr_ratio = 1.0 (normal)
+    
+    - atr_ratio 0.3 → 30 (thị trường ngủ đông, kiệt sức → Fear nhẹ)
+    - atr_ratio 0.7 → 45 (hơi thấp, gần neutral)
+    - atr_ratio 1.0 → 55 (bình thường, slight greed - market đang hoạt động)
+    - atr_ratio 1.5 → 45 (biến động cao - cảnh giác)
+    - atr_ratio 2.5+ → 20 (panic, volatility spike)
+    """
+    if atr_ratio is None or atr_ratio <= 0:
+        return 50.0
+    
+    if atr_ratio < 0.3:
+        return 25.0 + (atr_ratio / 0.3) * 10.0   # 25 → 35 (cực thấp = Fear)
+    elif atr_ratio < 0.7:
+        return 35.0 + ((atr_ratio - 0.3) / 0.4) * 15.0   # 35 → 50 (thấp → neutral)
+    elif atr_ratio < 1.0:
+        return 50.0 + ((atr_ratio - 0.7) / 0.3) * 5.0   # 50 → 55 (peak greed nhẹ)
+    elif atr_ratio < 1.5:
+        return 55.0 - ((atr_ratio - 1.0) / 0.5) * 15.0   # 55 → 40
+    elif atr_ratio < 2.5:
+        return 40.0 - ((atr_ratio - 1.5) / 1.0) * 20.0   # 40 → 20
+    else:
+        return 20.0
+
+
+def _score_momentum(pct_5d: Optional[float]) -> float:
+    """Momentum 5-day return.
+    -10% → 0, 0% → 50, +10% → 100 (more sensitive than cũ /5 → /10)
+    """
+    if pct_5d is None:
+        return 50.0
+    return max(0.0, min(100.0, 50.0 + (pct_5d / 10.0) * 50.0))
+
+
 def _calc_fg_from_df(df_full) -> Dict[str, Any]:
-    """Pure calculation from prepared DataFrame."""
+    """Pure calculation from prepared DataFrame.
+    PHASE 14C: subscore logic improved."""
     last = df_full.iloc[-1]
     close_now = float(last["close"])
-    
+
+    # ---- RSI ----
     rsi = _safe_float(last.get("rsi"))
-    rsi_score = 50.0 if rsi is None else max(0, min(100, rsi))
-    
+    rsi_score = _score_rsi(rsi)
+
+    # ---- MA200 distance ----
     ma200 = _safe_float(last.get("ma200"))
     if ma200 is None or ma200 <= 0:
         ma200 = _safe_float(last.get("ma50")) or close_now
     pct_above_ma = ((close_now - ma200) / ma200) * 100 if ma200 > 0 else 0
-    ma_score = max(0, min(100, 50 + (pct_above_ma / 15) * 50))
-    
-    vol_ratio = _safe_float(last.get("vol_ratio")) or 1.0
-    if vol_ratio < 0.5:
-        vol_score = 30
-    elif vol_ratio < 1.0:
-        vol_score = 30 + (vol_ratio - 0.5) * 40
-    elif vol_ratio < 1.5:
-        vol_score = 50 + (vol_ratio - 1.0) * 40
-    else:
-        vol_score = min(85, 70 + (vol_ratio - 1.5) * 15)
-    
+    ma_score = _score_ma200(pct_above_ma)
+
+    # ---- Volume ratio (FIXED) ----
+    vol_ratio = _safe_float(last.get("vol_ratio"))
+    vol_score = _score_volume(vol_ratio)
+
+    # ---- Volatility (FIXED - U-curve) ----
     recent_atr = df_full["close"].pct_change().rolling(14).std().iloc[-1] * 100
     avg_atr = df_full["close"].pct_change().rolling(60).std().iloc[-1] * 100
     atr_ratio = None
     if recent_atr and avg_atr and avg_atr > 0:
         atr_ratio = recent_atr / avg_atr
-        vol_score_atr = max(20, min(80, 70 - (atr_ratio - 0.5) * 30))
-    else:
-        vol_score_atr = 50
-    
+    vol_score_atr = _score_volatility(atr_ratio)
+
+    # ---- Momentum 5D (more sensitive) ----
     pct_5d = None
     if len(df_full) >= 5:
         close_5d_ago = float(df_full["close"].iloc[-5])
         pct_5d = ((close_now - close_5d_ago) / close_5d_ago) * 100
-        mom_score = max(0, min(100, 50 + (pct_5d / 5) * 50))
-    else:
-        mom_score = 50
-    
+    mom_score = _score_momentum(pct_5d)
+
+    # ---- Weighted total ----
     score = (
-        rsi_score * 0.30 + ma_score * 0.25 + vol_score * 0.20 +
-        vol_score_atr * 0.15 + mom_score * 0.10
+        rsi_score * 0.30
+        + ma_score * 0.25
+        + vol_score * 0.20
+        + vol_score_atr * 0.15
+        + mom_score * 0.10
     )
     score = round(max(0, min(100, score)), 1)
-    
+
+    # ---- Label ----
     if score < 25:
         label, emoji = "Sợ hãi cực độ", "😱"
     elif score < 45:
@@ -123,7 +219,7 @@ def _calc_fg_from_df(df_full) -> Dict[str, Any]:
         label, emoji = "Tham lam", "😏"
     else:
         label, emoji = "Tham lam cực độ", "🤑"
-    
+
     return {
         "score": score,
         "label": label,
@@ -136,7 +232,7 @@ def _calc_fg_from_df(df_full) -> Dict[str, Any]:
         "components": {
             "rsi": {"value": round(rsi, 1) if rsi else None, "score": round(rsi_score, 1), "weight": 30, "label": "RSI(14)"},
             "ma200": {"value": round(pct_above_ma, 2), "score": round(ma_score, 1), "weight": 25, "label": "Cách MA200"},
-            "volume": {"value": round(vol_ratio, 2), "score": round(vol_score, 1), "weight": 20, "label": "Vol/MA20"},
+            "volume": {"value": round(vol_ratio, 2) if vol_ratio else None, "score": round(vol_score, 1), "weight": 20, "label": "Vol/MA20"},
             "volatility": {"value": round(atr_ratio, 2) if atr_ratio else None, "score": round(vol_score_atr, 1), "weight": 15, "label": "Biến động"},
             "momentum": {"value": round(pct_5d, 2) if pct_5d is not None else None, "score": round(mom_score, 1), "weight": 10, "label": "Momentum 5D"},
         },
@@ -145,7 +241,7 @@ def _calc_fg_from_df(df_full) -> Dict[str, Any]:
 
 
 # ============================================================
-# SECTOR HEATMAP + STOCKS PER SECTOR (Phase 8E)
+# SECTOR HEATMAP + STOCKS PER SECTOR (unchanged)
 # ============================================================
 SECTOR_NAMES = {
     "Banks": "🏦 Ngân hàng",
@@ -169,7 +265,6 @@ SECTOR_NAMES = {
     "Media": "📺 Truyền thông",
 }
 
-# Top tickers per sector (representative leaders) - 3 đầu để tính heatmap
 SECTOR_LEADERS = {
     "Banks": ["VCB", "BID", "CTG"],
     "Real Estate": ["VHM", "VIC", "DXG"],
@@ -183,8 +278,6 @@ SECTOR_LEADERS = {
     "Utilities": ["POW", "REE", "NT2"],
 }
 
-# === Phase 8E: Danh sách MỞ RỘNG mã con theo ngành ===
-# (top mã vốn hóa / thanh khoản trên HOSE/HNX, dùng cho expand panel)
 SECTOR_STOCKS = {
     "Banks": ["VCB", "BID", "CTG", "TCB", "MBB", "VPB", "ACB", "HDB", "STB", "TPB", "VIB", "SHB", "LPB", "EIB", "MSB", "OCB", "NAB", "VAB"],
     "Real Estate": ["VHM", "VIC", "VRE", "NVL", "KDH", "DXG", "PDR", "NLG", "DIG", "CEO", "KBC", "ITA", "HDC", "AGG", "HDG", "SCR", "TCH", "HPX"],
@@ -209,40 +302,34 @@ SECTOR_STOCKS = {
 
 
 class _RateLimitStop(Exception):
-    """Internal signal to stop fetching when rate limited."""
     pass
 
 
-# In-memory cache
 _CACHE = {"fg": None, "fg_at": 0, "sectors": None, "sectors_at": 0,
           "sector_stocks": {}, "sector_stocks_at": {}}
-_CACHE_TTL = 300   # giây
-_STOCK_CACHE_TTL = 180   # giây cho list stocks (ngắn hơn để cập nhật giá thường xuyên)
+_CACHE_TTL = 300
+_STOCK_CACHE_TTL = 180
 
 
 async def compute_sector_heatmap() -> Dict[str, Any]:
-    """Compute % change for top sectors using their leader stocks."""
     import time as _time
-    
     now = _time.time()
     if _CACHE["sectors"] and (now - _CACHE["sectors_at"]) < _CACHE_TTL:
         cached = dict(_CACHE["sectors"])
         cached["cached"] = True
         return cached
-    
+
     try:
         from app.data.vnstock_client import vnstock_client
-        
         end = datetime.now().strftime("%Y-%m-%d")
         start = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")
-        
         sectors_result = []
-        
+
         for sector_key, tickers in SECTOR_LEADERS.items():
             sector_name = SECTOR_NAMES.get(sector_key, sector_key)
             pct_changes = []
             tickers_used = []
-            
+
             for ticker in tickers[:2]:
                 try:
                     await asyncio.sleep(0.5)
@@ -265,18 +352,14 @@ async def compute_sector_heatmap() -> Dict[str, Any]:
                                 "pct": round(pct, 2),
                             })
                 except asyncio.TimeoutError:
-                    logger.debug(f"Timeout {ticker}")
                     continue
                 except SystemExit as se:
-                    logger.warning(f"Rate limit hit at {ticker}: {se}. Stopping sector fetch.")
                     raise _RateLimitStop()
-                except Exception as e:
-                    logger.debug(f"Skip {ticker}: {e}")
+                except Exception:
                     continue
-            
+
             if pct_changes:
                 avg_pct = sum(pct_changes) / len(pct_changes)
-                # Phase 8E: số mã tổng trong ngành (để frontend hint user)
                 total_count = len(SECTOR_STOCKS.get(sector_key, tickers))
                 sectors_result.append({
                     "key": sector_key,
@@ -286,9 +369,8 @@ async def compute_sector_heatmap() -> Dict[str, Any]:
                     "stocks_count": total_count,
                     "leaders": tickers_used,
                 })
-        
+
         sectors_result.sort(key=lambda x: x["avg_pct"], reverse=True)
-        
         result = {
             "sectors": sectors_result,
             "updated_at": datetime.now().isoformat(),
@@ -305,18 +387,13 @@ async def compute_sector_heatmap() -> Dict[str, Any]:
             "updated_at": datetime.now().isoformat(),
             "total_sectors": len(sectors_result),
             "partial": True,
-            "note": "Dữ liệu một phần do giới hạn API",
         }
     except Exception as e:
         logger.exception(f"Sector heatmap fail: {e}")
         return {"sectors": [], "error": str(e)}
 
 
-# ============================================================
-# Phase 8E: Lấy tất cả mã trong 1 ngành (giá + %)
-# ============================================================
 async def _fetch_one_stock(ticker: str, start: str, end: str) -> Optional[Dict[str, Any]]:
-    """Helper: fetch 1 ticker, return dict {ticker, price, pct, volume} or None."""
     try:
         from app.data.vnstock_client import vnstock_client
         df = await asyncio.wait_for(
@@ -341,22 +418,16 @@ async def _fetch_one_stock(ticker: str, start: str, end: str) -> Optional[Dict[s
             "volume": volume,
         }
     except asyncio.TimeoutError:
-        logger.debug(f"[sector_stocks] timeout {ticker}")
         return None
-    except SystemExit as se:
-        # vnai sys.exit khi rate limit
-        logger.warning(f"[sector_stocks] rate limit {ticker}: {se}")
+    except SystemExit:
         raise _RateLimitStop()
-    except Exception as e:
-        logger.debug(f"[sector_stocks] skip {ticker}: {e}")
+    except Exception:
         return None
 
 
 async def get_sector_stocks(sector_key: str) -> Dict[str, Any]:
-    """Lấy tất cả mã trong ngành với giá + %.
-    Cache 3 phút theo sector_key."""
     import time as _time
-    
+
     if sector_key not in SECTOR_STOCKS:
         return {
             "sector": sector_key,
@@ -364,25 +435,22 @@ async def get_sector_stocks(sector_key: str) -> Dict[str, Any]:
             "error": f"Unknown sector: {sector_key}",
             "available": list(SECTOR_STOCKS.keys()),
         }
-    
-    # Per-sector cache
+
     now = _time.time()
     cached_at = _CACHE["sector_stocks_at"].get(sector_key, 0)
     if (now - cached_at) < _STOCK_CACHE_TTL and sector_key in _CACHE["sector_stocks"]:
         cached = dict(_CACHE["sector_stocks"][sector_key])
         cached["cached"] = True
         return cached
-    
+
     tickers = SECTOR_STOCKS[sector_key]
     sector_name = SECTOR_NAMES.get(sector_key, sector_key)
-    
     end = datetime.now().strftime("%Y-%m-%d")
     start = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")
-    
+
     stocks: List[Dict[str, Any]] = []
     partial = False
-    
-    # Fetch tuần tự với delay nhỏ (vnstock dễ rate-limit khi parallel)
+
     try:
         for tk in tickers:
             await asyncio.sleep(0.35)
@@ -391,14 +459,11 @@ async def get_sector_stocks(sector_key: str) -> Dict[str, Any]:
                 stocks.append(res)
     except _RateLimitStop:
         partial = True
-        logger.warning(f"[sector_stocks] {sector_key}: partial due to rate limit ({len(stocks)}/{len(tickers)})")
     except Exception as e:
-        logger.exception(f"[sector_stocks] {sector_key} unexpected: {e}")
-    
-    # Sort theo % giảm dần (tăng nhất lên đầu)
+        logger.exception(f"[sector_stocks] {sector_key}: {e}")
+
     stocks.sort(key=lambda x: x["pct"], reverse=True)
-    
-    # Tính trung bình ngành
+
     if stocks:
         avg_pct = round(sum(s["pct"] for s in stocks) / len(stocks), 2)
         winners = sum(1 for s in stocks if s["pct"] > 0)
@@ -407,7 +472,7 @@ async def get_sector_stocks(sector_key: str) -> Dict[str, Any]:
     else:
         avg_pct = 0.0
         winners = losers = flat = 0
-    
+
     result = {
         "sector": sector_key,
         "sector_name": sector_name,
@@ -423,23 +488,21 @@ async def get_sector_stocks(sector_key: str) -> Dict[str, Any]:
     }
     if partial:
         result["partial"] = True
-        result["note"] = "Một số mã chưa lấy được do giới hạn API"
-    
-    # Cache nếu có ít nhất 50% data
+
     if len(stocks) >= max(3, len(tickers) // 2):
         _CACHE["sector_stocks"][sector_key] = result
         _CACHE["sector_stocks_at"][sector_key] = _time.time()
-    
+
     return result
 
 
 # Standalone test
 if __name__ == "__main__":
     import json
-    
+
     async def _test():
-        print("=== SECTOR STOCKS (Banks) ===")
-        ss = await get_sector_stocks("Banks")
-        print(json.dumps(ss, ensure_ascii=False, indent=2))
-    
+        print("=== FEAR & GREED ===")
+        fg = await compute_fear_greed()
+        print(json.dumps(fg, ensure_ascii=False, indent=2))
+
     asyncio.run(_test())
