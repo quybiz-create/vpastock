@@ -1793,6 +1793,47 @@ input{font-family:inherit;color:inherit}
   .wyckoff-event { font-size: 10.5px; }
 }
 
+
+/* ========== PHASE 15A: PATTERNS PANEL ========== */
+.patterns-card {
+  background: var(--card-bg, #1a1f2e);
+  border: 1px solid var(--border, #2a3441);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 12px 0;
+}
+.patterns-card .title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text, #c8d0e0);
+  margin-bottom: 10px;
+}
+.patterns-card .title-spacer { margin-left: auto; font-size: 11px; color: var(--text3, #888); font-weight: normal; }
+.patterns-summary { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12px; }
+.patterns-summary .pill { background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
+.patterns-summary .pill.bull { color: var(--green-hi, #26a69a); border: 1px solid rgba(38,166,154,0.3); }
+.patterns-summary .pill.bear { color: var(--red-hi, #ef5350); border: 1px solid rgba(239,83,80,0.3); }
+.patterns-summary .pill.neutral { color: #ffb74d; border: 1px solid rgba(255,183,77,0.3); }
+.patterns-list { display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto; }
+.pattern-row { background: rgba(0,0,0,0.2); padding: 8px 10px; border-radius: 6px; border-left: 3px solid #555; display: grid; grid-template-columns: 70px 1fr auto; gap: 10px; align-items: center; }
+.pattern-row.bullish { border-left-color: var(--green-hi, #26a69a); }
+.pattern-row.bearish { border-left-color: var(--red-hi, #ef5350); }
+.pattern-row.neutral { border-left-color: #ffb74d; }
+.pattern-row .pdate { font-size: 11px; color: var(--text3, #888); font-family: monospace; }
+.pattern-row .pname { font-weight: 600; font-size: 13px; color: var(--text, #d0d8e8); }
+.pattern-row .pname small { display: block; font-weight: normal; color: var(--text3, #888); font-size: 10px; }
+.pattern-row .pdesc { font-size: 11px; color: var(--text2, #aab2c4); margin-top: 2px; line-height: 1.4; }
+.pattern-row .preliability { text-align: right; font-size: 10px; color: var(--text3, #888); }
+.pattern-row .preliability b { font-size: 16px; color: #ffb74d; display: block; }
+.pattern-row .ptags { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+.pattern-row .ptag { font-size: 9px; padding: 1px 6px; border-radius: 8px; background: rgba(255,255,255,0.08); color: var(--text2, #aab2c4); }
+.pattern-row .ptag.vol { background: rgba(38,166,154,0.15); color: var(--green-hi, #26a69a); }
+.pattern-row .ptag.ctx-up { background: rgba(38,166,154,0.15); color: var(--green-hi, #26a69a); }
+.pattern-row .ptag.ctx-down { background: rgba(239,83,80,0.15); color: var(--red-hi, #ef5350); }
+.patterns-empty { text-align: center; color: var(--text3, #888); font-size: 12px; padding: 20px 0; font-style: italic; }
 </style>
 </head>
 <body>
@@ -2235,6 +2276,18 @@ input{font-family:inherit;color:inherit}
         </div>
       </div>
 
+      <!-- ========== PHASE 15A: Candlestick Patterns Panel ========== -->
+      <div class="patterns-card" id="patternsCard">
+        <div class="title">
+          🕯️ Mô hình nến & Price Action
+          <span class="title-spacer">30 ngày gần nhất</span>
+        </div>
+        <div class="patterns-summary" id="patternsSummary">
+          <span style="color:var(--text3,#888);font-size:12px">📊 Chọn 1 mã để xem patterns</span>
+        </div>
+        <div class="patterns-list" id="patternsList"></div>
+      </div>
+
       <div id="calcSection" style="display:none">
         <h4 style="margin-top:0">💰 Tính lệnh MUA</h4>
         <p style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.5">
@@ -2477,6 +2530,10 @@ async function loadStock(symbol) {
   _currentSymbol = symbol;   // track for auto-refresh
   currentSymbol = symbol.toUpperCase();
   showLoading(true);
+  // Phase 15A: Load patterns ngay khi chọn mã (không đợi tab News)
+  if (typeof loadPatterns === 'function') {
+    loadPatterns(currentSymbol);
+  }
   const t0 = performance.now();
 
   try {
@@ -6200,6 +6257,9 @@ const newsAiCache = {}; // {symbol: {data, at}}
 function maybeFetchNews() {
   const sym = currentSymbol;
   if (!sym) return;
+  // Phase 15A: load patterns cùng news
+  maybeFetchPatterns();
+  
   const cached = newsCache[sym];
   const now = Date.now();
   if (cached && (now - cached.at) < NEWS_CACHE_TTL) {
@@ -6226,6 +6286,100 @@ async function fetchNews(symbol) {
     if (listEl) listEl.innerHTML = `<div class="news-empty" style="color:var(--red-hi)">⚠️ Lỗi tải tin: ${e.message}</div>`;
   }
 }
+
+
+// ========== PHASE 15A: Patterns Panel ==========
+async function loadPatterns(symbol) {
+  const summaryEl = document.getElementById('patternsSummary');
+  const listEl = document.getElementById('patternsList');
+  if (!summaryEl || !listEl) return;
+  if (!symbol) return;
+  
+  summaryEl.innerHTML = '<span style="color:var(--text3,#888);font-size:12px">⏳ Đang quét patterns...</span>';
+  listEl.innerHTML = '';
+  
+  try {
+    const res = await fetch(`${API}/api/patterns/detect/${encodeURIComponent(symbol)}?days=30`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    
+    const s = data.summary || {};
+    if (!data.patterns || data.patterns.length === 0 || s.total === 0) {
+      summaryEl.innerHTML = '<span class="pill neutral">📊 Không có pattern rõ ràng</span>';
+      listEl.innerHTML = '<div class="patterns-empty">Không phát hiện pattern nào trong 30 ngày qua.</div>';
+      return;
+    }
+    
+    let overallEmoji = '😐';
+    let overallText = 'Trung tính';
+    let overallClass = 'neutral';
+    if (s.overall === 'bullish') { overallEmoji = '🟢'; overallText = 'Thiên hướng TĂNG'; overallClass = 'bull'; }
+    else if (s.overall === 'bearish') { overallEmoji = '🔴'; overallText = 'Thiên hướng GIẢM'; overallClass = 'bear'; }
+    
+    summaryEl.innerHTML = `
+      <span class="pill ${overallClass}">${overallEmoji} ${overallText}</span>
+      <span class="pill bull">↑ ${s.bullish || 0}</span>
+      <span class="pill bear">↓ ${s.bearish || 0}</span>
+      ${(s.neutral||0) > 0 ? `<span class="pill neutral">~ ${s.neutral}</span>` : ''}
+      <span class="pill" style="color:var(--text3,#888)">Tổng: ${s.total}</span>
+    `;
+    
+    let html = '';
+    for (const p of data.patterns.slice(0, 15)) {
+      const dirClass = p.direction || 'neutral';
+      const dirIcon = p.direction === 'bullish' ? '🟢' : (p.direction === 'bearish' ? '🔴' : '🟡');
+      const ctxClass = p.context === 'uptrend' ? 'ctx-up' : (p.context === 'downtrend' ? 'ctx-down' : '');
+      const ctxText = p.context === 'uptrend' ? 'Sau Uptrend' : (p.context === 'downtrend' ? 'Sau Downtrend' : 'Sideways');
+      const typeText = p.type === 'reversal' ? 'Đảo chiều' : (p.type === 'continuation' ? 'Tiếp diễn' : 'Lưỡng lự');
+      const dateShort = (p.date || '').substring(5);   // MM-DD
+      
+      html += `
+        <div class="pattern-row ${dirClass}">
+          <div class="pdate">${dateShort}</div>
+          <div>
+            <div class="pname">
+              ${dirIcon} ${p.name_vi || p.name}
+              <small>${p.name}</small>
+            </div>
+            <div class="pdesc">${p.description || ''}</div>
+            <div class="ptags">
+              ${ctxClass ? `<span class="ptag ${ctxClass}">${ctxText}</span>` : ''}
+              ${p.volume_confirmed ? '<span class="ptag vol">📊 Vol xác nhận</span>' : ''}
+              <span class="ptag">${typeText}</span>
+            </div>
+          </div>
+          <div class="preliability">
+            <b>${p.reliability || 0}</b>
+            độ tin cậy
+          </div>
+        </div>
+      `;
+    }
+    listEl.innerHTML = html;
+    
+  } catch (err) {
+    console.error('[patterns]', err);
+    summaryEl.innerHTML = `<span style="color:var(--red-hi,#ef5350);font-size:12px">⚠️ Lỗi: ${err.message}</span>`;
+    listEl.innerHTML = '';
+  }
+}
+
+// Cache patterns 5 phút per symbol
+const patternsCache = {};
+const PATTERNS_CACHE_TTL = 5 * 60 * 1000;
+
+function maybeFetchPatterns() {
+  const sym = currentSymbol;
+  if (!sym) return;
+  const cached = patternsCache[sym];
+  const now = Date.now();
+  if (cached && (now - cached.at) < PATTERNS_CACHE_TTL) {
+    return;   // Đã load gần đây, skip
+  }
+  loadPatterns(sym);
+  patternsCache[sym] = { at: Date.now() };
+}
+
 
 function renderNews(data) {
   const items = data.items || [];
