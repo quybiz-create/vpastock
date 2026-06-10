@@ -34,133 +34,25 @@ def _safe_float(v: Any) -> Optional[float]:
 # FEAR & GREED INDEX - CUSTOM FORMULA (Phase 14C fixed)
 # ============================================================
 
-async def compute_fear_greed() -> Dict[str, Any]:
-    """Compute Fear & Greed Index from VNINDEX indicators."""
+async def compute_fear_greed():
+    """Compute Fear & Greed Index - PHASE 14D FireAnt: Market Breadth-based.
+    Scan 100 mã qua FireAnt API → phản ánh độ rộng thị trường thật.
+    """
     try:
-        from app.data.vnstock_client import vnstock_client
-        from app.core.indicators import compute_all
-
-        end = datetime.now().strftime("%Y-%m-%d")
-        start = (datetime.now() - timedelta(days=400)).strftime("%Y-%m-%d")
-        df = await vnstock_client.get_history("VNINDEX", start=start, end=end)
-
-        if df is None or df.empty:
-            return {"score": 50, "label": "N/A", "components": {}, "error": "No data"}
-
-        df = df[~df.index.duplicated(keep='last')]
-        df = df.sort_index()
-        df_full = compute_all(df)
-        df_full = df_full.dropna(subset=["close"])
-
-        if len(df_full) < 20:
-            return {"score": 50, "label": "N/A", "components": {}, "error": "Insufficient data"}
-
-        result = _calc_fg_from_df(df_full)
-
-        # === Phase 8D: persist snapshot ===
-        try:
-            from app.services import fg_history
-            fg_history.save_snapshot(result)
-        except Exception as e:
-            logger.warning(f"[market] fg_history save_snapshot failed (non-fatal): {e}")
-
+        from app.services.market_breadth_fireant import compute_fear_greed_breadth
+        result = await compute_fear_greed_breadth()
+        
+        # Compatibility: thêm vnindex info để frontend cũ không break
+        if "vnindex" not in result and "breadth" in result:
+            result["vnindex"] = {
+                "value": None,
+                "ma200": None,
+                "pct_above_ma": result["breadth"].get("ma20_trend_pct", 0),
+            }
         return result
     except Exception as e:
-        logger.exception(f"Fear&Greed compute fail: {e}")
+        logger.exception(f"Fear&Greed (FireAnt Breadth) compute fail: {e}")
         return {"score": 50, "label": "N/A", "error": str(e), "components": {}}
-
-
-# ============================================================
-# PHASE 14C: Sub-score helper functions (fixed logic)
-# ============================================================
-
-def _score_rsi(rsi: Optional[float]) -> float:
-    """RSI score: 0-100 = identity.
-    RSI 30 = Fear extreme, RSI 70 = Greed extreme.
-    """
-    if rsi is None:
-        return 50.0
-    return max(0.0, min(100.0, rsi))
-
-
-def _score_ma200(pct_above_ma: float) -> float:
-    """Distance from MA200.
-    -15% → 0 (Fear cực)
-    0% → 50 (neutral)
-    +15% → 100 (Greed cực)
-    """
-    return max(0.0, min(100.0, 50.0 + (pct_above_ma / 15.0) * 50.0))
-
-
-def _score_volume(vol_ratio: Optional[float]) -> float:
-    """PHASE 14C FIX: Bỏ FLOOR 30 cũ, dùng range rộng 10-90.
-    
-    Vol/MA20 ratio:
-    - 0.0  → 50 (data lỗi, neutral) - không penalize do lỗi tech
-    - 0.3  → 15 (cực thấp = chết khoản → Fear extreme)
-    - 0.5  → 25 
-    - 0.7  → 38
-    - 1.0  → 50 (normal)
-    - 1.3  → 62
-    - 1.5  → 70 (khối lượng tăng = tăng quan tâm = Greed)
-    - 2.0  → 82
-    - 2.5+ → 90 (volume spike = euphoria/panic - thường top)
-    """
-    if vol_ratio is None or vol_ratio <= 0:
-        # Edge case: data lỗi, không tính Fear oan
-        return 50.0
-    
-    if vol_ratio < 0.3:
-        return 10.0 + (vol_ratio / 0.3) * 5.0   # 10 → 15
-    elif vol_ratio < 0.7:
-        return 15.0 + ((vol_ratio - 0.3) / 0.4) * 23.0   # 15 → 38
-    elif vol_ratio < 1.0:
-        return 38.0 + ((vol_ratio - 0.7) / 0.3) * 12.0   # 38 → 50
-    elif vol_ratio < 1.5:
-        return 50.0 + ((vol_ratio - 1.0) / 0.5) * 20.0   # 50 → 70
-    elif vol_ratio < 2.5:
-        return 70.0 + ((vol_ratio - 1.5) / 1.0) * 20.0   # 70 → 90
-    else:
-        return 90.0
-
-
-def _score_volatility(atr_ratio: Optional[float]) -> float:
-    """PHASE 14C FIX: Sửa logic ngược.
-    
-    Cũ: atr thấp → score cao (Greed) - SAI cho VN market
-    Mới: U-curve, peak ở atr_ratio = 1.0 (normal)
-    
-    - atr_ratio 0.3 → 30 (thị trường ngủ đông, kiệt sức → Fear nhẹ)
-    - atr_ratio 0.7 → 45 (hơi thấp, gần neutral)
-    - atr_ratio 1.0 → 55 (bình thường, slight greed - market đang hoạt động)
-    - atr_ratio 1.5 → 45 (biến động cao - cảnh giác)
-    - atr_ratio 2.5+ → 20 (panic, volatility spike)
-    """
-    if atr_ratio is None or atr_ratio <= 0:
-        return 50.0
-    
-    if atr_ratio < 0.3:
-        return 25.0 + (atr_ratio / 0.3) * 10.0   # 25 → 35 (cực thấp = Fear)
-    elif atr_ratio < 0.7:
-        return 35.0 + ((atr_ratio - 0.3) / 0.4) * 15.0   # 35 → 50 (thấp → neutral)
-    elif atr_ratio < 1.0:
-        return 50.0 + ((atr_ratio - 0.7) / 0.3) * 5.0   # 50 → 55 (peak greed nhẹ)
-    elif atr_ratio < 1.5:
-        return 55.0 - ((atr_ratio - 1.0) / 0.5) * 15.0   # 55 → 40
-    elif atr_ratio < 2.5:
-        return 40.0 - ((atr_ratio - 1.5) / 1.0) * 20.0   # 40 → 20
-    else:
-        return 20.0
-
-
-def _score_momentum(pct_5d: Optional[float]) -> float:
-    """Momentum 5-day return.
-    -10% → 0, 0% → 50, +10% → 100 (more sensitive than cũ /5 → /10)
-    """
-    if pct_5d is None:
-        return 50.0
-    return max(0.0, min(100.0, 50.0 + (pct_5d / 10.0) * 50.0))
-
 
 def _calc_fg_from_df(df_full) -> Dict[str, Any]:
     """Pure calculation from prepared DataFrame.
