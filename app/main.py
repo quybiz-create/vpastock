@@ -12,6 +12,7 @@ from app.api import stock, market, screener, calendar, risk, watchlist, news
 from app.api import stock, market, screener, calendar, risk, watchlist, news, wyckoff
 from app.api import stock, market, screener, calendar, risk, watchlist, news, wyckoff, alerts, portfolio, backtest
 from app.api import canslim as canslim_api
+from app.api import ichimoku as ichimoku_api
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -76,3 +77,4 @@ app.include_router(risk.router, prefix="/api/risk", tags=["risk"])
 app.include_router(watchlist.router, prefix="/api/watchlist", tags=["watchlist"])
 app.include_router(patterns_api.router, prefix="/api/patterns", tags=["patterns"])
 app.include_router(canslim_api.router, prefix="/api/canslim", tags=["canslim"])
+app.include_router(ichimoku_api.router, prefix="/api/ichimoku", tags=["ichimoku"])

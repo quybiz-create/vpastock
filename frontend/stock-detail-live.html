@@ -1834,6 +1834,34 @@ input{font-family:inherit;color:inherit}
 .pattern-row .ptag.ctx-up { background: rgba(38,166,154,0.15); color: var(--green-hi, #26a69a); }
 .pattern-row .ptag.ctx-down { background: rgba(239,83,80,0.15); color: var(--red-hi, #ef5350); }
 .patterns-empty { text-align: center; color: var(--text3, #888); font-size: 12px; padding: 20px 0; font-style: italic; }
+
+/* ========== PHASE 17A: ICHIMOKU PANEL ========== */
+.ichimoku-card { background: var(--card-bg, #1a1f2e); border: 1px solid var(--border, #2a3441); border-radius: 10px; padding: 14px 16px; margin: 12px 0; }
+.ichimoku-card .title { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: var(--text, #c8d0e0); margin-bottom: 10px; }
+.ichimoku-card .title-spacer { margin-left: auto; font-size: 11px; color: var(--text3, #888); font-weight: normal; }
+.ichimoku-signal-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 10px 12px; border-radius: 8px; background: rgba(0,0,0,0.2); }
+.ichimoku-signal-row.bullish { border-left: 4px solid var(--green-hi, #26a69a); }
+.ichimoku-signal-row.bearish { border-left: 4px solid var(--red-hi, #ef5350); }
+.ichimoku-signal-row.neutral { border-left: 4px solid #ffb74d; }
+.ichimoku-signal-row .lvl-emoji { font-size: 22px; }
+.ichimoku-signal-row .lvl-info { flex: 1; }
+.ichimoku-signal-row .lvl-info .lvl-name { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
+.ichimoku-signal-row.bullish .lvl-name { color: var(--green-hi, #26a69a); }
+.ichimoku-signal-row.bearish .lvl-name { color: var(--red-hi, #ef5350); }
+.ichimoku-signal-row.neutral .lvl-name { color: #ffb74d; }
+.ichimoku-signal-row .lvl-info .lvl-detail { font-size: 11px; color: var(--text3, #888); margin-top: 2px; }
+.ichimoku-signal-row .lvl-score { text-align: right; font-size: 11px; color: var(--text3, #888); }
+.ichimoku-signal-row .lvl-score b { font-size: 18px; display: block; color: var(--text, #d0d8e8); }
+.ichimoku-values { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; margin-bottom: 12px; font-size: 11px; }
+.ichi-cell { background: rgba(0,0,0,0.15); padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border, #2a3441); }
+.ichi-cell .lbl { color: var(--text3, #888); font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; }
+.ichi-cell .val { font-weight: 600; font-size: 13px; color: var(--text, #d0d8e8); }
+.ichimoku-cloud-pill { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+.ichimoku-cloud-pill.bullish { background: rgba(38,166,154,0.2); color: var(--green-hi, #26a69a); }
+.ichimoku-cloud-pill.bearish { background: rgba(239,83,80,0.2); color: var(--red-hi, #ef5350); }
+.ichimoku-cloud-pill.neutral { background: rgba(255,183,77,0.2); color: #ffb74d; }
+.ichimoku-analysis { font-size: 11px; color: var(--text2, #aab2c4); line-height: 1.6; }
+.ichimoku-analysis div { padding: 3px 0; }
 </style>
 </head>
 <body>
@@ -2289,6 +2317,19 @@ input{font-family:inherit;color:inherit}
         <div class="patterns-list" id="patternsList"></div>
       </div>
 
+      <!-- ========== PHASE 17A: Ichimoku Cloud Panel ========== -->
+      <div class="ichimoku-card" id="ichimokuCard">
+        <div class="title">
+          ☁️ Ichimoku Cloud
+          <span class="title-spacer">Indicator Nhật cổ điển</span>
+        </div>
+        <div id="ichimokuContent">
+          <div style="text-align:center;color:var(--text3,#888);font-size:12px;padding:16px 0;font-style:italic">
+            📊 Chọn 1 mã để xem phân tích Ichimoku
+          </div>
+        </div>
+      </div>
+
       <div id="calcSection" style="display:none">
         <h4 style="margin-top:0">💰 Tính lệnh MUA</h4>
         <p style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.5">
@@ -2534,6 +2575,10 @@ async function loadStock(symbol) {
   // Phase 15A: Load patterns ngay khi chọn mã (không đợi tab News)
   if (typeof loadPatterns === 'function') {
     loadPatterns(currentSymbol);
+  }
+  // Phase 17A: Load Ichimoku
+  if (typeof maybeFetchIchimoku === 'function') {
+    maybeFetchIchimoku();
   }
   const t0 = performance.now();
 
@@ -6379,6 +6424,146 @@ function maybeFetchPatterns() {
   }
   loadPatterns(sym);
   patternsCache[sym] = { at: Date.now() };
+}
+
+
+
+// ========== PHASE 17A: Ichimoku Cloud (v2 with Strategy) ==========
+async function loadIchimoku(symbol) {
+  const el = document.getElementById('ichimokuContent');
+  if (!el || !symbol) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--text3,#888);font-size:12px;padding:16px 0;font-style:italic">⏳ Đang tính Ichimoku...</div>';
+  try {
+    const res = await fetch(`${API}/api/ichimoku/symbol/${encodeURIComponent(symbol)}`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const sig = data.signal || {};
+    const cur = data.current || {};
+    const strat = data.strategy || {};
+    const levels = data.key_levels || [];
+    
+    let sigClass = 'neutral';
+    if (sig.level === 'strong_buy' || sig.level === 'buy') sigClass = 'bullish';
+    else if (sig.level === 'strong_sell' || sig.level === 'sell') sigClass = 'bearish';
+    
+    const cloudClass = cur.cloud_color || 'neutral';
+    const cloudText = cur.cloud_color === 'bullish' ? '🟢 MÂY XANH' : (cur.cloud_color === 'bearish' ? '🔴 MÂY ĐỎ' : '⚪ TT');
+    const cloudFutureClass = cur.cloud_color_future || 'neutral';
+    const cloudFutureText = cur.cloud_color_future === 'bullish' ? '🟢 Xanh' : (cur.cloud_color_future === 'bearish' ? '🔴 Đỏ' : '⚪ TT');
+    
+    let posText = '⚠️ Trong mây';
+    if (sig.position === 'above_cloud') posText = '✅ Trên mây';
+    else if (sig.position === 'below_cloud') posText = '❌ Dưới mây';
+    
+    // Strategy actionable section
+    let strategyHtml = '';
+    if (strat.action) {
+      let stopLossHtml = '';
+      if (strat.stop_loss) {
+        stopLossHtml = `<div style="margin-top:8px"><b style="color:var(--red-hi,#ef5350)">🛑 Stop Loss:</b> ${strat.stop_loss}</div>`;
+      }
+      let targetsHtml = '';
+      if (strat.targets && strat.targets.length) {
+        targetsHtml = `<div style="margin-top:6px"><b style="color:var(--green-hi,#26a69a)">🎯 Targets:</b> ${strat.targets.join(' → ')}</div>`;
+      }
+      let entriesHtml = '';
+      if (strat.entries && strat.entries.length) {
+        entriesHtml = '<div style="margin-top:6px"><b>📍 Entry:</b><ul style="margin:4px 0 0 0;padding-left:20px">' + 
+          strat.entries.map(e => `<li>${e}</li>`).join('') + '</ul></div>';
+      }
+      let notesHtml = '';
+      if (strat.notes && strat.notes.length) {
+        notesHtml = '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border,#2a3441)">' + 
+          strat.notes.map(n => `<div style="padding:2px 0">${n}</div>`).join('') + '</div>';
+      }
+      strategyHtml = `
+        <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border,#2a3441);border-radius:8px;padding:10px 12px;margin-top:12px">
+          <div style="font-weight:600;font-size:13px;color:var(--text,#d0d8e8);margin-bottom:8px">
+            🎯 Chiến lược giao dịch
+          </div>
+          <div style="font-size:14px;font-weight:600;color:${sigClass==='bullish'?'var(--green-hi,#26a69a)':sigClass==='bearish'?'var(--red-hi,#ef5350)':'#ffb74d'};margin-bottom:8px">
+            ${strat.action}
+          </div>
+          <div style="font-size:11px;color:var(--text2,#aab2c4);line-height:1.6">
+            ${entriesHtml}
+            ${stopLossHtml}
+            ${targetsHtml}
+            ${notesHtml}
+          </div>
+        </div>
+      `;
+    }
+    
+    // Key Levels section
+    let levelsHtml = '';
+    if (levels.length) {
+      const levelRows = levels.map(lv => {
+        const colorStyle = lv.type === 'kháng cự' ? 'color:var(--red-hi,#ef5350)' : (lv.type === 'hỗ trợ' ? 'color:var(--green-hi,#26a69a)' : 'color:var(--text2,#aab2c4)');
+        return `
+          <div style="display:flex;justify-content:space-between;padding:4px 8px;border-radius:4px;background:rgba(255,255,255,0.03);font-size:11px;margin-bottom:3px">
+            <span><span style="${colorStyle}">${lv.icon}</span> <b>${lv.name}</b> <small style="color:var(--text3,#888)">(${lv.desc})</small></span>
+            <span><b>${lv.value}</b> <small style="${colorStyle}">${lv.diff_pct >= 0 ? '+' : ''}${lv.diff_pct}%</small></span>
+          </div>
+        `;
+      }).join('');
+      levelsHtml = `
+        <div style="background:rgba(0,0,0,0.15);border:1px solid var(--border,#2a3441);border-radius:8px;padding:10px 12px;margin-top:10px">
+          <div style="font-weight:600;font-size:12px;color:var(--text,#d0d8e8);margin-bottom:6px">
+            🔑 Các mức giá quan trọng
+          </div>
+          ${levelRows}
+        </div>
+      `;
+    }
+    
+    let html = `
+      <div class="ichimoku-signal-row ${sigClass}">
+        <div class="lvl-emoji">${sig.emoji || ''}</div>
+        <div class="lvl-info">
+          <div class="lvl-name">${sig.level_vi || sig.level || 'N/A'}</div>
+          <div class="lvl-detail">${posText} · Score: ${sig.score >= 0 ? '+' : ''}${sig.score || 0}/+5</div>
+        </div>
+        <div class="lvl-score">
+          <small>Mây hôm nay</small>
+          <b><span class="ichimoku-cloud-pill ${cloudClass}">${cloudText}</span></b>
+        </div>
+      </div>
+      <div class="ichimoku-values">
+        <div class="ichi-cell"><div class="lbl">Giá</div><div class="val">${cur.price || '--'}</div></div>
+        <div class="ichi-cell"><div class="lbl">Tenkan (9)</div><div class="val">${cur.tenkan || '--'}</div></div>
+        <div class="ichi-cell"><div class="lbl">Kijun (26)</div><div class="val">${cur.kijun || '--'}</div></div>
+        <div class="ichi-cell"><div class="lbl">Đỉnh mây</div><div class="val">${cur.cloud_top || '--'}</div></div>
+        <div class="ichi-cell"><div class="lbl">Đáy mây</div><div class="val">${cur.cloud_bottom || '--'}</div></div>
+        <div class="ichi-cell"><div class="lbl">Mây 26p tới</div><div class="val"><span class="ichimoku-cloud-pill ${cloudFutureClass}">${cloudFutureText}</span></div></div>
+      </div>
+      <div class="ichimoku-analysis">
+        ${(data.analysis || []).map(s => `<div>${s}</div>`).join('')}
+      </div>
+      ${levelsHtml}
+      ${strategyHtml}
+    `;
+    el.innerHTML = html;
+  } catch (err) {
+    console.error('[ichimoku]', err);
+    el.innerHTML = `<div style="color:var(--red-hi,#ef5350);font-size:12px;padding:16px 0;text-align:center">⚠️ Lỗi: ${err.message}</div>`;
+  }
+}
+
+const ichimokuCache = {};
+const ICHIMOKU_CACHE_TTL = 5 * 60 * 1000;
+
+function maybeFetchIchimoku() {
+  const sym = currentSymbol;
+  if (!sym) return;
+  const cached = ichimokuCache[sym];
+  const now = Date.now();
+  if (cached && (now - cached.at) < ICHIMOKU_CACHE_TTL) return;
+  loadIchimoku(sym);
+  ichimokuCache[sym] = { at: Date.now() };
 }
 
 
