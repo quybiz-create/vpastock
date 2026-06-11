@@ -1,4 +1,4 @@
-﻿"""FastAPI app chinh cho vpastock. Entry: uvicorn app.main:app --reload"""
+"""FastAPI app chinh cho vpastock. Entry: uvicorn app.main:app --reload"""
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +10,8 @@ from app.api import stock, market, screener, calendar, risk, watchlist
 from app.api import patterns as patterns_api
 from app.api import stock, market, screener, calendar, risk, watchlist, news
 from app.api import stock, market, screener, calendar, risk, watchlist, news, wyckoff
-from app.api import stock, market, screener, calendar, risk, watchlist, news, wyckoff, alerts, portfolio, backtest, financial
+from app.api import stock, market, screener, calendar, risk, watchlist, news, wyckoff, alerts, portfolio, backtest
+from app.api import canslim as canslim_api
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -69,9 +70,9 @@ app.include_router(wyckoff.router, prefix="/api/wyckoff", tags=["wyckoff"])
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"])
 app.include_router(portfolio.router, prefix="/api/portfolio", tags=["portfolio"])
 app.include_router(backtest.router, prefix="/api/backtest", tags=["backtest"])
-app.include_router(financial.router, prefix="/api/financial", tags=["financial"])
 app.include_router(screener.router, prefix="/api/screener", tags=["screener"])
 app.include_router(calendar.router, prefix="/api/calendar", tags=["calendar"])
 app.include_router(risk.router, prefix="/api/risk", tags=["risk"])
 app.include_router(watchlist.router, prefix="/api/watchlist", tags=["watchlist"])
 app.include_router(patterns_api.router, prefix="/api/patterns", tags=["patterns"])
+app.include_router(canslim_api.router, prefix="/api/canslim", tags=["canslim"])

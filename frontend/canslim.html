@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CANSLIM Scanner - VPASTOCK</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-EJVDBF6RFD"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-EJVDBF6RFD');
+</script>
+<style>
+:root{
+  --bg:#0d1117;--card-bg:#161b22;--border:#2a3441;
+  --text:#c9d1d9;--text2:#8b949e;--text3:#6e7681;
+  --green:#26a69a;--green-hi:#3fb950;--green-bg:rgba(38,166,154,.15);
+  --red:#ef5350;--red-hi:#f85149;--red-bg:rgba(239,83,80,.15);
+  --blue:#58a6ff;--orange:#ffb74d;--yellow:#e3b341;--purple:#a371f7;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+
+/* Nav */
+.navbar{display:flex;align-items:center;gap:6px;padding:10px 16px;background:var(--card-bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.navbar .brand{font-weight:700;color:var(--blue);font-size:15px;margin-right:14px}
+.navbar a{color:var(--text);text-decoration:none;padding:6px 12px;border-radius:6px;font-size:13px}
+.navbar a:hover{background:rgba(255,255,255,.05)}
+.navbar a.active{background:var(--blue);color:#fff;font-weight:600}
+
+/* Container */
+.wrap{max-width:1400px;margin:0 auto;padding:18px}
+
+/* Header */
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.page-head h1{margin:0;font-size:22px;color:var(--text)}
+.page-head .sub{color:var(--text2);font-size:12px;margin-top:3px}
+
+/* Controls */
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{background:var(--card-bg);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:rgba(255,255,255,.05)}
+.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn.primary:hover{background:#4493f8}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Summary cards */
+.summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:18px}
+.summary-card{background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.summary-card .label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.summary-card .value{font-size:22px;font-weight:700}
+.summary-card .value.strong{color:var(--green-hi)}
+.summary-card .value.setup{color:var(--orange)}
+.summary-card .value.weak{color:var(--text2)}
+
+/* Market context bar */
+.market-bar{background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:12px;display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.market-bar b{font-weight:600}
+.market-bar .ok{color:var(--green-hi)}
+.market-bar .bad{color:var(--red-hi)}
+
+/* Matches list */
+.matches{display:flex;flex-direction:column;gap:8px}
+.match-row{background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:90px 1fr 100px;gap:14px;align-items:center;transition:border-color .15s}
+.match-row:hover{border-color:var(--blue)}
+.match-row.strong{border-left:4px solid var(--green-hi)}
+.match-row.setup{border-left:4px solid var(--orange)}
+.match-row.weak{border-left:4px solid var(--text3);opacity:.6}
+
+.match-symbol{font-size:18px;font-weight:700;color:var(--blue);cursor:pointer}
+.match-symbol:hover{text-decoration:underline}
+.match-symbol .tag{display:block;font-size:9px;color:var(--text3);font-weight:400;margin-top:2px}
+
+.criteria-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.crit-cell{padding:4px 5px;border-radius:4px;background:rgba(255,255,255,.03);text-align:center;cursor:help}
+.crit-cell.pass{background:var(--green-bg);border:1px solid var(--green)}
+.crit-cell.fail{background:rgba(255,255,255,.02);border:1px solid var(--border)}
+.crit-cell .letter{font-weight:700;font-size:13px}
+.crit-cell.pass .letter{color:var(--green-hi)}
+.crit-cell.fail .letter{color:var(--text3)}
+.crit-cell .detail{font-size:9px;color:var(--text3);margin-top:1px;line-height:1.2}
+
+.match-score{text-align:right}
+.match-score .num{font-size:24px;font-weight:700;line-height:1}
+.match-score .num.strong{color:var(--green-hi)}
+.match-score .num.setup{color:var(--orange)}
+.match-score .num.weak{color:var(--text3)}
+.match-score .max{font-size:11px;color:var(--text3)}
+
+/* Loading */
+.loading{text-align:center;color:var(--text2);padding:40px 0;font-style:italic}
+.empty{text-align:center;color:var(--text2);padding:40px 0;font-style:italic;background:var(--card-bg);border:1px solid var(--border);border-radius:8px}
+
+/* Filter pills */
+.filter-pills{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.fpill{background:var(--card-bg);border:1px solid var(--border);padding:5px 12px;border-radius:20px;cursor:pointer;font-size:12px;color:var(--text2)}
+.fpill:hover{border-color:var(--blue)}
+.fpill.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* Info panel */
+.info-panel{background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.6}
+.info-panel summary{cursor:pointer;color:var(--text);font-weight:600;font-size:13px;margin-bottom:6px}
+.info-panel ul{margin:6px 0;padding-left:18px}
+.info-panel li{margin-bottom:3px}
+.info-panel li b{color:var(--text)}
+
+@media (max-width: 768px){
+  .match-row{grid-template-columns:80px 1fr;gap:8px}
+  .match-score{grid-column:1/-1;text-align:left;display:flex;justify-content:space-between;align-items:baseline}
+  .criteria-grid{grid-template-columns:repeat(7,1fr);gap:3px}
+  .crit-cell{padding:3px}
+  .crit-cell .detail{display:none}
+  .crit-cell .letter{font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<div class="navbar">
+  <div class="brand">📊 VPASTOCK</div>
+  <a href="stock-detail-live.html">📈 Chi tiết CP</a>
+  <a href="market.html">🌍 Thị trường</a>
+  <a href="screener.html">🔍 Bộ lọc</a>
+  <a href="watchlist.html">⭐ Watchlist</a>
+  <a href="alerts.html">🔔 Alerts</a>
+  <a href="portfolio.html">💼 Portfolio</a>
+  <a href="backtest.html">🧪 Backtest</a>
+  <a href="canslim.html" class="active">🚀 CANSLIM</a>
+</div>
+
+<div class="wrap">
+  <div class="page-head">
+    <div>
+      <h1>🚀 CANSLIM Scanner</h1>
+      <div class="sub">Phương pháp đầu tư growth của William O'Neil (Investor's Business Daily) - 7 tiêu chí</div>
+    </div>
+    <div class="controls">
+      <button class="btn" id="btnRefresh" onclick="loadScan(true)">🔄 Scan lại</button>
+      <button class="btn primary" id="btnAutoScan" onclick="loadScan(false)">🎯 Bắt đầu quét</button>
+    </div>
+  </div>
+
+  <!-- Info accordion -->
+  <details class="info-panel">
+    <summary>ℹ️ 7 tiêu chí CANSLIM là gì?</summary>
+    <ul>
+      <li><b>C</b> — <i>Current quarterly earnings</i>: EPS quý gần nhất tăng ≥ 20% YoY (so cùng kỳ năm trước)</li>
+      <li><b>A</b> — <i>Annual earnings</i>: EPS năm tăng ≥ 15% trong 3 năm liên tiếp</li>
+      <li><b>N</b> — <i>New highs</i>: Giá đang gần đỉnh 52 tuần (≥ 90%)</li>
+      <li><b>S</b> — <i>Supply &amp; Demand</i>: Khối lượng tăng đột biến (Vol ≥ 1.5× MA20)</li>
+      <li><b>L</b> — <i>Leader</i>: Hiệu suất YTD vượt VNINDEX ít nhất 10%</li>
+      <li><b>I</b> — <i>Institutional</i>: Có sự quan tâm của tổ chức/nước ngoài (≥ 5%)</li>
+      <li><b>M</b> — <i>Market direction</i>: Thị trường chung uptrend (VNI &gt; MA50)</li>
+    </ul>
+    <p style="margin-top:8px"><b>Mã đạt 6-7 điểm</b> = 🌟 Strong CANSLIM (rất tiềm năng).<br>
+    <b>Mã đạt 4-5 điểm</b> = 💪 Setup (đang hình thành).<br>
+    <b>Tip:</b> Click số điểm trong mỗi ô để xem chi tiết. Click mã CP để mở trang phân tích sâu.</p>
+  </details>
+
+  <!-- Market context -->
+  <div class="market-bar" id="marketBar" style="display:none">
+    <span>📊 Thị trường:</span>
+    <span id="marketStatus"></span>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-row" id="summaryRow" style="display:none">
+    <div class="summary-card">
+      <div class="label">🌟 Strong</div>
+      <div class="value strong" id="cntStrong">--</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">💪 Setup</div>
+      <div class="value setup" id="cntSetup">--</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">⚪ Yếu</div>
+      <div class="value weak" id="cntWeak">--</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">📋 Tổng quét</div>
+      <div class="value" style="color:var(--text)" id="cntTotal">--</div>
+    </div>
+  </div>
+
+  <!-- Filter pills -->
+  <div class="filter-pills" id="filterPills" style="display:none">
+    <div class="fpill active" data-min="0">Tất cả</div>
+    <div class="fpill" data-min="6">🌟 Strong (6-7)</div>
+    <div class="fpill" data-min="4">💪 Setup+ (4-7)</div>
+    <div class="fpill" data-min="5">🎯 Top (5-7)</div>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsArea">
+    <div class="empty">
+      🚀 Bấm <b>"Bắt đầu quét"</b> để CANSLIM Scanner phân tích ~50 mã hàng đầu.<br>
+      <small style="display:block;margin-top:6px;color:var(--text3)">Quá trình mất ~30-60 giây.</small>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? `http://${location.hostname}:8000`
+  : location.origin;
+
+let _scanData = null;
+let _currentMinScore = 0;
+
+async function loadScan(forceRefresh = false) {
+  const btn = document.getElementById('btnAutoScan');
+  const btnR = document.getElementById('btnRefresh');
+  const resultsArea = document.getElementById('resultsArea');
+  
+  btn.disabled = true;
+  btnR.disabled = true;
+  btn.textContent = '⏳ Đang quét...';
+  
+  resultsArea.innerHTML = '<div class="loading">⏳ Đang quét ~50 mã theo 7 tiêu chí CANSLIM... (30-60s)</div>';
+  
+  try {
+    const url = `${API}/api/canslim/scan${forceRefresh ? '?force=true' : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    
+    _scanData = data;
+    renderResults();
+    
+  } catch (err) {
+    resultsArea.innerHTML = `<div class="empty" style="color:var(--red-hi)">⚠️ Lỗi: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btnR.disabled = false;
+    btn.textContent = '🎯 Bắt đầu quét';
+  }
+}
+
+function renderResults() {
+  if (!_scanData) return;
+  
+  const s = _scanData.summary || {};
+  const m = s.market || {};
+  
+  // Market bar
+  document.getElementById('marketBar').style.display = 'flex';
+  document.getElementById('marketStatus').innerHTML = `
+    VNINDEX <b>${m.vni_close || '?'}</b> · 
+    ${m.above_ma50 ? '<span class="ok">✅ Trên MA50</span>' : '<span class="bad">❌ Dưới MA50</span>'} · 
+    ${m.above_ma200 ? '<span class="ok">✅ Trên MA200</span>' : '<span class="bad">⚠️ Dưới MA200</span>'} · 
+    YTD <b style="color:${(m.vni_ytd_pct||0)>=0?'var(--green-hi)':'var(--red-hi)'}">${(m.vni_ytd_pct||0)>=0?'+':''}${m.vni_ytd_pct||0}%</b>
+  `;
+  
+  // Summary cards
+  document.getElementById('summaryRow').style.display = 'grid';
+  document.getElementById('cntStrong').textContent = s.strong || 0;
+  document.getElementById('cntSetup').textContent = s.setup || 0;
+  document.getElementById('cntWeak').textContent = s.weak || 0;
+  document.getElementById('cntTotal').textContent = s.total || 0;
+  
+  // Filter pills
+  document.getElementById('filterPills').style.display = 'flex';
+  
+  renderMatches();
+}
+
+function renderMatches() {
+  if (!_scanData) return;
+  const matches = (_scanData.matches || []).filter(m => m.score >= _currentMinScore);
+  const area = document.getElementById('resultsArea');
+  
+  if (matches.length === 0) {
+    area.innerHTML = '<div class="empty">📭 Không có mã nào đạt tiêu chí này.</div>';
+    return;
+  }
+  
+  let html = '<div class="matches">';
+  for (const m of matches) {
+    let criteriaHtml = '';
+    for (const letter of ['C','A','N','S','L','I','M']) {
+      const c = m.criteria[letter] || {pass:false, detail:'N/A', name_vi:letter};
+      const passClass = c.pass ? 'pass' : 'fail';
+      const icon = c.pass ? '✅' : '❌';
+      const tooltipText = `${c.name_vi} (${letter}): ${c.detail} - Ngưỡng: ${c.threshold || ''}`;
+      criteriaHtml += `
+        <div class="crit-cell ${passClass}" title="${tooltipText.replace(/"/g, '&quot;')}">
+          <div class="letter">${letter}</div>
+          <div class="detail">${icon}</div>
+        </div>
+      `;
+    }
+    
+    html += `
+      <div class="match-row ${m.tag_class}">
+        <div>
+          <div class="match-symbol" onclick="openStock('${m.symbol}')">${m.symbol}</div>
+          <div class="match-symbol" style="font-size:11px;color:var(--text3);cursor:default">
+            <span class="tag">${m.tag}</span>
+            ${m.price} · YTD ${m.ytd_pct>=0?'+':''}${m.ytd_pct}%
+          </div>
+        </div>
+        <div class="criteria-grid">${criteriaHtml}</div>
+        <div class="match-score">
+          <div class="num ${m.tag_class}">${m.score}</div>
+          <div class="max">/ ${m.max_score}</div>
+        </div>
+      </div>
+    `;
+  }
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+// Filter pills click
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('fpill')) {
+    document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
+    e.target.classList.add('active');
+    _currentMinScore = parseInt(e.target.dataset.min || '0');
+    renderMatches();
+  }
+});
+
+function openStock(sym) {
+  window.location.href = `stock-detail-live.html?sym=${encodeURIComponent(sym)}`;
+}
+</script>
+
+</body>
+</html>

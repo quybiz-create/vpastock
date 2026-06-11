@@ -7,4 +7,15 @@ __pycache__/
 logs/
 .vscode/
 .idea/
-*.tar.gz
+*.tar.gz  
+# BCTC shelved (do not deploy)  
+app/api/financial.py  
+app/services/bctc_ai.py  
+app/services/bctc_parser.py  
+app/services/financial_analyzer.py  
+frontend/financial.html  
+  
+# Backups  
+*.bak  
+*.bak2  
+Hardcoded 
